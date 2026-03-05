@@ -1,16 +1,18 @@
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { getExamsBySubject, getStatusMeta } from '../api/mockData';
 import './ProfessorExamsPage.css';
 
 function StatusBadge({ status }) {
+    const { t } = useTranslation();
     const meta = getStatusMeta(status);
     return (
         <span
             className="status-badge"
             style={{ color: meta.color, background: meta.bg }}
         >
-            {meta.label}
+            {t(`status.${status}`)}
         </span>
     );
 }
@@ -21,7 +23,7 @@ function ExamCard({ exam, subjectCode }) {
 
     return (
         <Link
-            to={`/profesor/examenes/${exam.id}`}
+            to={`/professor/exams/${exam.id}`}
             className="exam-card"
             state={{ subjectCode }}
             aria-label={`Ver instancias de ${exam.name}`}
@@ -59,6 +61,7 @@ function ExamCard({ exam, subjectCode }) {
 }
 
 export default function ProfessorExamsPage() {
+    const { t } = useTranslation();
     const { code } = useParams();
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -71,8 +74,8 @@ export default function ProfessorExamsPage() {
         return (
             <div className="not-found-page">
                 <p>Asignatura <strong>{code}</strong> no encontrada.</p>
-                <button className="btn-back" onClick={() => navigate('/profesor/asignaturas')}>
-                    ← Volver a mis asignaturas
+                <button className="btn-back" onClick={() => navigate('/professor/subjects')}>
+                    ← {t('common.back')}
                 </button>
             </div>
         );
@@ -82,7 +85,7 @@ export default function ProfessorExamsPage() {
         <div className="exams-page">
             {/* Breadcrumb */}
             <nav className="breadcrumb" aria-label="Navegación">
-                <Link to="/profesor/asignaturas" className="breadcrumb__item">Asignaturas</Link>
+                <Link to="/professor/subjects" className="breadcrumb__item">{t('professor.subjects.title').split(' ').pop()}</Link>
                 <span className="breadcrumb__sep" aria-hidden="true">›</span>
                 <span className="breadcrumb__item breadcrumb__item--active">{subject.name}</span>
             </nav>
@@ -94,7 +97,7 @@ export default function ProfessorExamsPage() {
                     <h1 className="exams-page__title">{subject.name}</h1>
                     {subject.semester && (
                         <p className="exams-page__meta">
-                            Cuatrimestre {subject.semester}
+                            {t('common.semester')} {subject.semester}
                             {subject.year ? ` · ${subject.year}` : ''}
                         </p>
                     )}
@@ -102,7 +105,7 @@ export default function ProfessorExamsPage() {
                 <div className="subject-page__stats">
                     <div className="stat-card">
                         <span className="stat-card__value">{exams.length}</span>
-                        <span className="stat-card__label">Exámenes</span>
+                        <span className="stat-card__label">{t('professor.exams.title')}</span>
                     </div>
                 </div>
             </div>
@@ -117,7 +120,7 @@ export default function ProfessorExamsPage() {
                         <line x1="22" y1="31" x2="42" y2="31" stroke="#a0b4d8" strokeWidth="2" strokeLinecap="round" />
                         <line x1="22" y1="38" x2="34" y2="38" stroke="#a0b4d8" strokeWidth="2" strokeLinecap="round" />
                     </svg>
-                    <p>No hay exámenes para esta asignatura.</p>
+                    <p>{t('professor.exams.empty')}</p>
                 </div>
             ) : (
                 <div className="exam-list">

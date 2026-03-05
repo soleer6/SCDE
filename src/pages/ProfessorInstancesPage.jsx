@@ -1,13 +1,15 @@
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { getExamById, getInstancesByExam, getStatusMeta } from '../api/mockData';
 import './ProfessorInstancesPage.css';
 
 function StatusBadge({ status }) {
+    const { t } = useTranslation();
     const meta = getStatusMeta(status);
     return (
         <span className="status-badge" style={{ color: meta.color, background: meta.bg }}>
-            {meta.label}
+            {t(`status.${status}`)}
         </span>
     );
 }
@@ -23,7 +25,7 @@ function GradeChip({ grade }) {
 function InstanceRow({ instance }) {
     const handleClick = () => {
         console.log('[SCDE] Navegando a instancia:', instance);
-        // TODO: navigate to /profesor/instancias/:id when that view is ready
+        // TODO: navigate to /professor/instances/:id when that view is ready
     };
 
     return (
@@ -60,6 +62,7 @@ function InstanceRow({ instance }) {
 }
 
 export default function ProfessorInstancesPage() {
+    const { t } = useTranslation();
     const { examId } = useParams();
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -76,8 +79,8 @@ export default function ProfessorInstancesPage() {
         return (
             <div className="not-found-page">
                 <p>Examen <strong>#{examId}</strong> no encontrado.</p>
-                <button className="btn-back" onClick={() => navigate('/profesor/asignaturas')}>
-                    ← Volver a mis asignaturas
+                <button className="btn-back" onClick={() => navigate('/professor/subjects')}>
+                    ← {t('common.back')}
                 </button>
             </div>
         );
@@ -93,11 +96,11 @@ export default function ProfessorInstancesPage() {
         <div className="instances-page">
             {/* Breadcrumb */}
             <nav className="breadcrumb" aria-label="Navegación">
-                <Link to="/profesor/asignaturas" className="breadcrumb__item">Asignaturas</Link>
+                <Link to="/professor/subjects" className="breadcrumb__item">{t('professor.subjects.title').split(' ').pop()}</Link>
                 <span className="breadcrumb__sep" aria-hidden="true">›</span>
                 {subject ? (
                     <Link
-                        to={`/profesor/asignaturas/${subjectCode}`}
+                        to={`/professor/subjects/${subjectCode}`}
                         state={{ subjectCode }}
                         className="breadcrumb__item"
                     >
@@ -127,11 +130,11 @@ export default function ProfessorInstancesPage() {
                 <div className="subject-page__stats">
                     <div className="stat-card">
                         <span className="stat-card__value">{instances.length}</span>
-                        <span className="stat-card__label">Instancias</span>
+                        <span className="stat-card__label">{t('professor.instances.title')}</span>
                     </div>
                     <div className="stat-card">
                         <span className="stat-card__value">{corrected}</span>
-                        <span className="stat-card__label">Corregidas</span>
+                        <span className="stat-card__label">{t('professor.instances.corrected')}</span>
                     </div>
                 </div>
             </div>
@@ -144,7 +147,7 @@ export default function ProfessorInstancesPage() {
                         <circle cx="32" cy="24" r="8" fill="white" stroke="#a0b4d8" strokeWidth="2" />
                         <path d="M16 48c0-8.837 7.163-16 16-16s16 7.163 16 16" stroke="#a0b4d8" strokeWidth="2" strokeLinecap="round" fill="none" />
                     </svg>
-                    <p>No hay instancias para este examen.</p>
+                    <p>{t('professor.instances.empty')}</p>
                 </div>
             ) : (
                 <div className="instances-table-wrapper">
@@ -152,9 +155,9 @@ export default function ProfessorInstancesPage() {
                         <thead>
                             <tr>
                                 <th className="th-avatar" />
-                                <th>Alumno</th>
-                                <th>Estado</th>
-                                <th>Calificación</th>
+                                <th>{t('professor.instances.student')}</th>
+                                <th>{t('professor.instances.status')}</th>
+                                <th>{t('professor.instances.grade')}</th>
                                 <th />
                             </tr>
                         </thead>

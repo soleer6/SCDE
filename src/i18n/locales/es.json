@@ -1,0 +1,55 @@
+{
+    "header": {
+        "title": "SCDE",
+        "logout": "Cerrar sesión"
+    },
+    "login": {
+        "title": "Iniciar Sesión",
+        "email": "Correo electrónico",
+        "password": "Contraseña",
+        "submit": "Entrar",
+        "error": "Error al iniciar sesión"
+    },
+    "professor": {
+        "subjects": {
+            "title": "Mis Asignaturas",
+            "subtitle": "Gestiona las correcciones de exámenes de tus asignaturas asignadas.",
+            "empty": "No tienes asignaturas asignadas actualmente."
+        },
+        "exams": {
+            "title": "Exámenes",
+            "empty": "No hay exámenes para esta asignatura."
+        },
+        "instances": {
+            "title": "Instancias",
+            "student": "Alumno",
+            "grade": "Calificación",
+            "status": "Estado",
+            "empty": "No hay instancias para este examen.",
+            "corrected": "Corregidas"
+        }
+    },
+    "student": {
+        "subjects": {
+            "title": "Mis Asignaturas",
+            "subtitle": "Consulta tus exámenes y resultados en cada asignatura.",
+            "empty": "No tienes asignaturas matriculadas actualmente."
+        }
+    },
+    "common": {
+        "loading": "Cargando...",
+        "back": "Volver",
+        "error": "Error",
+        "greeting": "Hola",
+        "welcome": "Bienvenido/a",
+        "viewExams": "Ver exámenes",
+        "viewSubject": "Ver asignatura",
+        "semester": "Cuatrimestre"
+    },
+    "status": {
+        "PENDING": "Pendiente",
+        "CORRECTED": "Corregido",
+        "REVIEW_REQUESTED": "Revisión solicitada",
+        "CLOSED": "Cerrado"
+    }
+}

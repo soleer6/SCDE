@@ -1,0 +1,55 @@
+{
+    "header": {
+        "title": "SCDE",
+        "logout": "Log out"
+    },
+    "login": {
+        "title": "Sign In",
+        "email": "Email address",
+        "password": "Password",
+        "submit": "Sign in",
+        "error": "Sign in error"
+    },
+    "professor": {
+        "subjects": {
+            "title": "My Subjects",
+            "subtitle": "Manage exam corrections for your assigned subjects.",
+            "empty": "You have no subjects assigned currently."
+        },
+        "exams": {
+            "title": "Exams",
+            "empty": "No exams for this subject."
+        },
+        "instances": {
+            "title": "Instances",
+            "student": "Student",
+            "grade": "Grade",
+            "status": "Status",
+            "empty": "No instances for this exam.",
+            "corrected": "Corrected"
+        }
+    },
+    "student": {
+        "subjects": {
+            "title": "My Subjects",
+            "subtitle": "Check your exams and results in each subject.",
+            "empty": "You are not enrolled in any subjects currently."
+        }
+    },
+    "common": {
+        "loading": "Loading...",
+        "back": "Back",
+        "error": "Error",
+        "greeting": "Hello",
+        "welcome": "Welcome",
+        "viewExams": "View exams",
+        "viewSubject": "View subject",
+        "semester": "Semester"
+    },
+    "status": {
+        "PENDING": "Pending",
+        "CORRECTED": "Corrected",
+        "REVIEW_REQUESTED": "Review requested",
+        "CLOSED": "Closed"
+    }
+}
