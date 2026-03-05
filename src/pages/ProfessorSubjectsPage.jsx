@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import './SubjectPage.css';
 
@@ -16,11 +17,12 @@ function getColor(index) {
 }
 
 function SubjectCard({ subject, index }) {
+    const { t } = useTranslation();
     const color = getColor(index);
 
     return (
         <Link
-            to={`/profesor/asignaturas/${subject.code}`}
+            to={`/professor/subjects/${subject.code}`}
             className="subject-card subject-card--link"
             style={{ '--card-bg': color.bg, '--card-accent': color.accent }}
             aria-label={`Ver exámenes de ${subject.name}`}
@@ -39,7 +41,7 @@ function SubjectCard({ subject, index }) {
                 <h3 className="subject-card__name">{subject.name}</h3>
                 <div className="subject-card__meta">
                     {subject.semester && (
-                        <span className="subject-card__pill">Cuatrimestre {subject.semester}</span>
+                        <span className="subject-card__pill">{t('common.semester')} {subject.semester}</span>
                     )}
                     {subject.year && (
                         <span className="subject-card__pill">{subject.year}</span>
@@ -48,7 +50,7 @@ function SubjectCard({ subject, index }) {
             </div>
 
             <div className="subject-card__action" style={{ background: color.accent }}>
-                Ver asignatura
+                {t('common.viewSubject')}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
@@ -58,6 +60,7 @@ function SubjectCard({ subject, index }) {
 }
 
 export default function ProfessorSubjectsPage() {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const subjects = user?.subjects || [];
 
@@ -65,16 +68,16 @@ export default function ProfessorSubjectsPage() {
         <div className="subject-page">
             <div className="subject-page__hero">
                 <div className="subject-page__hero-text">
-                    <p className="subject-page__greeting">Bienvenido/a, {user?.firstName} 👋</p>
-                    <h1 className="subject-page__title">Mis Asignaturas</h1>
+                    <p className="subject-page__greeting">{t('common.welcome')}, {user?.firstName} 👋</p>
+                    <h1 className="subject-page__title">{t('professor.subjects.title')}</h1>
                     <p className="subject-page__subtitle">
-                        Gestiona las correcciones de exámenes de tus asignaturas asignadas.
+                        {t('professor.subjects.subtitle')}
                     </p>
                 </div>
                 <div className="subject-page__stats">
                     <div className="stat-card">
                         <span className="stat-card__value">{subjects.length}</span>
-                        <span className="stat-card__label">Asignaturas</span>
+                        <span className="stat-card__label">{t('professor.subjects.title').split(' ').pop()}</span>
                     </div>
                 </div>
             </div>
@@ -87,7 +90,7 @@ export default function ProfessorSubjectsPage() {
                         <line x1="25" y1="28" x2="39" y2="28" stroke="#a0b4d8" strokeWidth="2" strokeLinecap="round" />
                         <line x1="25" y1="33" x2="35" y2="33" stroke="#a0b4d8" strokeWidth="2" strokeLinecap="round" />
                     </svg>
-                    <p>No tienes asignaturas asignadas actualmente.</p>
+                    <p>{t('professor.subjects.empty')}</p>
                 </div>
             ) : (
                 <div className="subjects-grid">

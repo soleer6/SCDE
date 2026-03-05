@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import './SubjectPage.css';
 
@@ -15,6 +16,7 @@ function getColor(index) {
 }
 
 function SubjectCard({ subject, index }) {
+    const { t } = useTranslation();
     const color = getColor(index);
 
     return (
@@ -32,7 +34,7 @@ function SubjectCard({ subject, index }) {
                 <div className="subject-card__meta">
                     {subject.semester && (
                         <span className="subject-card__pill">
-                            Cuatrimestre {subject.semester}
+                            {t('common.semester')} {subject.semester}
                         </span>
                     )}
                     {subject.year && (
@@ -42,7 +44,7 @@ function SubjectCard({ subject, index }) {
             </div>
 
             <button className="subject-card__action" style={{ background: color.accent }}>
-                Ver exámenes
+                {t('common.viewExams')}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
@@ -52,6 +54,7 @@ function SubjectCard({ subject, index }) {
 }
 
 export default function StudentSubjectsPage() {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const subjects = user?.subjects || [];
 
@@ -59,16 +62,16 @@ export default function StudentSubjectsPage() {
         <div className="subject-page">
             <div className="subject-page__hero">
                 <div className="subject-page__hero-text">
-                    <p className="subject-page__greeting">Hola, {user?.firstName} 👋</p>
-                    <h1 className="subject-page__title">Mis Asignaturas</h1>
+                    <p className="subject-page__greeting">{t('common.greeting')}, {user?.firstName} 👋</p>
+                    <h1 className="subject-page__title">{t('student.subjects.title')}</h1>
                     <p className="subject-page__subtitle">
-                        Consulta tus exámenes y resultados en cada asignatura.
+                        {t('student.subjects.subtitle')}
                     </p>
                 </div>
                 <div className="subject-page__stats">
                     <div className="stat-card">
                         <span className="stat-card__value">{subjects.length}</span>
-                        <span className="stat-card__label">Asignaturas</span>
+                        <span className="stat-card__label">{t('student.subjects.title').split(' ').pop()}</span>
                     </div>
                 </div>
             </div>
@@ -81,7 +84,7 @@ export default function StudentSubjectsPage() {
                         <line x1="25" y1="28" x2="39" y2="28" stroke="#a0b4d8" strokeWidth="2" strokeLinecap="round" />
                         <line x1="25" y1="33" x2="35" y2="33" stroke="#a0b4d8" strokeWidth="2" strokeLinecap="round" />
                     </svg>
-                    <p>No tienes asignaturas matriculadas actualmente.</p>
+                    <p>{t('student.subjects.empty')}</p>
                 </div>
             ) : (
                 <div className="subjects-grid">

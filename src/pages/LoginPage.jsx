@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import './LoginPage.css';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -12,13 +13,14 @@ export default function LoginPage() {
 
     const { login } = useAuth();
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
         if (!email.trim() || !password) {
-            setError('Por favor, introduce tu email y contraseña.');
+            setError(t('login.error') + ': Introduce datos');
             return;
         }
 
@@ -26,10 +28,10 @@ export default function LoginPage() {
         try {
             const user = await login(email.trim(), password);
             // Redirect based on role
-            if (user.rol === 'CORRECTOR') {
-                navigate('/profesor/asignaturas', { replace: true });
+            if (user.role === 'PROFESSOR') {
+                navigate('/professor/subjects', { replace: true });
             } else {
-                navigate('/alumno/asignaturas', { replace: true });
+                navigate('/student/subjects', { replace: true });
             }
         } catch (err) {
             setError(err.message || 'Error al iniciar sesión. Inténtalo de nuevo.');
@@ -58,7 +60,7 @@ export default function LoginPage() {
                         </svg>
                     </div>
                     <div>
-                        <h1 className="login-brand__name">SCDE</h1>
+                        <h1 className="login-brand__name">{t('header.title', 'SCDE')}</h1>
                         <p className="login-brand__desc">Sistema de Corrección Digital de Exámenes</p>
                     </div>
                 </div>
@@ -66,7 +68,7 @@ export default function LoginPage() {
                 {/* Card */}
                 <div className="login-card">
                     <div className="login-card__header">
-                        <h2 className="login-card__title">Iniciar sesión</h2>
+                        <h2 className="login-card__title">{t('login.title')}</h2>
                         <p className="login-card__subtitle">Accede con tus credenciales universitarias</p>
                     </div>
 
@@ -84,7 +86,7 @@ export default function LoginPage() {
 
                         <div className="form-group">
                             <label className="form-label" htmlFor="email">
-                                Correo electrónico
+                                {t('login.email')}
                             </label>
                             <div className="input-wrapper">
                                 <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -107,7 +109,7 @@ export default function LoginPage() {
 
                         <div className="form-group">
                             <label className="form-label" htmlFor="password">
-                                Contraseña
+                                {t('login.password')}
                             </label>
                             <div className="input-wrapper">
                                 <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -155,10 +157,10 @@ export default function LoginPage() {
                             {loading ? (
                                 <>
                                     <span className="spinner spinner--sm" />
-                                    Verificando...
+                                    {t('common.loading')}
                                 </>
                             ) : (
-                                'Acceder'
+                                t('login.submit')
                             )}
                         </button>
                     </form>
