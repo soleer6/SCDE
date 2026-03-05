@@ -1,0 +1,210 @@
+/* =============================================
+   ProfesorInstanciasPage
+   ============================================= */
+
+.instances-page__hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 1.75rem;
+    flex-wrap: wrap;
+}
+
+.instances-page__title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--color-text);
+    margin: 0 0 0.4rem;
+    line-height: 1.1;
+}
+
+.instances-page__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    margin: 0;
+    text-transform: capitalize;
+}
+
+.instances-page__meta svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* ---- Table wrapper ---- */
+.instances-table-wrapper {
+    background: white;
+    border: 1.5px solid var(--color-border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.instances-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.instances-table thead {
+    background: var(--color-surface);
+    border-bottom: 1.5px solid var(--color-border);
+}
+
+.instances-table th {
+    padding: 0.85rem 1rem;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+
+.th-avatar {
+    width: 52px;
+}
+
+/* ---- Instance rows ---- */
+.instance-row {
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.instance-row:last-child {
+    border-bottom: none;
+}
+
+.instance-row:hover {
+    background: #f5f8ff;
+}
+
+.instance-row:focus {
+    outline: none;
+    background: #eef3ff;
+}
+
+.instance-cell {
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+}
+
+/* Avatar cell */
+.instance-cell--avatar {
+    width: 52px;
+}
+
+.instance-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+}
+
+/* Name cell */
+.instance-cell--name {
+    min-width: 200px;
+}
+
+.instance-name {
+    display: block;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 0.15rem;
+}
+
+.instance-nia {
+    display: block;
+    font-size: 0.74rem;
+    color: var(--color-text-muted);
+}
+
+/* Status cell */
+.instance-cell--status {
+    white-space: nowrap;
+}
+
+/* Grade cell */
+.instance-cell--grade {
+    white-space: nowrap;
+}
+
+/* Action cell (chevron) */
+.instance-cell--action {
+    width: 36px;
+    text-align: right;
+    color: var(--color-text-muted);
+}
+
+.instance-cell--action svg {
+    width: 18px;
+    height: 18px;
+    transition: color 0.15s, transform 0.15s;
+}
+
+.instance-row:hover .instance-cell--action svg {
+    color: var(--color-primary);
+    transform: translateX(3px);
+}
+
+/* ---- Grade chips ---- */
+.grade-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0.25rem 0.7rem;
+    border-radius: 99px;
+    min-width: 44px;
+}
+
+.grade-chip--pass {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.grade-chip--fail {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.grade-chip--empty {
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+}
+
+/* ======= Responsive ======= */
+@media (max-width: 700px) {
+    .instances-page__hero {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .instances-page__title {
+        font-size: 1.4rem;
+    }
+
+    .instances-table-wrapper {
+        overflow-x: auto;
+    }
+
+    .instances-table {
+        min-width: 520px;
+    }
+}
