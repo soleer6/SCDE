@@ -23,7 +23,7 @@ function SubjectCard({ subject, index }) {
             to={`/profesor/asignaturas/${subject.code}`}
             className="subject-card subject-card--link"
             style={{ '--card-bg': color.bg, '--card-accent': color.accent }}
-            aria-label={`Ver exámenes de ${subject.nombre}`}
+            aria-label={`Ver exámenes de ${subject.name}`}
         >
             <div className="subject-card__icon-wrap" style={{ background: color.accent }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -36,13 +36,13 @@ function SubjectCard({ subject, index }) {
 
             <div className="subject-card__body">
                 <span className="subject-card__code" style={{ color: color.accent }}>{subject.code}</span>
-                <h3 className="subject-card__name">{subject.nombre}</h3>
+                <h3 className="subject-card__name">{subject.name}</h3>
                 <div className="subject-card__meta">
-                    {subject.cuatrimestre && (
-                        <span className="subject-card__pill">Cuatrimestre {subject.cuatrimestre}</span>
+                    {subject.semester && (
+                        <span className="subject-card__pill">Cuatrimestre {subject.semester}</span>
                     )}
-                    {subject.año && (
-                        <span className="subject-card__pill">{subject.año}</span>
+                    {subject.year && (
+                        <span className="subject-card__pill">{subject.year}</span>
                     )}
                 </div>
             </div>
@@ -57,7 +57,7 @@ function SubjectCard({ subject, index }) {
     );
 }
 
-export default function ProfesorAsignaturasPage() {
+export default function ProfessorSubjectsPage() {
     const { user } = useAuth();
     const subjects = user?.subjects || [];
 
@@ -65,7 +65,7 @@ export default function ProfesorAsignaturasPage() {
         <div className="subject-page">
             <div className="subject-page__hero">
                 <div className="subject-page__hero-text">
-                    <p className="subject-page__greeting">Bienvenido/a, {user?.nombre} 👋</p>
+                    <p className="subject-page__greeting">Bienvenido/a, {user?.firstName} 👋</p>
                     <h1 className="subject-page__title">Mis Asignaturas</h1>
                     <p className="subject-page__subtitle">
                         Gestiona las correcciones de exámenes de tus asignaturas asignadas.

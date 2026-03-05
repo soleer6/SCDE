@@ -1,10 +1,10 @@
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getExamById, getInstancesByExam, getStatusMeta } from '../api/mockData';
-import './ProfesorInstanciasPage.css';
+import './ProfessorInstancesPage.css';
 
-function StatusBadge({ estado }) {
-    const meta = getStatusMeta(estado);
+function StatusBadge({ status }) {
+    const meta = getStatusMeta(status);
     return (
         <span className="status-badge" style={{ color: meta.color, background: meta.bg }}>
             {meta.label}
@@ -12,12 +12,12 @@ function StatusBadge({ estado }) {
     );
 }
 
-function GradeChip({ calificacion }) {
-    if (calificacion === null || calificacion === undefined) {
+function GradeChip({ grade }) {
+    if (grade === null || grade === undefined) {
         return <span className="grade-chip grade-chip--empty">—</span>;
     }
-    const cls = calificacion >= 5 ? 'grade-chip--pass' : 'grade-chip--fail';
-    return <span className={`grade-chip ${cls}`}>{calificacion.toFixed(1)}</span>;
+    const cls = grade >= 5 ? 'grade-chip--pass' : 'grade-chip--fail';
+    return <span className={`grade-chip ${cls}`}>{grade.toFixed(1)}</span>;
 }
 
 function InstanceRow({ instance }) {
@@ -33,22 +33,22 @@ function InstanceRow({ instance }) {
             tabIndex={0}
             onKeyDown={(e) => e.key === 'Enter' && handleClick()}
             role="button"
-            aria-label={`Ver instancia de ${instance.nombre} ${instance.apellidos}`}
+            aria-label={`Ver instancia de ${instance.firstName} ${instance.lastName}`}
         >
             <td className="instance-cell instance-cell--avatar">
                 <div className="instance-avatar">
-                    {instance.nombre[0]}{instance.apellidos[0]}
+                    {instance.firstName[0]}{instance.lastName[0]}
                 </div>
             </td>
             <td className="instance-cell instance-cell--name">
-                <span className="instance-name">{instance.nombre} {instance.apellidos}</span>
+                <span className="instance-name">{instance.firstName} {instance.lastName}</span>
                 <span className="instance-nia">NIA: {instance.nia}</span>
             </td>
             <td className="instance-cell instance-cell--status">
-                <StatusBadge estado={instance.estado} />
+                <StatusBadge status={instance.status} />
             </td>
             <td className="instance-cell instance-cell--grade">
-                <GradeChip calificacion={instance.calificacion} />
+                <GradeChip grade={instance.grade} />
             </td>
             <td className="instance-cell instance-cell--action">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -59,7 +59,7 @@ function InstanceRow({ instance }) {
     );
 }
 
-export default function ProfesorInstanciasPage() {
+export default function ProfessorInstancesPage() {
     const { examId } = useParams();
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -83,11 +83,11 @@ export default function ProfesorInstanciasPage() {
         );
     }
 
-    const dateStr = new Date(exam.fecha + 'T' + exam.hora).toLocaleDateString('es-ES', {
+    const dateStr = new Date(exam.date + 'T' + exam.time).toLocaleDateString('es-ES', {
         weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
     });
 
-    const corrected = instances.filter((i) => i.estado === 'CORRECTED').length;
+    const corrected = instances.filter((i) => i.status === 'CORRECTED').length;
 
     return (
         <div className="instances-page">
@@ -101,19 +101,19 @@ export default function ProfesorInstanciasPage() {
                         state={{ subjectCode }}
                         className="breadcrumb__item"
                     >
-                        {subject.nombre}
+                        {subject.name}
                     </Link>
                 ) : (
                     <span className="breadcrumb__item">{subjectCode}</span>
                 )}
                 <span className="breadcrumb__sep" aria-hidden="true">›</span>
-                <span className="breadcrumb__item breadcrumb__item--active">{exam.nombre}</span>
+                <span className="breadcrumb__item breadcrumb__item--active">{exam.name}</span>
             </nav>
 
             {/* Exam header */}
             <div className="instances-page__hero">
                 <div className="instances-page__hero-text">
-                    <h1 className="instances-page__title">{exam.nombre}</h1>
+                    <h1 className="instances-page__title">{exam.name}</h1>
                     <p className="instances-page__meta">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -121,7 +121,7 @@ export default function ProfesorInstanciasPage() {
                             <line x1="8" y1="2" x2="8" y2="6" />
                             <line x1="3" y1="10" x2="21" y2="10" />
                         </svg>
-                        {dateStr} · {exam.hora}
+                        {dateStr} · {exam.time}
                     </p>
                 </div>
                 <div className="subject-page__stats">

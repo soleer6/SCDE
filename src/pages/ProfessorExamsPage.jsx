@@ -1,10 +1,10 @@
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getExamsBySubject, getStatusMeta } from '../api/mockData';
-import './ProfesorExamenesPage.css';
+import './ProfessorExamsPage.css';
 
-function StatusBadge({ estado }) {
-    const meta = getStatusMeta(estado);
+function StatusBadge({ status }) {
+    const meta = getStatusMeta(status);
     return (
         <span
             className="status-badge"
@@ -16,7 +16,7 @@ function StatusBadge({ estado }) {
 }
 
 function ExamCard({ exam, subjectCode }) {
-    const date = new Date(exam.fecha + 'T' + exam.hora);
+    const date = new Date(exam.date + 'T' + exam.time);
     const dateStr = date.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
 
     return (
@@ -24,7 +24,7 @@ function ExamCard({ exam, subjectCode }) {
             to={`/profesor/examenes/${exam.id}`}
             className="exam-card"
             state={{ subjectCode }}
-            aria-label={`Ver instancias de ${exam.nombre}`}
+            aria-label={`Ver instancias de ${exam.name}`}
         >
             <div className="exam-card__left">
                 <div className="exam-card__date-box">
@@ -38,18 +38,18 @@ function ExamCard({ exam, subjectCode }) {
             </div>
 
             <div className="exam-card__body">
-                <h3 className="exam-card__name">{exam.nombre}</h3>
+                <h3 className="exam-card__name">{exam.name}</h3>
                 <p className="exam-card__meta">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                         <circle cx="12" cy="12" r="10" />
                         <polyline points="12 6 12 12 16 14" />
                     </svg>
-                    {dateStr} · {exam.hora}
+                    {dateStr} · {exam.time}
                 </p>
             </div>
 
             <div className="exam-card__right">
-                <StatusBadge estado={exam.estado} />
+                <StatusBadge estado={exam.status} />
                 <svg className="exam-card__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                     <path d="M9 18l6-6-6-6" />
                 </svg>
@@ -58,7 +58,7 @@ function ExamCard({ exam, subjectCode }) {
     );
 }
 
-export default function ProfesorExamenesPage() {
+export default function ProfessorExamsPage() {
     const { code } = useParams();
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -84,18 +84,18 @@ export default function ProfesorExamenesPage() {
             <nav className="breadcrumb" aria-label="Navegación">
                 <Link to="/profesor/asignaturas" className="breadcrumb__item">Asignaturas</Link>
                 <span className="breadcrumb__sep" aria-hidden="true">›</span>
-                <span className="breadcrumb__item breadcrumb__item--active">{subject.nombre}</span>
+                <span className="breadcrumb__item breadcrumb__item--active">{subject.name}</span>
             </nav>
 
             {/* Hero */}
             <div className="exams-page__hero">
                 <div>
                     <p className="exams-page__code">{code}</p>
-                    <h1 className="exams-page__title">{subject.nombre}</h1>
-                    {subject.cuatrimestre && (
+                    <h1 className="exams-page__title">{subject.name}</h1>
+                    {subject.semester && (
                         <p className="exams-page__meta">
-                            Cuatrimestre {subject.cuatrimestre}
-                            {subject.año ? ` · ${subject.año}` : ''}
+                            Cuatrimestre {subject.semester}
+                            {subject.year ? ` · ${subject.year}` : ''}
                         </p>
                     )}
                 </div>
