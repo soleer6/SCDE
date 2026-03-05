@@ -28,15 +28,15 @@ function SubjectCard({ subject, index }) {
 
             <div className="subject-card__body">
                 <span className="subject-card__code" style={{ color: color.accent }}>{subject.code}</span>
-                <h3 className="subject-card__name">{subject.nombre}</h3>
+                <h3 className="subject-card__name">{subject.name}</h3>
                 <div className="subject-card__meta">
-                    {subject.cuatrimestre && (
+                    {subject.semester && (
                         <span className="subject-card__pill">
-                            Cuatrimestre {subject.cuatrimestre}
+                            Cuatrimestre {subject.semester}
                         </span>
                     )}
-                    {subject.año && (
-                        <span className="subject-card__pill">{subject.año}</span>
+                    {subject.year && (
+                        <span className="subject-card__pill">{subject.year}</span>
                     )}
                 </div>
             </div>
@@ -51,7 +51,7 @@ function SubjectCard({ subject, index }) {
     );
 }
 
-export default function AlumnoAsignaturasPage() {
+export default function StudentSubjectsPage() {
     const { user } = useAuth();
     const subjects = user?.subjects || [];
 
@@ -59,7 +59,7 @@ export default function AlumnoAsignaturasPage() {
         <div className="subject-page">
             <div className="subject-page__hero">
                 <div className="subject-page__hero-text">
-                    <p className="subject-page__greeting">Hola, {user?.nombre} 👋</p>
+                    <p className="subject-page__greeting">Hola, {user?.firstName} 👋</p>
                     <h1 className="subject-page__title">Mis Asignaturas</h1>
                     <p className="subject-page__subtitle">
                         Consulta tus exámenes y resultados en cada asignatura.
