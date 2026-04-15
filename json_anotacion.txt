@@ -1,0 +1,43 @@
+{
+  "instanceId": 103,
+  "author": "juan.torres@uni.es",
+  "savedAt": 1774535178888,
+  "textComment": "",
+  "strokes": [
+    {
+      "page": 1,
+      "points": [
+        {"x": 0.45, "y": 0.32},
+        {"x": 0.46, "y": 0.33},
+        // ... array de 56 puntos en este caso
+      ],
+      "color": "#e53e3e",
+      "width": 4,
+      "timestamp": 1774535169077
+    }
+  ]
+}
+```
+
+## Explicación 
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `instanceId` | int | ID de la instancia de examen |
+| `author` | string | Email del profesor que corrige |
+| `savedAt` | int | Timestamp (ms) del guardado |
+| `textComment` | string | Comentario general del profesor |
+| `strokes` | array | Lista de trazos dibujados |
+| `strokes[].page` | int | Número de página (1-indexed) |
+| `strokes[].points` | array | Coordenadas relativas (0-1) |
+| `strokes[].color` | string | Color hex del trazo |
+| `strokes[].width` | int | Grosor en px (2, 4, o 6) |
+| `strokes[].timestamp` | int | Cuándo se hizo el trazo |
+
+## Endpoints que necesitáis
+```
+POST /api/instances/{instanceId}/annotations
+Body: el JSON de arriba
+
+GET /api/instances/{instanceId}/annotations
+Response: el mismo JSON (para cargar al abrir)

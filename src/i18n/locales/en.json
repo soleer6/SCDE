@@ -51,5 +51,26 @@
         "CORRECTED": "Corrected",
         "REVIEW_REQUESTED": "Review requested",
         "CLOSED": "Closed"
+    },
+    "correction": {
+        "title": "Correction",
+        "pdfError": "Could not load the PDF.",
+        "notFound": "Instance #{{id}} not found.",
+        "pageOf": "Page {{current}} of {{total}}",
+        "prevPage": "Previous page",
+        "nextPage": "Next page",
+        "toolbar": {
+            "pen": "Pen",
+            "eraser": "Eraser",
+            "thin": "Thin",
+            "medium": "Medium",
+            "thick": "Thick",
+            "undo": "Undo",
+            "clearPage": "Clear page"
+        },
+        "save": "Save correction",
+        "saved": "Saved!",
+        "comment": "Correction comments...",
+        "addComment": "Add comment"
     }
 }
