@@ -23,9 +23,9 @@ function GradeChip({ grade }) {
 }
 
 function InstanceRow({ instance }) {
+    const navigate = useNavigate();
     const handleClick = () => {
-        console.log('[SCDE] Navegando a instancia:', instance);
-        // TODO: navigate to /professor/instances/:id when that view is ready
+        navigate(`/professor/correction/${instance.id}`);
     };
 
     return (

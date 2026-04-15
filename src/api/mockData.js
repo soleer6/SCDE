@@ -12,9 +12,9 @@ export const MOCK_EXAMS = {
 
 export const MOCK_INSTANCES = {
     1: [
-        { id: 101, firstName: 'Elena', lastName: 'Rodríguez López', nia: '100401', status: 'CORRECTED', grade: 7.5 },
-        { id: 102, firstName: 'Pablo', lastName: 'Fernández García', nia: '100402', status: 'CORRECTED', grade: 6.0 },
-        { id: 103, firstName: 'Sofía', lastName: 'Jiménez Ruiz', nia: '100403', status: 'PENDING', grade: null },
+        { id: 101, firstName: 'Elena', lastName: 'Rodríguez López', nia: '100401', status: 'CORRECTED', grade: 7.5, pdfUrl: '/mock-pdfs/exam_101.pdf' },
+        { id: 102, firstName: 'Pablo', lastName: 'Fernández García', nia: '100402', status: 'CORRECTED', grade: 6.0, pdfUrl: '/mock-pdfs/exam_102.pdf' },
+        { id: 103, firstName: 'Sofía', lastName: 'Jiménez Ruiz', nia: '100403', status: 'PENDING', grade: null, pdfUrl: '/mock-pdfs/exam_103.pdf' },
     ],
     2: [],
     3: [],

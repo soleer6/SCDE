@@ -51,5 +51,26 @@
         "CORRECTED": "Corregido",
         "REVIEW_REQUESTED": "Revisión solicitada",
         "CLOSED": "Cerrado"
+    },
+    "correction": {
+        "title": "Corrección",
+        "pdfError": "No se pudo cargar el PDF.",
+        "notFound": "Instancia #{{id}} no encontrada.",
+        "pageOf": "Página {{current}} de {{total}}",
+        "prevPage": "Página anterior",
+        "nextPage": "Página siguiente",
+        "toolbar": {
+            "pen": "Lápiz",
+            "eraser": "Borrador",
+            "thin": "Fino",
+            "medium": "Medio",
+            "thick": "Grueso",
+            "undo": "Deshacer",
+            "clearPage": "Limpiar página"
+        },
+        "save": "Guardar corrección",
+        "saved": "¡Guardado!",
+        "comment": "Comentarios de la corrección...",
+        "addComment": "Añadir comentario"
     }
 }

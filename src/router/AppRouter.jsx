@@ -6,6 +6,7 @@ import ProfessorSubjectsPage from '../pages/ProfessorSubjectsPage';
 import ProfessorExamsPage from '../pages/ProfessorExamsPage';
 import ProfessorInstancesPage from '../pages/ProfessorInstancesPage';
 import StudentSubjectsPage from '../pages/StudentSubjectsPage';
+import ProfessorCorrectionPage from '../pages/ProfessorCorrectionPage';
 
 export default function AppRouter() {
     return (
@@ -19,6 +20,7 @@ export default function AppRouter() {
                     <Route path="/professor/subjects" element={<ProfessorSubjectsPage />} />
                     <Route path="/professor/subjects/:code" element={<ProfessorExamsPage />} />
                     <Route path="/professor/exams/:examId" element={<ProfessorInstancesPage />} />
+                    <Route path="/professor/correction/:instanceId" element={<ProfessorCorrectionPage />} />
                 </Route>
             </Route>
 
