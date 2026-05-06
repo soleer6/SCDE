@@ -4,7 +4,7 @@ import { useRef, useEffect, useCallback } from 'react';
  * PdfCanvas – transparent canvas overlaid on a PDF page.
  * All coordinates are stored as relative values (0-1).
  */
-export default function PdfCanvas({ page, strokes, tool, color, width, onStrokeComplete }) {
+export default function PdfCanvas({ page, strokes, tool, color, width, onStrokeComplete, readOnly = false }) {
     const canvasRef = useRef(null);
     const drawing = useRef(false);
     const currentPoints = useRef([]);
@@ -20,6 +20,14 @@ export default function PdfCanvas({ page, strokes, tool, color, width, onStrokeC
         for (const stroke of strokes) {
             if (!stroke.points || stroke.points.length < 2) continue;
             ctx.save();
+
+            /* Use destination-out for eraser strokes, source-over for pen strokes */
+            if (stroke.tool === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+            }
+
             ctx.strokeStyle = stroke.color;
             ctx.lineWidth = stroke.width;
             ctx.lineCap = 'round';
@@ -70,8 +78,17 @@ export default function PdfCanvas({ page, strokes, tool, color, width, onStrokeC
         const pts = currentPoints.current;
         if (pts.length < 2) return;
         ctx.save();
-        ctx.strokeStyle = tool === 'eraser' ? 'rgba(255,255,255,0.9)' : color;
-        ctx.lineWidth = tool === 'eraser' ? width * 4 : width;
+
+        if (tool === 'eraser') {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.strokeStyle = 'rgba(0,0,0,1)'; // color doesn't matter for destination-out
+            ctx.lineWidth = width * 4;
+        } else {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+        }
+
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.beginPath();
@@ -85,34 +102,34 @@ export default function PdfCanvas({ page, strokes, tool, color, width, onStrokeC
 
     /* ── Pointer events ── */
     const onPointerDown = (e) => {
-        if (e.button !== 0) return;
+        if (readOnly || e.button !== 0) return;
         e.currentTarget.setPointerCapture(e.pointerId);
         drawing.current = true;
         currentPoints.current = [toRelative(e)];
     };
 
     const onPointerMove = (e) => {
-        if (!drawing.current) return;
+        if (readOnly || !drawing.current) return;
         currentPoints.current.push(toRelative(e));
         drawLive();
     };
 
     const onPointerUp = () => {
-        if (!drawing.current) return;
+        if (readOnly || !drawing.current) return;
         drawing.current = false;
         const pts = currentPoints.current;
         if (pts.length >= 2) {
             onStrokeComplete(page, pts, color, width, tool);
         }
         currentPoints.current = [];
-        redraw();
+        /* Don't redraw here; let the parent update trigger redraw via useEffect */
     };
 
     return (
         <canvas
             ref={canvasRef}
             className="pdf-canvas"
-            style={{ cursor: tool === 'eraser' ? 'cell' : 'crosshair' }}
+            style={{ cursor: readOnly ? 'default' : (tool === 'eraser' ? 'cell' : 'crosshair') }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}

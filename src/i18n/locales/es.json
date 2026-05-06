@@ -27,6 +27,21 @@
             "status": "Estado",
             "empty": "No hay instancias para este examen.",
             "corrected": "Corregidas"
+        },
+        "dashboard": {
+            "title": "Panel de corrección",
+            "hasPending": "Tienes {{count}} entrega(s) pendiente(s) de corregir.",
+            "allDone": "Todo al día. ¡Sin pendientes!",
+            "quickAccess": "Acceso rápido",
+            "allSubjects": "Ver todas",
+            "pendingShort": "pendiente(s)",
+            "progress": "Progreso de corrección",
+            "stats": {
+                "subjects": "Asignaturas",
+                "exams": "Exámenes",
+                "pending": "Pendientes",
+                "corrected": "Corregidos"
+            }
         }
     },
     "student": {
@@ -34,6 +49,17 @@
             "title": "Mis Asignaturas",
             "subtitle": "Consulta tus exámenes y resultados en cada asignatura.",
             "empty": "No tienes asignaturas matriculadas actualmente."
+        },
+        "exams": {
+            "title": "Exámenes",
+            "empty": "No hay exámenes en esta asignatura."
+        },
+        "result": {
+            "title": "Mi Examen Corregido",
+            "grade": "Mi nota:",
+            "noInstance": "No tienes un examen entregado en esta convocatoria.",
+            "noPdf": "El PDF aún no está disponible.",
+            "comments": "Comentarios del profesor"
         }
     },
     "common": {
@@ -68,9 +94,15 @@
             "undo": "Deshacer",
             "clearPage": "Limpiar página"
         },
-        "save": "Guardar corrección",
+        "save": "Guardar anotaciones",
         "saved": "¡Guardado!",
         "comment": "Comentarios de la corrección...",
-        "addComment": "Añadir comentario"
+        "addComment": "Añadir comentario",
+        "grade": "Nota:",
+        "outOf": "/ 10",
+        "markCorrected": "Corregido",
+        "markPending": "Pendiente",
+        "finalize": "Finalizar corrección",
+        "finalized": "Guardado"
     }
 }

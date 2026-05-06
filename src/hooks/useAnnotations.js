@@ -51,13 +51,14 @@ export default function useAnnotations(instanceId, author = 'profesor@uni.es') {
         console.log('Saved annotations:', data);
     }, [instanceId, author, textComment, strokesByPage]);
 
-    const addStroke = useCallback((page, points, color, width) => {
+    const addStroke = useCallback((page, points, color, width, tool = 'pen') => {
         if (!points || points.length < 2) return;
         const stroke = {
             page,
             points,
             color,
             width,
+            tool,
             timestamp: Date.now(),
             author,
         };

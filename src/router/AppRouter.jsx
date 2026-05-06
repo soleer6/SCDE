@@ -6,7 +6,10 @@ import ProfessorSubjectsPage from '../pages/ProfessorSubjectsPage';
 import ProfessorExamsPage from '../pages/ProfessorExamsPage';
 import ProfessorInstancesPage from '../pages/ProfessorInstancesPage';
 import StudentSubjectsPage from '../pages/StudentSubjectsPage';
+import StudentExamsPage from '../pages/StudentExamsPage';
+import StudentResultPage from '../pages/StudentResultPage';
 import ProfessorCorrectionPage from '../pages/ProfessorCorrectionPage';
+import ProfessorDashboardPage from '../pages/ProfessorDashboardPage';
 
 export default function AppRouter() {
     return (
@@ -17,6 +20,7 @@ export default function AppRouter() {
             {/* Protected – PROFESSOR */}
             <Route element={<ProtectedRoute allowedRole="PROFESSOR" />}>
                 <Route element={<AppLayout />}>
+                    <Route path="/professor" element={<ProfessorDashboardPage />} />
                     <Route path="/professor/subjects" element={<ProfessorSubjectsPage />} />
                     <Route path="/professor/subjects/:code" element={<ProfessorExamsPage />} />
                     <Route path="/professor/exams/:examId" element={<ProfessorInstancesPage />} />
@@ -28,6 +32,8 @@ export default function AppRouter() {
             <Route element={<ProtectedRoute allowedRole="STUDENT" />}>
                 <Route element={<AppLayout />}>
                     <Route path="/student/subjects" element={<StudentSubjectsPage />} />
+                    <Route path="/student/subjects/:subjectId" element={<StudentExamsPage />} />
+                    <Route path="/student/result/:examId" element={<StudentResultPage />} />
                 </Route>
             </Route>
 

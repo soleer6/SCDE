@@ -29,7 +29,7 @@ export default function LoginPage() {
             const user = await login(email.trim(), password);
             // Redirect based on role
             if (user.role === 'PROFESSOR') {
-                navigate('/professor/subjects', { replace: true });
+                navigate('/professor', { replace: true });
             } else {
                 navigate('/student/subjects', { replace: true });
             }

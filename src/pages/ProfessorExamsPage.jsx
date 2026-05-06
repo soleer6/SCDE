@@ -1,8 +1,12 @@
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import { getExamsBySubject, getStatusMeta } from '../api/mockData';
+import { getStatusMeta } from '../api/mockData';
+import { getExamsBySubject } from '../services/examService.js';
 import './ProfessorExamsPage.css';
+
+const USE_MOCK = import.meta.env.VITE_MOCK_API === 'true';
 
 function StatusBadge({ status }) {
     const { t } = useTranslation();
@@ -18,8 +22,11 @@ function StatusBadge({ status }) {
 }
 
 function ExamCard({ exam, subjectCode }) {
-    const date = new Date(exam.date + 'T' + exam.time);
-    const dateStr = date.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+    const createdAt = exam.created_at || (exam.date ? exam.date + 'T' + (exam.time || '00:00:00') : null);
+    const date = createdAt ? new Date(createdAt) : null;
+    const dateStr = date
+        ? date.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+        : '—';
 
     return (
         <Link
@@ -31,10 +38,10 @@ function ExamCard({ exam, subjectCode }) {
             <div className="exam-card__left">
                 <div className="exam-card__date-box">
                     <span className="exam-card__day">
-                        {date.toLocaleDateString('es-ES', { day: '2-digit' })}
+                        {date ? date.toLocaleDateString('es-ES', { day: '2-digit' }) : '—'}
                     </span>
                     <span className="exam-card__month">
-                        {date.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '')}
+                        {date ? date.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '') : '—'}
                     </span>
                 </div>
             </div>
@@ -46,12 +53,12 @@ function ExamCard({ exam, subjectCode }) {
                         <circle cx="12" cy="12" r="10" />
                         <polyline points="12 6 12 12 16 14" />
                     </svg>
-                    {dateStr} · {exam.time}
+                    {dateStr}
                 </p>
             </div>
 
             <div className="exam-card__right">
-                <StatusBadge estado={exam.status} />
+                {exam.status && <StatusBadge status={exam.status} />}
                 <svg className="exam-card__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                     <path d="M9 18l6-6-6-6" />
                 </svg>
@@ -65,12 +72,31 @@ export default function ProfessorExamsPage() {
     const { code } = useParams();
     const { user } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
-    // Find subject info from user's enrolled subjects
-    const subject = user?.subjects?.find((s) => s.code === code);
-    const exams = getExamsBySubject(code);
+    // In real API mode, subjectId (UUID) is passed via router state from ProfessorSubjectsPage
+    const subjectId = location.state?.subjectId ?? code;
 
-    if (!subject) {
+    const [exams, setExams] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // In mock mode fall back to user.subjects; in real mode subjectId is a UUID
+    const subject = USE_MOCK
+        ? user?.subjects?.find((s) => s.code === code)
+        : { code, name: code, id: subjectId };
+
+    useEffect(() => {
+        getExamsBySubject(subjectId)
+            .then(setExams)
+            .catch((err) => setError(err.message || 'Error cargando exámenes'))
+            .finally(() => setLoading(false));
+    }, [subjectId]);
+
+    if (loading) return <div className="exams-page"><p style={{ padding: '2rem' }}>Cargando exámenes…</p></div>;
+    if (error) return <div className="exams-page"><p style={{ padding: '2rem', color: 'red' }}>{error}</p></div>;
+
+    if (USE_MOCK && !subject) {
         return (
             <div className="not-found-page">
                 <p>Asignatura <strong>{code}</strong> no encontrada.</p>
