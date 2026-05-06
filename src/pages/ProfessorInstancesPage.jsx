@@ -1,8 +1,12 @@
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import { getExamById, getInstancesByExam, getStatusMeta } from '../api/mockData';
+import { getExamById, getStatusMeta, getStoredCorrection } from '../api/mockData';
+import { getInstancesByExam } from '../services/instanceService.js';
 import './ProfessorInstancesPage.css';
+
+const USE_MOCK = import.meta.env.VITE_MOCK_API === 'true';
 
 function StatusBadge({ status }) {
     const { t } = useTranslation();
@@ -68,14 +72,38 @@ export default function ProfessorInstancesPage() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const exam = getExamById(examId);
-    const instances = getInstancesByExam(examId);
-
-    // Recover subjectCode from router state (set by ExamCard) or fall back to searching
     const subjectCode = location.state?.subjectCode ?? '—';
     const subject = user?.subjects?.find((s) => s.code === subjectCode);
 
-    if (!exam) {
+    const [instances, setInstances] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // In mock mode exam comes from mockData; in real mode we use examId as UUID
+    const exam = USE_MOCK ? getExamById(examId) : { id: examId, name: `Examen`, time: '' };
+
+    useEffect(() => {
+        getInstancesByExam(examId)
+            .then((list) => {
+                if (USE_MOCK) {
+                    // Merge localStorage grades for mock mode
+                    const merged = list.map((inst) => {
+                        const stored = getStoredCorrection(inst.id);
+                        return stored ? { ...inst, grade: stored.grade, status: stored.status } : inst;
+                    });
+                    setInstances(merged);
+                } else {
+                    setInstances(list);
+                }
+            })
+            .catch((err) => setError(err.message || 'Error cargando instancias'))
+            .finally(() => setLoading(false));
+    }, [examId]);
+
+    if (loading) return <div className="instances-page"><p style={{ padding: '2rem' }}>Cargando instancias…</p></div>;
+    if (error) return <div className="instances-page"><p style={{ padding: '2rem', color: 'red' }}>{error}</p></div>;
+
+    if (USE_MOCK && !exam) {
         return (
             <div className="not-found-page">
                 <p>Examen <strong>#{examId}</strong> no encontrado.</p>

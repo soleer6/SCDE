@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -15,7 +15,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     import.meta.url,
 ).toString();
 
-export default function PdfViewer({ pdfUrl, author, instanceId }) {
+const PdfViewer = forwardRef(function PdfViewer({ pdfUrl, author, instanceId, readOnly = false }, ref) {
     const { t } = useTranslation();
     const [numPages, setNumPages] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
@@ -39,11 +39,13 @@ export default function PdfViewer({ pdfUrl, author, instanceId }) {
         loadAnnotations();
     }, [loadAnnotations]);
 
-    const handleSave = () => {
+    const handleSave = useCallback(() => {
         setIsSaving(true);
         saveAnnotations();
         setTimeout(() => setIsSaving(false), 1500);
-    };
+    }, [saveAnnotations]);
+
+    useImperativeHandle(ref, () => ({ save: handleSave }), [handleSave]);
 
     const onDocumentLoadSuccess = ({ numPages }) => {
         setNumPages(numPages);
@@ -56,8 +58,7 @@ export default function PdfViewer({ pdfUrl, author, instanceId }) {
     }, []);
 
     const handleStrokeComplete = (page, points, strokeColor, strokeWidth, activeTool) => {
-        if (activeTool === 'eraser') return; // eraser handled via canvas composite op
-        addStroke(page, points, strokeColor, strokeWidth);
+        addStroke(page, points, strokeColor, strokeWidth, activeTool);
     };
 
     const goTo = (delta) => {
@@ -66,18 +67,20 @@ export default function PdfViewer({ pdfUrl, author, instanceId }) {
 
     return (
         <div className="pdf-viewer">
-            <AnnotationToolbar
-                tool={tool} onToolChange={setTool}
-                color={color} onColorChange={setColor}
-                width={width} onWidthChange={setWidth}
-                onUndo={() => undo(currentPage)}
-                onClearPage={() => clearPage(currentPage)}
-                onToggleComment={() => setShowCommentBox(p => !p)}
-                onSave={handleSave}
-                isSaving={isSaving}
-            />
+            {!readOnly && (
+                <AnnotationToolbar
+                    tool={tool} onToolChange={setTool}
+                    color={color} onColorChange={setColor}
+                    width={width} onWidthChange={setWidth}
+                    onUndo={() => undo(currentPage)}
+                    onClearPage={() => clearPage(currentPage)}
+                    onToggleComment={() => setShowCommentBox(p => !p)}
+                    onSave={handleSave}
+                    isSaving={isSaving}
+                />
+            )}
 
-            {showCommentBox && (
+            {!readOnly && showCommentBox && (
                 <div style={{ padding: '12px', background: '#16213e', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                     <textarea
                         value={textComment}
@@ -114,6 +117,7 @@ export default function PdfViewer({ pdfUrl, author, instanceId }) {
                                 color={color}
                                 width={width}
                                 onStrokeComplete={handleStrokeComplete}
+                                readOnly={readOnly}
                             />
                         </div>
                     </Document>
@@ -145,4 +149,6 @@ export default function PdfViewer({ pdfUrl, author, instanceId }) {
             )}
         </div>
     );
-}
+});
+
+export default PdfViewer;

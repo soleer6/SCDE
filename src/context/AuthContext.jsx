@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { login as apiLogin } from '../api/authService';
+import { login as apiLogin, logout as apiLogout } from '../services/authService.js';
 
 const AuthContext = createContext(null);
 
@@ -44,7 +44,16 @@ export function AuthProvider({ children }) {
         return user;
     }, []);
 
-    const logout = useCallback(() => {
+    const logout = useCallback(async () => {
+        const refreshToken = localStorage.getItem('scde_token_refresh');
+        if (refreshToken) {
+            try {
+                await apiLogout(refreshToken);
+            } catch (error) {
+                console.warn('Logout API call failed:', error);
+                // Even if API call fails, clear local state
+            }
+        }
         localStorage.removeItem('scde_token');
         localStorage.removeItem('scde_token_refresh');
         localStorage.removeItem('scde_user');

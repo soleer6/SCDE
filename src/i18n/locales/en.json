@@ -27,6 +27,21 @@
             "status": "Status",
             "empty": "No instances for this exam.",
             "corrected": "Corrected"
+        },
+        "dashboard": {
+            "title": "Correction panel",
+            "hasPending": "You have {{count}} submission(s) pending correction.",
+            "allDone": "All up to date. Nothing pending!",
+            "quickAccess": "Quick access",
+            "allSubjects": "View all",
+            "pendingShort": "pending",
+            "progress": "Correction progress",
+            "stats": {
+                "subjects": "Subjects",
+                "exams": "Exams",
+                "pending": "Pending",
+                "corrected": "Corrected"
+            }
         }
     },
     "student": {
@@ -34,6 +49,17 @@
             "title": "My Subjects",
             "subtitle": "Check your exams and results in each subject.",
             "empty": "You are not enrolled in any subjects currently."
+        },
+        "exams": {
+            "title": "Exams",
+            "empty": "No exams for this subject."
+        },
+        "result": {
+            "title": "My Corrected Exam",
+            "grade": "My grade:",
+            "noInstance": "You have no submitted exam for this call.",
+            "noPdf": "The PDF is not available yet.",
+            "comments": "Professor comments"
         }
     },
     "common": {
@@ -68,9 +94,15 @@
             "undo": "Undo",
             "clearPage": "Clear page"
         },
-        "save": "Save correction",
+        "save": "Save annotations",
         "saved": "Saved!",
         "comment": "Correction comments...",
-        "addComment": "Add comment"
+        "addComment": "Add comment",
+        "grade": "Grade:",
+        "outOf": "/ 10",
+        "markCorrected": "Corrected",
+        "markPending": "Pending",
+        "finalize": "Finalize correction",
+        "finalized": "Saved"
     }
 }

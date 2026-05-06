@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import { getMySubjects } from '../services/subjectService.js';
 import './SubjectPage.css';
+
+const USE_MOCK = import.meta.env.VITE_MOCK_API === 'true';
 
 const SUBJECT_COLORS = [
     { bg: '#e8f0fe', accent: '#2d6be4', icon: '#1a56db' },
@@ -23,6 +27,7 @@ function SubjectCard({ subject, index }) {
     return (
         <Link
             to={`/professor/subjects/${subject.code}`}
+            state={{ subjectId: subject.id }}
             className="subject-card subject-card--link"
             style={{ '--card-bg': color.bg, '--card-accent': color.accent }}
             aria-label={`Ver exámenes de ${subject.name}`}
@@ -62,7 +67,20 @@ function SubjectCard({ subject, index }) {
 export default function ProfessorSubjectsPage() {
     const { t } = useTranslation();
     const { user } = useAuth();
-    const subjects = user?.subjects || [];
+    const [subjects, setSubjects] = useState(USE_MOCK ? (user?.subjects || []) : []);
+    const [loading, setLoading] = useState(!USE_MOCK);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        if (USE_MOCK) return;
+        getMySubjects()
+            .then(setSubjects)
+            .catch((err) => setError(err.message || 'Error cargando asignaturas'))
+            .finally(() => setLoading(false));
+    }, []);
+
+    if (loading) return <div className="subject-page"><p style={{ padding: '2rem' }}>Cargando asignaturas…</p></div>;
+    if (error) return <div className="subject-page"><p style={{ padding: '2rem', color: 'red' }}>{error}</p></div>;
 
     return (
         <div className="subject-page">

@@ -1,14 +1,19 @@
+import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import { getMySubjects } from '../services/subjectService.js';
 import './SubjectPage.css';
 
+const USE_MOCK = import.meta.env.VITE_MOCK_API === 'true';
+
 const SUBJECT_COLORS = [
-    { bg: '#e8f0fe', accent: '#2d6be4', icon: '#1a56db' },
-    { bg: '#fce8ff', accent: '#9333ea', icon: '#7c3aed' },
-    { bg: '#e8fef0', accent: '#16a34a', icon: '#15803d' },
-    { bg: '#fff4e8', accent: '#ea8c00', icon: '#d97706' },
-    { bg: '#e8f8fe', accent: '#0891b2', icon: '#0e7490' },
-    { bg: '#fee8f0', accent: '#e4356a', icon: '#db2777' },
+    { bg: '#e8f0fe', accent: '#2d6be4' },
+    { bg: '#fce8ff', accent: '#9333ea' },
+    { bg: '#e8fef0', accent: '#16a34a' },
+    { bg: '#fff4e8', accent: '#ea8c00' },
+    { bg: '#e8f8fe', accent: '#0891b2' },
+    { bg: '#fee8f0', accent: '#e4356a' },
 ];
 
 function getColor(index) {
@@ -20,11 +25,19 @@ function SubjectCard({ subject, index }) {
     const color = getColor(index);
 
     return (
-        <div className="subject-card" style={{ '--card-bg': color.bg, '--card-accent': color.accent }}>
+        <Link
+            to={`/student/subjects/${subject.id}`}
+            state={{ subjectCode: subject.code, subjectName: subject.name }}
+            className="subject-card subject-card--link"
+            style={{ '--card-bg': color.bg, '--card-accent': color.accent }}
+            aria-label={`Ver exámenes de ${subject.name}`}
+        >
             <div className="subject-card__icon-wrap" style={{ background: color.accent }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                    <line x1="9" y1="9" x2="15" y2="9" />
+                    <line x1="9" y1="13" x2="13" y2="13" />
                 </svg>
             </div>
 
@@ -33,30 +46,38 @@ function SubjectCard({ subject, index }) {
                 <h3 className="subject-card__name">{subject.name}</h3>
                 <div className="subject-card__meta">
                     {subject.semester && (
-                        <span className="subject-card__pill">
-                            {t('common.semester')} {subject.semester}
-                        </span>
-                    )}
-                    {subject.year && (
-                        <span className="subject-card__pill">{subject.year}</span>
+                        <span className="subject-card__pill">{t('common.semester')} {subject.semester}</span>
                     )}
                 </div>
             </div>
 
-            <button className="subject-card__action" style={{ background: color.accent }}>
+            <div className="subject-card__action" style={{ background: color.accent }}>
                 {t('common.viewExams')}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
-            </button>
-        </div>
+            </div>
+        </Link>
     );
 }
 
 export default function StudentSubjectsPage() {
     const { t } = useTranslation();
     const { user } = useAuth();
-    const subjects = user?.subjects || [];
+    const [subjects, setSubjects] = useState(USE_MOCK ? (user?.subjects || []) : []);
+    const [loading, setLoading] = useState(!USE_MOCK);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        if (USE_MOCK) return;
+        getMySubjects()
+            .then(setSubjects)
+            .catch((err) => setError(err.message || 'Error cargando asignaturas'))
+            .finally(() => setLoading(false));
+    }, []);
+
+    if (loading) return <div className="subject-page"><p style={{ padding: '2rem' }}>{t('common.loading')}</p></div>;
+    if (error) return <div className="subject-page"><p style={{ padding: '2rem', color: 'red' }}>{error}</p></div>;
 
     return (
         <div className="subject-page">
@@ -64,9 +85,7 @@ export default function StudentSubjectsPage() {
                 <div className="subject-page__hero-text">
                     <p className="subject-page__greeting">{t('common.greeting')}, {user?.firstName} 👋</p>
                     <h1 className="subject-page__title">{t('student.subjects.title')}</h1>
-                    <p className="subject-page__subtitle">
-                        {t('student.subjects.subtitle')}
-                    </p>
+                    <p className="subject-page__subtitle">{t('student.subjects.subtitle')}</p>
                 </div>
                 <div className="subject-page__stats">
                     <div className="stat-card">
@@ -89,7 +108,7 @@ export default function StudentSubjectsPage() {
             ) : (
                 <div className="subjects-grid">
                     {subjects.map((subject, i) => (
-                        <SubjectCard key={subject.code} subject={subject} index={i} />
+                        <SubjectCard key={subject.id || subject.code} subject={subject} index={i} />
                     ))}
                 </div>
             )}

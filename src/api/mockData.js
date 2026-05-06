@@ -63,3 +63,25 @@ export const STATUS_META = {
 export function getStatusMeta(status) {
     return STATUS_META[status] ?? STATUS_META.PENDING;
 }
+
+// ---------------------------------------------------------------------------
+// LocalStorage corrections overlay
+// These functions mirror what the grading API will provide.
+// Replace with API calls when the backend implements /instances/{id}/grade/
+// ---------------------------------------------------------------------------
+
+export function getStoredCorrection(instanceId) {
+    try {
+        const raw = localStorage.getItem(`scde_correction_${instanceId}`);
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
+
+export function saveStoredCorrection(instanceId, { grade, status }) {
+    localStorage.setItem(
+        `scde_correction_${instanceId}`,
+        JSON.stringify({ grade, status, savedAt: Date.now() }),
+    );
+}
