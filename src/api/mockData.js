@@ -1,52 +1,65 @@
 // Centralized mock data for development
 
 export const MOCK_EXAMS = {
-    MAT101: [
-        { id: 1, name: 'Parcial 1', date: '2025-02-15', time: '09:00', status: 'CORRECTED' },
-        { id: 2, name: 'Parcial 2', date: '2025-03-20', time: '09:00', status: 'PENDING' },
+    'mock-sub-1': [
+        { id: 'mock-exam-1', name: 'Parcial 1', subject_id: 'mock-sub-1', status: 'CORRECTED', created_at: '2025-02-15T09:00:00Z' },
+        { id: 'mock-exam-2', name: 'Parcial 2', subject_id: 'mock-sub-1', status: 'PENDING', created_at: '2025-03-20T09:00:00Z' },
     ],
-    FIS101: [
-        { id: 3, name: 'Parcial 1', date: '2025-02-20', time: '11:00', status: 'CORRECTED' },
+    'mock-sub-2': [
+        { id: 'mock-exam-3', name: 'Parcial 1', subject_id: 'mock-sub-2', status: 'CORRECTED', created_at: '2025-02-20T11:00:00Z' },
     ],
 };
 
 export const MOCK_INSTANCES = {
-    1: [
-        { id: 101, firstName: 'Elena', lastName: 'Rodríguez López', nia: '100401', status: 'CORRECTED', grade: 7.5, pdfUrl: '/mock-pdfs/exam_101.pdf' },
-        { id: 102, firstName: 'Pablo', lastName: 'Fernández García', nia: '100402', status: 'CORRECTED', grade: 6.0, pdfUrl: '/mock-pdfs/exam_102.pdf' },
-        { id: 103, firstName: 'Sofía', lastName: 'Jiménez Ruiz', nia: '100403', status: 'PENDING', grade: null, pdfUrl: '/mock-pdfs/exam_103.pdf' },
+    'mock-exam-1': [
+        { id: 'mock-inst-1', firstName: 'Elena', lastName: 'Rodríguez López', email: 'elena.r@estudiante.uni.es', nia: '100401', status: 'CORRECTED', grade: 7.5, pdfUrl: '/mock-pdfs/exam_101.pdf' },
+        { id: 'mock-inst-2', firstName: 'Pablo', lastName: 'Fernández García', email: 'pablo.f@estudiante.uni.es', nia: '100402', status: 'CORRECTED', grade: 6.0, pdfUrl: '/mock-pdfs/exam_102.pdf' },
     ],
-    2: [],
-    3: [],
+    'mock-exam-2': [
+        { id: 'mock-inst-3', firstName: 'Elena', lastName: 'Rodríguez López', email: 'elena.r@estudiante.uni.es', nia: '100401', status: 'PENDING', grade: null, pdfUrl: '/mock-pdfs/exam_103.pdf' },
+    ],
+    'mock-exam-3': [],
 };
 
 /**
- * Returns exams for a given subject code, or [] if unknown.
- * @param {string} code
+ * Returns exams for a given subject id, or [] if unknown.
+ * @param {string} subjectId
  * @returns {Array}
  */
-export function getExamsBySubject(code) {
-    return MOCK_EXAMS[code] ?? [];
+export function getExamsBySubject(subjectId) {
+    return MOCK_EXAMS[subjectId] ?? [];
 }
 
 /**
  * Returns instances for a given exam id, or [] if unknown.
- * @param {number|string} examId
+ * @param {string} examId
  * @returns {Array}
  */
 export function getInstancesByExam(examId) {
-    return MOCK_INSTANCES[Number(examId)] ?? [];
+    return MOCK_INSTANCES[examId] ?? [];
 }
 
 /**
  * Returns a single exam by id across all subjects.
- * @param {number|string} examId
+ * @param {string} examId
  * @returns {object|undefined}
  */
 export function getExamById(examId) {
-    const id = Number(examId);
     for (const exams of Object.values(MOCK_EXAMS)) {
-        const found = exams.find((e) => e.id === id);
+        const found = exams.find((e) => e.id === examId);
+        if (found) return found;
+    }
+    return undefined;
+}
+
+/**
+ * Returns a single instance by id across all exams.
+ * @param {string} instanceId
+ * @returns {object|undefined}
+ */
+export function getMockInstanceById(instanceId) {
+    for (const instances of Object.values(MOCK_INSTANCES)) {
+        const found = instances.find((i) => i.id === instanceId);
         if (found) return found;
     }
     return undefined;
@@ -67,7 +80,6 @@ export function getStatusMeta(status) {
 // ---------------------------------------------------------------------------
 // LocalStorage corrections overlay
 // These functions mirror what the grading API will provide.
-// Replace with API calls when the backend implements /instances/{id}/grade/
 // ---------------------------------------------------------------------------
 
 export function getStoredCorrection(instanceId) {
