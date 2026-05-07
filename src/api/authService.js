@@ -10,8 +10,8 @@ const MOCK_USERS = [
             email: 'maria.perez@uni.es',
             role: 'PROFESSOR',
             subjects: [
-                { code: 'MAT101', year: '2024-25', name: 'Matemáticas I', semester: '1' },
-                { code: 'FIS101', year: '2024-25', name: 'Física I', semester: '1' },
+                { id: 'mock-sub-1', code: 'MAT101', year: '2024-25', name: 'Matemáticas I', semester: '1' },
+                { id: 'mock-sub-2', code: 'FIS101', year: '2024-25', name: 'Física I', semester: '1' },
             ],
         },
     },
@@ -25,7 +25,7 @@ const MOCK_USERS = [
             email: 'juan.torres@uni.es',
             role: 'PROFESSOR',
             subjects: [
-                { code: 'MAT101', year: '2024-25', name: 'Matemáticas I', semester: '1' },
+                { id: 'mock-sub-1', code: 'MAT101', year: '2024-25', name: 'Matemáticas I', semester: '1' },
             ],
         },
     },
@@ -39,8 +39,8 @@ const MOCK_USERS = [
             email: 'elena.r@estudiante.uni.es',
             role: 'STUDENT',
             subjects: [
-                { code: 'MAT101', year: '2024-25', name: 'Matemáticas I', semester: '1' },
-                { code: 'FIS101', year: '2024-25', name: 'Física I', semester: '1' },
+                { id: 'mock-sub-1', code: 'MAT101', year: '2024-25', name: 'Matemáticas I', semester: '1' },
+                { id: 'mock-sub-2', code: 'FIS101', year: '2024-25', name: 'Física I', semester: '1' },
             ],
         },
     },
@@ -54,7 +54,7 @@ const MOCK_USERS = [
             email: 'pablo.f@estudiante.uni.es',
             role: 'STUDENT',
             subjects: [
-                { code: 'MAT101', year: '2024-25', name: 'Matemáticas I', semester: '1' },
+                { id: 'mock-sub-1', code: 'MAT101', year: '2024-25', name: 'Matemáticas I', semester: '1' },
             ],
         },
     },

@@ -1,27 +1,17 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import {
     getInstancesByExam,
     downloadInstancePdf,
+    transitionInstance,
 } from '../services/instanceService.js';
 import { preloadAnnotationsToLocalStorage } from '../services/annotationService.js';
 import PdfViewer from '../components/PdfViewer/PdfViewer';
 import './StudentResultPage.css';
 
 const USE_MOCK = import.meta.env.VITE_MOCK_API === 'true';
-
-const MOCK_INSTANCE = {
-    id: 'mock-inst-2',
-    examId: 'mock-exam-1',
-    firstName: 'Elena',
-    lastName: 'R.',
-    email: 'elena.r@estudiante.uni.es',
-    status: 'CORRECTED',
-    grade: 7.5,
-    hasIssues: false,
-};
 
 function GradePill({ grade }) {
     if (grade === null || grade === undefined) {
@@ -47,19 +37,14 @@ export default function StudentResultPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [textComment, setTextComment] = useState('');
+    const [requestingReview, setRequestingReview] = useState(false);
+    const [reviewRequested, setReviewRequested] = useState(false);
 
     useEffect(() => {
         let blobUrl = null;
 
         async function load() {
             try {
-                if (USE_MOCK) {
-                    setInstance(MOCK_INSTANCE);
-                    setLoading(false);
-                    return;
-                }
-
-                // Find the student's own instance within this exam
                 const instances = await getInstancesByExam(examId);
                 const mine = instances.find(
                     (inst) => inst.email === user?.email
@@ -71,24 +56,34 @@ export default function StudentResultPage() {
                     return;
                 }
 
-                // Load PDF and annotations in parallel
-                const [blob] = await Promise.all([
-                    downloadInstancePdf(mine.id).catch(() => null),
-                    preloadAnnotationsToLocalStorage(mine.id, user?.email),
-                ]);
+                if (!USE_MOCK) {
+                    const [blob] = await Promise.all([
+                        downloadInstancePdf(mine.id).catch(() => null),
+                        preloadAnnotationsToLocalStorage(mine.id, user?.email),
+                    ]);
+                    blobUrl = blob;
+                    setPdfUrl(blob);
 
-                // Read text comment from localStorage (written by preload)
-                const stored = localStorage.getItem(`scde_annotations_${mine.id}`);
-                if (stored) {
-                    try {
-                        const parsed = JSON.parse(stored);
-                        if (parsed.textComment) setTextComment(parsed.textComment);
-                    } catch (_) { /* ignore */ }
+                    const stored = localStorage.getItem(`scde_annotations_${mine.id}`);
+                    if (stored) {
+                        try {
+                            const parsed = JSON.parse(stored);
+                            if (parsed.textComment) setTextComment(parsed.textComment);
+                        } catch (_) { /* ignore */ }
+                    }
+                } else {
+                    // Mock mode: read text comment from localStorage if professor saved one
+                    const stored = localStorage.getItem(`scde_annotations_${mine.id}`);
+                    if (stored) {
+                        try {
+                            const parsed = JSON.parse(stored);
+                            if (parsed.textComment) setTextComment(parsed.textComment);
+                        } catch (_) { /* ignore */ }
+                    }
                 }
 
-                blobUrl = blob;
                 setInstance(mine);
-                setPdfUrl(blob);
+                setReviewRequested(mine.status === 'REVIEW_REQUESTED');
             } catch (err) {
                 setError(err.message || 'Error cargando resultado');
             } finally {
@@ -102,6 +97,22 @@ export default function StudentResultPage() {
             if (blobUrl) URL.revokeObjectURL(blobUrl);
         };
     }, [examId, user?.email, t]);
+
+    const handleRequestReview = useCallback(async () => {
+        if (!instance || requestingReview || reviewRequested) return;
+        setRequestingReview(true);
+        try {
+            if (!USE_MOCK) {
+                await transitionInstance(instance.id, 'PENDING_REVIEW');
+            }
+            setInstance((prev) => ({ ...prev, status: 'REVIEW_REQUESTED' }));
+            setReviewRequested(true);
+        } catch (err) {
+            console.warn('Error solicitando revisión:', err);
+        } finally {
+            setRequestingReview(false);
+        }
+    }, [instance, requestingReview, reviewRequested]);
 
     if (loading) {
         return (
@@ -121,6 +132,7 @@ export default function StudentResultPage() {
     }
 
     const statusLabel = t(`status.${instance.status}`, { defaultValue: instance.status });
+    const canRequestReview = (instance.status === 'CORRECTED' || instance.status === 'CLOSED') && !reviewRequested;
 
     return (
         <div className="result-page">
@@ -143,6 +155,21 @@ export default function StudentResultPage() {
                         <GradePill grade={instance.grade} />
                     </div>
                 </div>
+
+                {(canRequestReview || reviewRequested) && (
+                    <button
+                        className={`result-review-btn ${reviewRequested ? 'result-review-btn--done' : ''}`}
+                        onClick={handleRequestReview}
+                        disabled={requestingReview || reviewRequested}
+                        aria-label={t('student.result.requestReview')}
+                    >
+                        {reviewRequested
+                            ? `✓ ${t('student.result.reviewRequested')}`
+                            : requestingReview
+                                ? t('common.loading')
+                                : t('student.result.requestReview')}
+                    </button>
+                )}
             </header>
 
             {/* Professor comments (if any) */}

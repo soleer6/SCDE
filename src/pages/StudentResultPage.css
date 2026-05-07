@@ -170,6 +170,36 @@
     text-align: center;
 }
 
+/* ---- Botón solicitar revisión ---- */
+.result-review-btn {
+    background: none;
+    border: 1.5px solid var(--color-border);
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    font-size: 0.82rem;
+    font-family: inherit;
+    font-weight: 600;
+    color: #d97706;
+    border-color: #fde68a;
+    background: #fffbeb;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.result-review-btn:hover:not(:disabled) {
+    background: #fef3c7;
+    border-color: #f59e0b;
+}
+
+.result-review-btn--done {
+    color: #16a34a;
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    cursor: default;
+}
+
 /* ======= Responsive ======= */
 @media (max-width: 600px) {
     .result-header {

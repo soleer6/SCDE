@@ -4,11 +4,15 @@ const USE_MOCK = import.meta.env.VITE_MOCK_API === 'true';
 
 const MOCK_INSTANCES = {
   'mock-exam-1': [
-    { id: 'mock-inst-1', exam_id: 'mock-exam-1', student_email: 'elena.r@estudiante.uni.es', status: 'PENDING_GRADING', total_score: null },
-    { id: 'mock-inst-2', exam_id: 'mock-exam-1', student_email: 'pablo.f@estudiante.uni.es', status: 'GRADED', total_score: 7.5 },
+    { id: 'mock-inst-1', exam_id: 'mock-exam-1', student_email: 'elena.r@estudiante.uni.es', status: 'GRADED', total_score: 7.5 },
+    { id: 'mock-inst-2', exam_id: 'mock-exam-1', student_email: 'pablo.f@estudiante.uni.es', status: 'GRADED', total_score: 6.0 },
   ],
-  'mock-exam-2': [],
-  'mock-exam-3': [],
+  'mock-exam-2': [
+    { id: 'mock-inst-3', exam_id: 'mock-exam-2', student_email: 'elena.r@estudiante.uni.es', status: 'PENDING_GRADING', total_score: null },
+  ],
+  'mock-exam-3': [
+    { id: 'mock-inst-4', exam_id: 'mock-exam-3', student_email: 'elena.r@estudiante.uni.es', status: 'PENDING_GRADING', total_score: null },
+  ],
 };
 
 /**
