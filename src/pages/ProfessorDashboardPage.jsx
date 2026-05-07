@@ -103,8 +103,8 @@ export default function ProfessorDashboardPage() {
 
                 const entries = await Promise.all(
                     subs.map(async (s) => {
-                        const subjectKey = USE_MOCK ? s.code : s.id;
-                        const exams = await getExamsBySubject(USE_MOCK ? s.code : s.id).catch(() => []);
+                        const subjectKey = s.id || s.code;
+                        const exams = await getExamsBySubject(s.id || s.code).catch(() => []);
                         const allInstances = (await Promise.all(
                             exams.map((e) =>
                                 getInstancesByExam(e.id).catch(() => []).then((insts) =>
@@ -202,7 +202,7 @@ export default function ProfessorDashboardPage() {
                 ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
                         {subjects.map((subject, i) => {
-                            const key = USE_MOCK ? subject.code : subject.id;
+                            const key = subject.id || subject.code;
                             const data = subjectData[key] || { instances: [] };
                             return (
                                 <SubjectQuickLink
@@ -225,7 +225,7 @@ export default function ProfessorDashboardPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {subjects.map((subject, i) => {
                         const color = SUBJECT_COLORS[i % SUBJECT_COLORS.length];
-                        const key = USE_MOCK ? subject.code : subject.id;
+                        const key = subject.id || subject.code;
                         const instances = (subjectData[key] || {}).instances || [];
                         const correctedCount = instances.filter((inst) => inst.status === 'CORRECTED').length;
                         const total = instances.length;
