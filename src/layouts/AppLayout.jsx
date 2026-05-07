@@ -1,6 +1,7 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
+import BackendStatusBanner from '../components/BackendStatusBanner/BackendStatusBanner.jsx';
 import './AppLayout.css';
 
 export default function AppLayout() {
@@ -68,6 +69,8 @@ export default function AppLayout() {
                     </button>
                 </nav>
             </header>
+
+            <BackendStatusBanner />
 
             <main className="app-main">
                 <Outlet />

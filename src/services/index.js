@@ -7,3 +7,4 @@ export { default as subjectService, getMySubjects } from './subjectService.js';
 export { default as examService, getExamsBySubject } from './examService.js';
 export { default as instanceService, getInstancesByExam, getInstance, downloadInstancePdf, transitionInstance, normalizeInstance, mapInstanceStatus, toBackendStatus } from './instanceService.js';
 export { default as annotationService, getAnnotations, createAnnotation, updateAnnotation, syncAnnotations, preloadAnnotationsToLocalStorage } from './annotationService.js';
+export { default as healthService, checkHealth } from './healthService.js';
