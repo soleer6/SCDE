@@ -36,7 +36,7 @@ function SubjectQuickLink({ subject, instances, index }) {
     return (
         <Link
             to={`/professor/subjects/${subject.code}`}
-            state={{ subjectId: subject.id }}
+            state={{ subjectId: subject.id, subjectName: subject.name, subjectSemester: subject.semester }}
             style={{
                 display: 'flex',
                 alignItems: 'center',

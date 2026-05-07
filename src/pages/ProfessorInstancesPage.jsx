@@ -79,8 +79,14 @@ export default function ProfessorInstancesPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // In mock mode exam comes from mockData; in real mode we use examId as UUID
-    const exam = USE_MOCK ? getExamById(examId) : { id: examId, name: 'Examen', created_at: null };
+    // In mock mode exam comes from mockData; in real mode use router state for name
+    const exam = USE_MOCK
+        ? getExamById(examId)
+        : {
+            id: examId,
+            name: location.state?.examName ?? 'Examen',
+            created_at: location.state?.examDate ?? null,
+        };
 
     useEffect(() => {
         getInstancesByExam(examId)

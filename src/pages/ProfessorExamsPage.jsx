@@ -32,7 +32,7 @@ function ExamCard({ exam, subjectCode }) {
         <Link
             to={`/professor/exams/${exam.id}`}
             className="exam-card"
-            state={{ subjectCode }}
+            state={{ subjectCode, examName: exam.name, examDate: exam.created_at }}
             aria-label={`Ver instancias de ${exam.name}`}
         >
             <div className="exam-card__left">
@@ -86,10 +86,15 @@ export default function ProfessorExamsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // In mock mode fall back to user.subjects; in real mode subjectId is a UUID
+    // In mock mode fall back to user.subjects; in real mode use router state for name
     const subject = USE_MOCK
         ? user?.subjects?.find((s) => s.code === code)
-        : { code, name: code, id: subjectId };
+        : {
+            code,
+            name: location.state?.subjectName ?? code,
+            semester: location.state?.subjectSemester ?? null,
+            id: subjectId,
+        };
 
     useEffect(() => {
         getExamsBySubject(subjectId)

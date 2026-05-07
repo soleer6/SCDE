@@ -27,7 +27,7 @@ function SubjectCard({ subject, index }) {
     return (
         <Link
             to={`/professor/subjects/${subject.code}`}
-            state={{ subjectId: subject.id }}
+            state={{ subjectId: subject.id, subjectName: subject.name, subjectSemester: subject.semester }}
             className="subject-card subject-card--link"
             style={{ '--card-bg': color.bg, '--card-accent': color.accent }}
             aria-label={`Ver exámenes de ${subject.name}`}
