@@ -61,7 +61,9 @@
             "noPdf": "El PDF aún no está disponible.",
             "comments": "Comentarios del profesor",
             "requestReview": "Solicitar revisión",
-            "reviewRequested": "Revisión solicitada"
+            "reviewRequested": "Revisión solicitada",
+            "reviewSent": "Solicitud de revisión enviada",
+            "reviewError": "Error al solicitar la revisión"
         }
     },
     "common": {
@@ -105,6 +107,9 @@
         "markCorrected": "Corregido",
         "markPending": "Pendiente",
         "finalize": "Finalizar corrección",
-        "finalized": "Guardado"
+        "finalized": "Guardado",
+        "savedOk": "Corrección guardada correctamente",
+        "savedError": "Error al guardar la corrección",
+        "savedPartial": "Guardado con advertencias"
     }
 }
