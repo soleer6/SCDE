@@ -59,7 +59,9 @@
             "grade": "My grade:",
             "noInstance": "You have no submitted exam for this call.",
             "noPdf": "The PDF is not available yet.",
-            "comments": "Professor comments"
+            "comments": "Professor comments",
+            "requestReview": "Request review",
+            "reviewRequested": "Review requested"
         }
     },
     "common": {

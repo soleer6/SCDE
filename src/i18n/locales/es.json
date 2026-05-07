@@ -59,7 +59,9 @@
             "grade": "Mi nota:",
             "noInstance": "No tienes un examen entregado en esta convocatoria.",
             "noPdf": "El PDF aún no está disponible.",
-            "comments": "Comentarios del profesor"
+            "comments": "Comentarios del profesor",
+            "requestReview": "Solicitar revisión",
+            "reviewRequested": "Revisión solicitada"
         }
     },
     "common": {
