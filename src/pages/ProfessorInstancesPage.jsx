@@ -80,7 +80,7 @@ export default function ProfessorInstancesPage() {
     const [error, setError] = useState(null);
 
     // In mock mode exam comes from mockData; in real mode we use examId as UUID
-    const exam = USE_MOCK ? getExamById(examId) : { id: examId, name: `Examen`, time: '' };
+    const exam = USE_MOCK ? getExamById(examId) : { id: examId, name: 'Examen', created_at: null };
 
     useEffect(() => {
         getInstancesByExam(examId)
@@ -114,9 +114,10 @@ export default function ProfessorInstancesPage() {
         );
     }
 
-    const dateStr = new Date(exam.date + 'T' + exam.time).toLocaleDateString('es-ES', {
-        weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
-    });
+    const rawDate = exam.created_at || (exam.date ? `${exam.date}T${exam.time || '00:00:00'}` : null);
+    const dateStr = rawDate
+        ? new Date(rawDate).toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
+        : '—';
 
     const corrected = instances.filter((i) => i.status === 'CORRECTED').length;
 
@@ -152,7 +153,7 @@ export default function ProfessorInstancesPage() {
                             <line x1="8" y1="2" x2="8" y2="6" />
                             <line x1="3" y1="10" x2="21" y2="10" />
                         </svg>
-                        {dateStr} · {exam.time}
+                        {dateStr}{exam.time ? ` · ${exam.time}` : ''}
                     </p>
                 </div>
                 <div className="subject-page__stats">

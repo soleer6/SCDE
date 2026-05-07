@@ -2,21 +2,12 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import { MOCK_INSTANCES, getStoredCorrection, saveStoredCorrection } from '../api/mockData';
+import { getMockInstanceById, getStoredCorrection, saveStoredCorrection } from '../api/mockData';
 import { getInstance, downloadInstancePdf, transitionInstance, toBackendStatus } from '../services/instanceService.js';
 import { syncAnnotations, preloadAnnotationsToLocalStorage } from '../services/annotationService.js';
 import PdfViewer from '../components/PdfViewer/PdfViewer';
 
 const USE_MOCK = import.meta.env.VITE_MOCK_API === 'true';
-
-function getMockInstanceById(instanceId) {
-    const id = Number(instanceId);
-    for (const instances of Object.values(MOCK_INSTANCES)) {
-        const found = instances.find((i) => i.id === id);
-        if (found) return found;
-    }
-    return undefined;
-}
 
 function clampGrade(value) {
     const n = parseFloat(value);
