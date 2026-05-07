@@ -9,6 +9,8 @@ import {
 } from '../services/instanceService.js';
 import { preloadAnnotationsToLocalStorage } from '../services/annotationService.js';
 import PdfViewer from '../components/PdfViewer/PdfViewer';
+import ToastContainer from '../components/Toast/Toast.jsx';
+import useToast from '../hooks/useToast.js';
 import './StudentResultPage.css';
 
 const USE_MOCK = import.meta.env.VITE_MOCK_API === 'true';
@@ -31,6 +33,8 @@ export default function StudentResultPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const viewerRef = useRef(null);
+
+    const { toasts, showToast, dismissToast } = useToast();
 
     const [instance, setInstance] = useState(null);
     const [pdfUrl, setPdfUrl] = useState(null);
@@ -107,12 +111,14 @@ export default function StudentResultPage() {
             }
             setInstance((prev) => ({ ...prev, status: 'REVIEW_REQUESTED' }));
             setReviewRequested(true);
+            showToast(t('student.result.reviewSent'), 'success');
         } catch (err) {
             console.warn('Error solicitando revisión:', err);
+            showToast(t('student.result.reviewError'), 'error');
         } finally {
             setRequestingReview(false);
         }
-    }, [instance, requestingReview, reviewRequested]);
+    }, [instance, requestingReview, reviewRequested, showToast, t]);
 
     if (loading) {
         return (
@@ -196,6 +202,8 @@ export default function StudentResultPage() {
                     </div>
                 )}
             </div>
+
+            <ToastContainer toasts={toasts} onDismiss={dismissToast} />
         </div>
     );
 }

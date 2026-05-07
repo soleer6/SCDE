@@ -6,6 +6,8 @@ import { getMockInstanceById, getStoredCorrection, saveStoredCorrection } from '
 import { getInstance, downloadInstancePdf, transitionInstance, toBackendStatus } from '../services/instanceService.js';
 import { syncAnnotations, preloadAnnotationsToLocalStorage } from '../services/annotationService.js';
 import PdfViewer from '../components/PdfViewer/PdfViewer';
+import ToastContainer from '../components/Toast/Toast.jsx';
+import useToast from '../hooks/useToast.js';
 
 const USE_MOCK = import.meta.env.VITE_MOCK_API === 'true';
 
@@ -21,6 +23,7 @@ export default function ProfessorCorrectionPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const pdfViewerRef = useRef(null);
+    const { toasts, showToast, dismissToast } = useToast();
 
     const [instance, setInstance] = useState(USE_MOCK ? getMockInstanceById(instanceId) : null);
     const [pdfUrl, setPdfUrl] = useState(null);
@@ -80,12 +83,15 @@ export default function ProfessorCorrectionPage() {
     }, []);
 
     const handleFinalize = useCallback(async () => {
-        pdfViewerRef.current?.save(); // siempre guarda en localStorage
+        pdfViewerRef.current?.save();
 
         if (USE_MOCK) {
             saveStoredCorrection(instanceId, { grade, status: instanceStatus });
+            showToast(t('correction.savedOk'), 'success');
         } else {
-            // Sync annotations to backend
+            let annotationsOk = true;
+            let transitionOk = true;
+
             try {
                 const raw = localStorage.getItem(`scde_annotations_${instanceId}`);
                 if (raw) {
@@ -94,18 +100,28 @@ export default function ProfessorCorrectionPage() {
                 }
             } catch (err) {
                 console.warn('Error syncing annotations:', err);
+                annotationsOk = false;
             }
-            // Transition instance status
+
             try {
-                await transitionInstance(instanceId, toBackendStatus(instanceStatus));
+                await transitionInstance(instanceId, toBackendStatus(instanceStatus), grade);
             } catch (err) {
                 console.warn('Error transitioning status:', err);
+                transitionOk = false;
+            }
+
+            if (annotationsOk && transitionOk) {
+                showToast(t('correction.savedOk'), 'success');
+            } else if (!annotationsOk && !transitionOk) {
+                showToast(t('correction.savedError'), 'error');
+            } else {
+                showToast(t('correction.savedPartial'), 'warning');
             }
         }
 
         setIsFinalizing(true);
         setTimeout(() => setIsFinalizing(false), 2000);
-    }, [instanceId, grade, instanceStatus]);
+    }, [instanceId, grade, instanceStatus, showToast, t]);
 
     if (loadingInstance) {
         return <div style={{ padding: '2rem', color: '#a0aec0', fontFamily: 'Inter, sans-serif' }}>Cargando instancia…</div>;
@@ -269,6 +285,8 @@ export default function ProfessorCorrectionPage() {
                     instanceId={instance.id}
                 />
             </div>
+
+            <ToastContainer toasts={toasts} onDismiss={dismissToast} />
         </div>
     );
 }

@@ -44,15 +44,14 @@ async function attemptTokenRefresh() {
   }
 
   try {
-    // Backend expects { refresh_token }, returns { access_token, refresh_token }
+    // Backend expects { refresh } and returns { access, refresh } per API contract
     const response = await fetch(`${API_BASE}/auth/refresh/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken }),
+      body: JSON.stringify({ refresh: refreshToken }),
     });
 
     if (!response.ok) {
-      // Refresh failed, clear tokens and redirect to login
       localStorage.removeItem('scde_token');
       localStorage.removeItem('scde_token_refresh');
       localStorage.removeItem('scde_user');
@@ -61,8 +60,8 @@ async function attemptTokenRefresh() {
     }
 
     const data = await response.json();
-    localStorage.setItem('scde_token', data.access_token);
-    localStorage.setItem('scde_token_refresh', data.refresh_token);
+    localStorage.setItem('scde_token', data.access);
+    localStorage.setItem('scde_token_refresh', data.refresh);
     return data;
   } catch (error) {
     // Network error during refresh, clear and redirect

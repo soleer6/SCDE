@@ -62,11 +62,11 @@ export async function login(email, password) {
     };
   }
 
-  // Real API call — backend returns access_token/refresh_token
+  // Real API call — backend returns { access, refresh, user } per API contract
   const data = await apiPost('/auth/login/', { email, password });
   return {
-    token: data.access_token,
-    token_refresh: data.refresh_token,
+    token: data.access,
+    token_refresh: data.refresh,
     user: normalizeUser(data.user),
   };
 }
@@ -82,13 +82,13 @@ export async function refreshToken(refreshToken) {
       JSON.stringify({ sub: 'mock', exp: Date.now() + 86400000 })
     );
     return {
-      access_token: `mock.${payload}.signature`,
-      refresh_token: `mock.${payload}.refresh`,
+      access: `mock.${payload}.signature`,
+      refresh: `mock.${payload}.refresh`,
     };
   }
 
-  // Backend expects { refresh_token }, returns { access_token, refresh_token }
-  return apiPost('/auth/refresh/', { refresh_token: refreshToken });
+  // Backend expects { refresh } and returns { access, refresh } per API contract
+  return apiPost('/auth/refresh/', { refresh: refreshToken });
 }
 
 /**
@@ -102,9 +102,9 @@ export async function logout(refreshToken) {
     return Promise.resolve();
   }
 
-  // Backend expects { refresh_token }
+  // Backend expects { refresh } per API contract
   try {
-    await apiPost('/auth/logout/', { refresh_token: refreshToken });
+    await apiPost('/auth/logout/', { refresh: refreshToken });
   } catch (error) {
     console.warn('Logout API call failed:', error);
   }

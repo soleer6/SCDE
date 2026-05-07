@@ -122,15 +122,20 @@ export async function downloadInstancePdf(instanceId) {
 }
 
 /**
- * Transitions an instance to a new status.
+ * Transitions an instance to a new status, optionally setting a grade.
  * Real API: PATCH /api/v1/instances/{instanceId}/transition/
  * backendStatus: one of the InstanceStatus values (e.g. 'GRADED', 'PENDING_GRADING')
+ * grade: numeric 0-10 (sent only when provided)
  */
-export async function transitionInstance(instanceId, backendStatus) {
+export async function transitionInstance(instanceId, backendStatus, grade = null) {
   if (USE_MOCK) return;
+  const body = { target_status: backendStatus };
+  if (grade !== null && grade !== undefined) {
+    body.total_score = grade;
+  }
   return apiRequest(`/instances/${instanceId}/transition/`, {
     method: 'PATCH',
-    body: JSON.stringify({ target_status: backendStatus }),
+    body: JSON.stringify(body),
   });
 }
 
