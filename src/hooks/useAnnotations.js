@@ -41,14 +41,13 @@ export default function useAnnotations(instanceId, author = 'profesor@uni.es') {
         if (!instanceId) return;
         const flatStrokes = Object.values(strokesByPage).flat();
         const data = {
-            instanceId: Number(instanceId),
+            instanceId,
             author,
             savedAt: Date.now(),
             textComment,
             strokes: flatStrokes
         };
         localStorage.setItem(`scde_annotations_${instanceId}`, JSON.stringify(data));
-        console.log('Saved annotations:', data);
     }, [instanceId, author, textComment, strokesByPage]);
 
     const addStroke = useCallback((page, points, color, width, tool = 'pen') => {

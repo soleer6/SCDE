@@ -74,8 +74,13 @@ export default function ProfessorExamsPage() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // In real API mode, subjectId (UUID) is passed via router state from ProfessorSubjectsPage
-    const subjectId = location.state?.subjectId ?? code;
+    // In real API mode, subjectId (UUID) is passed via router state from ProfessorSubjectsPage.
+    // In mock mode, subjectId is the mock subject id (e.g. 'mock-sub-1') from router state,
+    // or we fall back to looking it up by code to handle direct URL navigation.
+    const subjectIdFromState = location.state?.subjectId;
+    const subjectId = subjectIdFromState
+        ?? (USE_MOCK ? user?.subjects?.find((s) => s.code === code)?.id : null)
+        ?? code;
 
     const [exams, setExams] = useState([]);
     const [loading, setLoading] = useState(true);
