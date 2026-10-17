@@ -1,0 +1,113 @@
+.dm-score {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+.dm-score--sm { font-size: var(--fs-h3); }
+.dm-score--md { font-size: var(--fs-h2); }
+.dm-score--lg { font-size: 88px; letter-spacing: -0.02em; }
+.dm-score.is-pass { color: var(--green); }
+.dm-score.is-fail { color: var(--rust); }
+.dm-score__max {
+  font-size: 0.45em;
+  color: var(--muted);
+}
+
+.dm-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 140px;
+}
+.dm-progress__bar {
+  position: relative;
+  flex: 1;
+  height: 1px;
+  background: var(--line-2);
+}
+.dm-progress__bar span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--gold);
+  transition: width var(--t-slow) var(--ease);
+}
+.dm-progress__txt {
+  font-size: var(--fs-micro);
+  color: var(--muted);
+}
+
+.dm-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.dm-section + .dm-section {
+  margin-top: var(--s-7);
+}
+.dm-section__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+.dm-subjects {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+.dm-subject {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transition: background-color var(--t-fast);
+  min-height: 150px;
+}
+.dm-subject:hover,
+.dm-subject:focus-visible {
+  background: var(--bg-3);
+}
+.dm-subject__code {
+  font-size: var(--fs-label);
+  letter-spacing: var(--track-eyebrow);
+  color: var(--muted);
+}
+.dm-subject__name {
+  font: 400 var(--fs-h3)/1.15 var(--serif);
+}
+.dm-subject__meta {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--fs-micro);
+  color: var(--muted);
+}
+
+.dm-message {
+  color: var(--muted);
+  max-width: 60ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dm-split {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(260px, 1fr);
+  gap: var(--s-6);
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .dm-split {
+    grid-template-columns: 1fr;
+  }
+}

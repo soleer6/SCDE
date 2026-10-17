@@ -1,0 +1,42 @@
+{
+  "nav": { "overview": "Home", "subjects": "Subjects" },
+  "overview": {
+    "eyebrow": "Year 2026-2027",
+    "title": "Hello, {{name}}",
+    "ledeTeacher": "Here's what you still have to grade and review.",
+    "ledeStudent": "Your exams and results this year.",
+    "statExams": "Exams to grade",
+    "statProblems": "Ungraded problems",
+    "statReviews": "Pending reviews",
+    "queue": "Grading queue",
+    "queueEmptyTitle": "Nothing pending",
+    "queueEmptyBody": "Problems assigned to you will show up here.",
+    "reviews": "Review requests",
+    "allReviews": "See all",
+    "myExams": "My exams",
+    "myExamsEmpty": "No exams yet this year",
+    "subjects": "Subjects",
+    "allSubjects": "See all"
+  },
+  "subjects": {
+    "title": "Subjects",
+    "lede": "Subjects you take part in this academic year.",
+    "semester": "Semester {{n}}",
+    "emptyTitle": "You're not in any subject",
+    "emptyBody": "If this looks wrong, contact your subject's coordinator.",
+    "emptyStaff": "As a manager, handle subjects and members from Manage."
+  },
+  "subject": {
+    "exams": "Exams",
+    "noExams": "This subject has no exams yet",
+    "noExamsTeacher": "Coordinators create exams and their models.",
+    "details": "Details",
+    "coordinator": "Coordinator",
+    "groups": "Groups",
+    "manage": "Manage subject"
+  },
+  "cols": {
+    "exam": "Exam", "student": "Student", "progress": "Progress", "problem": "Problem", "received": "Received",
+    "subject": "Subject", "date": "Date", "problems": "Problems", "students": "Enrolled", "graded": "Graded"
+  }
+}

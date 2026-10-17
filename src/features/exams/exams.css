@@ -1,0 +1,27 @@
+.ex-body {
+  margin-top: var(--s-7);
+}
+.ex-student {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+}
+.ex-student .u-muted {
+  font-size: var(--fs-micro);
+}
+.ex-problems {
+  list-style: none;
+}
+.ex-problems li {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--line);
+}
+.ex-problems li:last-child {
+  border-bottom: 0;
+}
+.ex-problems__total {
+  color: var(--gold);
+}

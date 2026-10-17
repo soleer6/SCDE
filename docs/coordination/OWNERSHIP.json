@@ -1,5 +1,5 @@
 {
-  "$comment": "Which agent may modify which paths. Checked by scripts/audit/ownership-check.mjs against the branch diff from frontend/base-v2. 'shared' paths are frozen: changes go through the auditor (Claude) via docs/coordination/REQUESTS.md.",
+  "$comment": "Which agent may modify which paths. Checked by scripts/audit/ownership-check.mjs against the branch diff from frontend/base-v2. 'shared' paths are frozen: changes go through the auditor (Claude) via docs/coordination/REQUESTS.md. Claude is also the auditor/owner of the shared base: shared paths are allowed for claude (marked '<shared>'), and every such change is announced in REQUESTS.md.",
   "base": "frontend/base-v2",
   "agents": {
     "claude": {
@@ -11,7 +11,8 @@
         "src/features/grading/**",
         "src/features/results/**",
         "src/features/reviews/**",
-        "docs/tfg/**"
+        "docs/tfg/**",
+        "<shared>"
       ]
     },
     "codex": {

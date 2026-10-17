@@ -1,0 +1,28 @@
+{
+  "header": { "model": "Modelo {{label}}", "unidentified": "Estudiante sin identificar" },
+  "actions": { "next": "Siguiente por corregir", "finish": "Marcar como corregido", "reopen": "Reabrir corrección" },
+  "toast": { "graded": "Examen marcado como corregido", "reopened": "Corrección reabierta" },
+  "toolbar": {
+    "label": "Herramientas de anotación", "prev": "Página anterior", "next": "Página siguiente",
+    "pen": "Lápiz", "eraser": "Goma", "undo": "Deshacer", "clear": "Borrar página",
+    "zoomIn": "Ampliar", "zoomOut": "Reducir", "width": "Grosor {{n}}",
+    "inks": { "red": "Tinta roja", "blue": "Tinta azul", "green": "Tinta verde", "black": "Tinta negra" }
+  },
+  "stage": { "loadingPdf": "Cargando examen", "pdfError": "No se ha podido cargar el PDF del examen." },
+  "save": { "idle": "Sin cambios", "pending": "Cambios sin guardar", "saving": "Guardando", "saved": "Guardado", "error": "Error al guardar" },
+  "side": {
+    "total": "Nota total",
+    "progress": "{{done}}/{{total}} problemas",
+    "problems": "Problemas",
+    "comment": "Comentario para el estudiante",
+    "commentHint": "Se guarda automáticamente. El estudiante lo verá durante la revisión.",
+    "commentPlaceholder": "Escribe una valoración general",
+    "locked": "Solo lectura · {{status}}",
+    "unknownGrades": "Este examen ya tiene notas puestas desde otra sesión. La API no permite leer las notas por problema, así que volver a calificar puede dar conflicto.",
+    "shortcuts": "← → cambiar de página · Ctrl+Z deshacer trazo"
+  },
+  "problem": {
+    "scoreFor": "Nota de {{name}}",
+    "state": { "idle": "Sin nota", "saving": "Guardando", "saved": "Guardado", "error": "Error" }
+  }
+}

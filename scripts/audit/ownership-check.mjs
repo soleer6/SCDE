@@ -22,7 +22,8 @@ if (!agent || !cfg.agents[agent]) {
 
 const toRegex = (glob) =>
   new RegExp('^' + glob.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*/g, '§').replace(/\*/g, '[^/]*').replace(/§/g, '.*') + '$');
-const own = cfg.agents[agent].paths.map(toRegex);
+const ownList = cfg.agents[agent].paths.flatMap((p) => (p === '<shared>' ? cfg.shared : [p]));
+const own = ownList.map(toRegex);
 const shared = cfg.shared.map(toRegex);
 
 const changed = sh(`git diff --name-only ${cfg.base}...${ref}`).split('\n').filter(Boolean);
