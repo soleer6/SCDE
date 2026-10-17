@@ -106,7 +106,11 @@ export async function mockFetch(input, init = {}) {
   const method = (init.method || 'GET').toUpperCase();
   const path = url.pathname.replace(/^\/api\/v1/, '');
 
-  const route = routes.find((r) => r.method === method && r.regex.test(path));
+  // Most specific match wins (fewest params), like Django resolving
+  // `subjects/export/` before `subjects/<uuid:pk>/`. Registration order must not matter.
+  const route = routes
+    .filter((r) => r.method === method && r.regex.test(path))
+    .sort((a, b) => a.keys.length - b.keys.length)[0];
   if (!route) {
     console.warn(`[mock] no handler for ${method} ${path}`);
     return toResponse(reply(404, { error_code: 'NOT_FOUND' }));
