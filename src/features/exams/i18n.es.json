@@ -1,9 +1,32 @@
 {
-  "crumbs": { "subjects": "Asignaturas" },
-  "actions": { "export": "Exportar notas", "publish": "Publicar {{count}} notas", "openReview": "Abrir revisión" },
-  "publish": { "done": "{{count}} notas publicadas. Se ha avisado a cada estudiante." },
-  "stats": { "enrolled": "Convocados", "todo": "Por corregir", "graded": "Corregidos", "average": "Media" },
-  "filters": { "label": "Filtrar instancias", "all": "Todas", "todo": "Por corregir", "graded": "Corregidas", "published": "Publicadas", "review": "En revisión", "issues": "Incidencias" },
+  "crumbs": {
+    "subjects": "Asignaturas"
+  },
+  "actions": {
+    "export": "Exportar notas",
+    "publish": "Publicar {{count}} notas",
+    "openReview": "Abrir revisión",
+    "configure": "Configurar",
+    "newExam": "Nuevo examen"
+  },
+  "publish": {
+    "done": "{{count}} notas publicadas. Se ha avisado a cada estudiante."
+  },
+  "stats": {
+    "enrolled": "Convocados",
+    "todo": "Por corregir",
+    "graded": "Corregidos",
+    "average": "Media"
+  },
+  "filters": {
+    "label": "Filtrar instancias",
+    "all": "Todas",
+    "todo": "Por corregir",
+    "graded": "Corregidas",
+    "published": "Publicadas",
+    "review": "En revisión",
+    "issues": "Incidencias"
+  },
   "instances": {
     "caption": "Instancias del examen",
     "empty": "Ninguna instancia en este estado",
@@ -11,8 +34,16 @@
     "emptyAllBody": "Las instancias aparecen cuando se procesan los escaneos o se ingieren a mano.",
     "unidentified": "Sin identificar"
   },
-  "cols": { "student": "Estudiante", "model": "Modelo", "status": "Estado", "score": "Nota" },
-  "problems": { "title": "Problemas", "total": "Total" },
+  "cols": {
+    "student": "Estudiante",
+    "model": "Modelo",
+    "status": "Estado",
+    "score": "Nota"
+  },
+  "problems": {
+    "title": "Problemas",
+    "total": "Total"
+  },
   "review": {
     "title": "Revisión",
     "status": "Estado",
@@ -24,7 +55,144 @@
     "created": "Periodo de revisión creado",
     "dialogTitle": "Abrir periodo de revisión",
     "dialogBody": "Durante este periodo cada estudiante podrá ver su examen corregido y pedir revisión de problemas concretos.",
-    "states": { "SCHEDULED": "Programada", "OPEN": "Abierta", "CLOSED": "Cerrada", "COMPLETED": "Completada" },
-    "errors": { "NOT_ALL_PUBLISHED": "Todas las notas deben estar publicadas.", "INVALID_DATES": "La fecha de inicio debe ser anterior a la de fin.", "REVIEW_ALREADY_EXISTS": "Este examen ya tiene un periodo de revisión." }
+    "states": {
+      "SCHEDULED": "Programada",
+      "OPEN": "Abierta",
+      "CLOSED": "Cerrada",
+      "COMPLETED": "Completada"
+    },
+    "errors": {
+      "NOT_ALL_PUBLISHED": "Todas las notas deben estar publicadas.",
+      "INVALID_DATES": "La fecha de inicio debe ser anterior a la de fin.",
+      "REVIEW_ALREADY_EXISTS": "Este examen ya tiene un periodo de revisión."
+    }
+  },
+  "setup": {
+    "crumb": "Configuración",
+    "title": "Configurar {{name}}",
+    "lede": "Define los modelos del examen, sus problemas y rúbricas, quién se presenta y quién corrige cada problema.",
+    "back": "Volver al examen",
+    "denied": "No tienes permisos para configurar este examen",
+    "tabsLabel": "Secciones de configuración",
+    "tabs": {
+      "details": "Datos",
+      "structure": "Modelos y problemas",
+      "convocation": "Convocatoria",
+      "correctors": "Correctores"
+    },
+    "details": {
+      "title": "Datos del examen",
+      "name": "Nombre",
+      "date": "Fecha y hora",
+      "studentPerms": "Qué ve el alumnado",
+      "studentPermsHelp": "Se aplica a los exámenes ya publicados. Las páginas y el desglose solo se muestran durante la revisión salvo que actives la última opción.",
+      "save": "Guardar cambios",
+      "saved": "Cambios guardados",
+      "delete": "Eliminar examen",
+      "deleteTitle": "Eliminar examen",
+      "deleteBody": "Se eliminará «{{name}}» con sus modelos, problemas y rúbricas. No se puede deshacer.",
+      "deleted": "Examen eliminado"
+    },
+    "studentPerms": {
+      "can_view_pages": "Ver las páginas escaneadas",
+      "can_view_annotations": "Ver las anotaciones del profesorado",
+      "can_view_rubric": "Ver la rúbrica",
+      "can_view_grade_breakdown": "Ver la nota de cada problema",
+      "can_download_pages": "Descargar el PDF sin cifrar",
+      "can_view_pages_after_review": "Seguir viendo las páginas cuando acabe la revisión"
+    },
+    "structure": {
+      "emptyTitle": "Este examen aún no tiene modelos",
+      "emptyBody": "Crea al menos un modelo (por ejemplo «A») y añade sus problemas.",
+      "model": "Modelo {{label}}",
+      "pdfPages": "PDF · {{count}} páginas",
+      "noPdf": "Sin PDF en blanco",
+      "uploadPdf": "Subir PDF en blanco",
+      "replacePdf": "Sustituir PDF",
+      "pdfUploaded": "PDF en blanco subido ({{pages}} páginas)",
+      "qr": "Descargar PDF con QR",
+      "problem": "Problema",
+      "max": "Máx.",
+      "rubric": "Rúbrica",
+      "manual": "Nota manual",
+      "criteria_one": "{{count}} criterio",
+      "criteria_other": "{{count}} criterios",
+      "editRubric": "Editar rúbrica",
+      "noProblems": "Sin problemas todavía.",
+      "total": "Total del modelo:",
+      "newProblem": "Nuevo problema",
+      "problemPlaceholder": "Por ejemplo, Derivadas",
+      "addProblem": "Añadir problema",
+      "problemAdded": "Problema añadido",
+      "newModel": "Nuevo modelo",
+      "label": "Etiqueta",
+      "labelHint": "Por ejemplo, A o B",
+      "copyFrom": "Copiar estructura de",
+      "copyNone": "No copiar",
+      "addModel": "Crear modelo",
+      "modelAdded": "Modelo creado"
+    },
+    "rubric": {
+      "title": "Rúbrica · {{name}}",
+      "help": "Cada criterio suma su puntuación cuando el corrector lo marca. Guardar sustituye la rúbrica completa.",
+      "description": "Descripción del criterio {{n}}",
+      "descriptionPlaceholder": "Planteamiento correcto",
+      "score": "Puntuación del criterio {{n}}",
+      "remove": "Quitar criterio {{n}}",
+      "add": "Añadir criterio",
+      "sum": "Suma: {{sum}} de {{max}}",
+      "emptyMeansManual": "Sin criterios, el problema se corrige con nota manual.",
+      "save": "Guardar rúbrica",
+      "saved": "Rúbrica guardada"
+    },
+    "convocation": {
+      "title": "Convocados: {{count}}",
+      "all": "Seleccionar todos",
+      "none": "Quitar todos",
+      "save": "Guardar convocatoria",
+      "saved": "Convocatoria guardada: {{valid}} de {{total}} válidos",
+      "search": "Buscar por nombre, email o grupo",
+      "student": "Estudiante",
+      "group": "Grupo",
+      "noGroup": "Sin grupo",
+      "noStudents": "La asignatura no tiene estudiantes matriculados",
+      "invalid_one": "{{count}} estudiante no se ha podido convocar:",
+      "invalid_other": "{{count}} estudiantes no se han podido convocar:",
+      "reasons": {
+        "NOT_ACTIVE_STUDENT": "no es estudiante activo de la asignatura",
+        "NO_GROUP_ASSIGNED": "no tiene grupo asignado"
+      }
+    },
+    "correctors": {
+      "covered": "Problemas con corrector",
+      "rules": "Reglas",
+      "instances": "Exámenes a corregir",
+      "uncovered": "Sin corrector:",
+      "listTitle": "Reglas de asignación",
+      "empty": "No hay reglas. Sin reglas, solo la coordinación puede corregir.",
+      "problems": "Problemas",
+      "correctors": "Correctores",
+      "delete": "Eliminar",
+      "deleted": "Regla eliminada",
+      "newTitle": "Nueva regla",
+      "create": "Crear regla",
+      "created": "Regla creada"
+    },
+    "errors": {
+      "HAS_INSTANCES": "No se puede eliminar: el examen ya tiene exámenes escaneados.",
+      "MODEL_LABEL_EXISTS": "Ya existe un modelo con esa etiqueta.",
+      "INVALID_PDF": "El fichero no es un PDF válido.",
+      "NO_FILE_PROVIDED": "Selecciona un fichero PDF.",
+      "NO_BLANK_PDF": "Sube primero el PDF en blanco del modelo.",
+      "COURSE_ARCHIVED": "El curso está archivado: no se puede modificar."
+    }
+  },
+  "create": {
+    "title": "Nuevo examen",
+    "name": "Nombre",
+    "namePlaceholder": "Parcial 1",
+    "date": "Fecha y hora (opcional)",
+    "submit": "Crear y configurar",
+    "created": "Examen creado"
   }
 }

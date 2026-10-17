@@ -1,9 +1,32 @@
 {
-  "crumbs": { "subjects": "Subjects" },
-  "actions": { "export": "Export grades", "publish": "Publish {{count}} grades", "openReview": "Open review" },
-  "publish": { "done": "{{count}} grades published. Each student has been notified." },
-  "stats": { "enrolled": "Enrolled", "todo": "To grade", "graded": "Graded", "average": "Average" },
-  "filters": { "label": "Filter instances", "all": "All", "todo": "To grade", "graded": "Graded", "published": "Published", "review": "In review", "issues": "Issues" },
+  "crumbs": {
+    "subjects": "Subjects"
+  },
+  "actions": {
+    "export": "Export grades",
+    "publish": "Publish {{count}} grades",
+    "openReview": "Open review",
+    "configure": "Set up",
+    "newExam": "New exam"
+  },
+  "publish": {
+    "done": "{{count}} grades published. Each student has been notified."
+  },
+  "stats": {
+    "enrolled": "Enrolled",
+    "todo": "To grade",
+    "graded": "Graded",
+    "average": "Average"
+  },
+  "filters": {
+    "label": "Filter instances",
+    "all": "All",
+    "todo": "To grade",
+    "graded": "Graded",
+    "published": "Published",
+    "review": "In review",
+    "issues": "Issues"
+  },
   "instances": {
     "caption": "Exam instances",
     "empty": "No instances in this state",
@@ -11,8 +34,16 @@
     "emptyAllBody": "Instances appear once scans are processed or ingested manually.",
     "unidentified": "Unidentified"
   },
-  "cols": { "student": "Student", "model": "Model", "status": "Status", "score": "Grade" },
-  "problems": { "title": "Problems", "total": "Total" },
+  "cols": {
+    "student": "Student",
+    "model": "Model",
+    "status": "Status",
+    "score": "Grade"
+  },
+  "problems": {
+    "title": "Problems",
+    "total": "Total"
+  },
   "review": {
     "title": "Review",
     "status": "Status",
@@ -24,7 +55,144 @@
     "created": "Review period created",
     "dialogTitle": "Open review period",
     "dialogBody": "During this period each student can see their graded exam and request a review of specific problems.",
-    "states": { "SCHEDULED": "Scheduled", "OPEN": "Open", "CLOSED": "Closed", "COMPLETED": "Completed" },
-    "errors": { "NOT_ALL_PUBLISHED": "Every grade must be published.", "INVALID_DATES": "Start must be before end.", "REVIEW_ALREADY_EXISTS": "This exam already has a review period." }
+    "states": {
+      "SCHEDULED": "Scheduled",
+      "OPEN": "Open",
+      "CLOSED": "Closed",
+      "COMPLETED": "Completed"
+    },
+    "errors": {
+      "NOT_ALL_PUBLISHED": "Every grade must be published.",
+      "INVALID_DATES": "Start must be before end.",
+      "REVIEW_ALREADY_EXISTS": "This exam already has a review period."
+    }
+  },
+  "setup": {
+    "crumb": "Setup",
+    "title": "Set up {{name}}",
+    "lede": "Define the exam's models, their problems and rubrics, who sits the exam and who grades each problem.",
+    "back": "Back to the exam",
+    "denied": "You don't have permission to set up this exam",
+    "tabsLabel": "Setup sections",
+    "tabs": {
+      "details": "Details",
+      "structure": "Models and problems",
+      "convocation": "Enrolment",
+      "correctors": "Graders"
+    },
+    "details": {
+      "title": "Exam details",
+      "name": "Name",
+      "date": "Date and time",
+      "studentPerms": "What students can see",
+      "studentPermsHelp": "Applies to published exams. Pages and breakdown are only shown during review unless you enable the last option.",
+      "save": "Save changes",
+      "saved": "Changes saved",
+      "delete": "Delete exam",
+      "deleteTitle": "Delete exam",
+      "deleteBody": "“{{name}}” will be deleted with its models, problems and rubrics. This can't be undone.",
+      "deleted": "Exam deleted"
+    },
+    "studentPerms": {
+      "can_view_pages": "See the scanned pages",
+      "can_view_annotations": "See teachers' annotations",
+      "can_view_rubric": "See the rubric",
+      "can_view_grade_breakdown": "See each problem's grade",
+      "can_download_pages": "Download the unencrypted PDF",
+      "can_view_pages_after_review": "Keep seeing pages after the review ends"
+    },
+    "structure": {
+      "emptyTitle": "This exam has no models yet",
+      "emptyBody": "Create at least one model (e.g. “A”) and add its problems.",
+      "model": "Model {{label}}",
+      "pdfPages": "PDF · {{count}} pages",
+      "noPdf": "No blank PDF",
+      "uploadPdf": "Upload blank PDF",
+      "replacePdf": "Replace PDF",
+      "pdfUploaded": "Blank PDF uploaded ({{pages}} pages)",
+      "qr": "Download PDF with QR",
+      "problem": "Problem",
+      "max": "Max",
+      "rubric": "Rubric",
+      "manual": "Manual grade",
+      "criteria_one": "{{count}} criterion",
+      "criteria_other": "{{count}} criteria",
+      "editRubric": "Edit rubric",
+      "noProblems": "No problems yet.",
+      "total": "Model total:",
+      "newProblem": "New problem",
+      "problemPlaceholder": "e.g. Derivatives",
+      "addProblem": "Add problem",
+      "problemAdded": "Problem added",
+      "newModel": "New model",
+      "label": "Label",
+      "labelHint": "e.g. A or B",
+      "copyFrom": "Copy structure from",
+      "copyNone": "Don't copy",
+      "addModel": "Create model",
+      "modelAdded": "Model created"
+    },
+    "rubric": {
+      "title": "Rubric · {{name}}",
+      "help": "Each criterion adds its score when the grader ticks it. Saving replaces the whole rubric.",
+      "description": "Criterion {{n}} description",
+      "descriptionPlaceholder": "Correct approach",
+      "score": "Criterion {{n}} score",
+      "remove": "Remove criterion {{n}}",
+      "add": "Add criterion",
+      "sum": "Sum: {{sum}} of {{max}}",
+      "emptyMeansManual": "Without criteria the problem is graded manually.",
+      "save": "Save rubric",
+      "saved": "Rubric saved"
+    },
+    "convocation": {
+      "title": "Enrolled: {{count}}",
+      "all": "Select all",
+      "none": "Clear",
+      "save": "Save enrolment",
+      "saved": "Enrolment saved: {{valid}} of {{total}} valid",
+      "search": "Search by name, email or group",
+      "student": "Student",
+      "group": "Group",
+      "noGroup": "No group",
+      "noStudents": "The subject has no enrolled students",
+      "invalid_one": "{{count}} student couldn't be enrolled:",
+      "invalid_other": "{{count}} students couldn't be enrolled:",
+      "reasons": {
+        "NOT_ACTIVE_STUDENT": "not an active student of the subject",
+        "NO_GROUP_ASSIGNED": "no group assigned"
+      }
+    },
+    "correctors": {
+      "covered": "Problems with a grader",
+      "rules": "Rules",
+      "instances": "Exams to grade",
+      "uncovered": "No grader:",
+      "listTitle": "Assignment rules",
+      "empty": "No rules. Without rules only coordinators can grade.",
+      "problems": "Problems",
+      "correctors": "Graders",
+      "delete": "Delete",
+      "deleted": "Rule deleted",
+      "newTitle": "New rule",
+      "create": "Create rule",
+      "created": "Rule created"
+    },
+    "errors": {
+      "HAS_INSTANCES": "Can't delete: the exam already has scanned copies.",
+      "MODEL_LABEL_EXISTS": "A model with that label already exists.",
+      "INVALID_PDF": "The file isn't a valid PDF.",
+      "NO_FILE_PROVIDED": "Choose a PDF file.",
+      "NO_BLANK_PDF": "Upload the model's blank PDF first.",
+      "COURSE_ARCHIVED": "The course is archived and can't be changed."
+    }
+  },
+  "create": {
+    "title": "New exam",
+    "name": "Name",
+    "namePlaceholder": "Midterm 1",
+    "date": "Date and time (optional)",
+    "submit": "Create and set up",
+    "created": "Exam created"
   }
 }

@@ -1,5 +1,8 @@
 {
-  "nav": { "overview": "Home", "subjects": "Subjects" },
+  "nav": {
+    "overview": "Home",
+    "subjects": "Subjects"
+  },
   "overview": {
     "eyebrow": "Year 2026-2027",
     "title": "Hello, {{name}}",
@@ -33,10 +36,19 @@
     "details": "Details",
     "coordinator": "Coordinator",
     "groups": "Groups",
-    "manage": "Manage subject"
+    "manage": "Manage subject",
+    "newExam": "New exam"
   },
   "cols": {
-    "exam": "Exam", "student": "Student", "progress": "Progress", "problem": "Problem", "received": "Received",
-    "subject": "Subject", "date": "Date", "problems": "Problems", "students": "Enrolled", "graded": "Graded"
+    "exam": "Exam",
+    "student": "Student",
+    "progress": "Progress",
+    "problem": "Problem",
+    "received": "Received",
+    "subject": "Subject",
+    "date": "Date",
+    "problems": "Problems",
+    "students": "Enrolled",
+    "graded": "Graded"
   }
 }

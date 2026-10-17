@@ -161,3 +161,58 @@ describe('teacher review inbox', () => {
     expect(db.instances.find((i) => i.id === 'i-e-mat-p1-3').status).toBe('FINALIZED');
   });
 });
+
+describe('exam authoring contract', () => {
+  it('creates an exam, a model, problems and a rubric, then refuses to delete an exam with instances', async () => {
+    await loginAs('maria.perez@uam.es', 'prof123');
+    const exam = await api.post('/subjects/s-prg102/exams/', { name: 'Práctica 2' });
+    expect(exam).toMatchObject({ name: 'Práctica 2', subject_code: 'PRG102', models_problems: [] });
+    const model = await api.post(`/exams/${exam.id}/models/`, { label: 'A' });
+    await expect(api.post(`/exams/${exam.id}/models/`, { label: 'A' })).rejects.toMatchObject({ code: 'MODEL_LABEL_EXISTS', status: 409 });
+    const p = await api.post(`/models/${model.id}/problems/`, { name: 'Diseño', max_score: '4' });
+    expect(p.max_score).toBe('4.00');
+    const crit = await api.post(`/problems/${p.id}/rubric/`, { criteria: [{ description: 'Clases', score: '2' }, { description: 'Pruebas', score: '2' }] });
+    expect(crit).toHaveLength(2);
+    const again = await api.post(`/problems/${p.id}/rubric/`, { criteria: [{ description: 'Todo', score: '4' }] });
+    expect(again).toHaveLength(1); // replaces, like set_rubric
+    const full = await api.get(`/exams/${exam.id}/`);
+    expect(full.models_problems[0].problems[0].rubric_criteria).toHaveLength(1);
+    await expect(api.del('/exams/e-prg-pr1/')).rejects.toMatchObject({ code: 'HAS_INSTANCES' });
+    await api.del(`/exams/${exam.id}/`);
+    await expect(api.get(`/exams/${exam.id}/`)).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('validates the blank PDF and the convocation like the backend', async () => {
+    await loginAs('maria.perez@uam.es', 'prof123');
+    const form = new FormData();
+    form.append('file', new File(['not a pdf'], 'x.pdf', { type: 'application/pdf' }));
+    await expect(api.upload('/models/mdl-e-mat-p2/blank-pdf/', form, 'PUT')).rejects.toMatchObject({ code: 'INVALID_PDF' });
+    const ok = new FormData();
+    ok.append('file', new File(['%PDF-1.7 ...'], 'blank.pdf', { type: 'application/pdf' }));
+    const res = await api.upload('/models/mdl-e-mat-p2/blank-pdf/', ok, 'PUT');
+    expect(res.pages).toBeGreaterThan(0);
+    const conv = await api.put('/exams/e-mat-p2/convocation/', { student_ids: ['u-elena', 'u-javier'] });
+    expect(conv).toMatchObject({ total: 2, valid: 1 });
+    expect(conv.invalid[0]).toMatchObject({ user_id: 'u-javier', reason: 'NOT_ACTIVE_STUDENT' });
+  });
+
+  it('manages corrector rules and reports coverage with the contract field names', async () => {
+    await loginAs('maria.perez@uam.es', 'prof123');
+    const before = await api.get('/exams/e-prg-pr1/coverage/');
+    expect(before).toMatchObject({ complete: false, total_problems: 2, covered_problems: 0 });
+    expect(before.uncovered_problems).toHaveLength(2);
+    const rule = await api.post('/exams/e-prg-pr1/assignment-rules/', { problems: ['p-e-prg-pr1-1', 'p-e-prg-pr1-2'], correctors: ['u-maria'] });
+    expect((await api.get('/exams/e-prg-pr1/coverage/')).complete).toBe(true);
+    await api.del(`/assignment-rules/${rule.id}/`);
+    expect(await api.get('/exams/e-prg-pr1/assignment-rules/')).toHaveLength(0);
+    await loginAs('javier.ruiz@uam.es', 'prof123');
+    await expect(api.post('/subjects/s-mat101/exams/', { name: 'X' })).rejects.toMatchObject({ code: 'PERMISSION_DENIED' });
+  });
+
+  it('offers exam setup to the coordinator from the exam page', async () => {
+    await loginAs('maria.perez@uam.es', 'prof123');
+    renderAt('/exams/e-mat-p2');
+    const link = await screen.findByRole('link', { name: 'Configurar' });
+    expect(link).toHaveAttribute('href', '/exams/e-mat-p2/setup');
+  });
+});
