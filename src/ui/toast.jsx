@@ -1,9 +1,11 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const ToastContext = createContext(null);
 
 /** tone: 'success' | 'error' | 'info' */
 export function ToastProvider({ children }) {
+  const { t: tr } = useTranslation('common');
   const [toasts, setToasts] = useState([]);
   const seq = useRef(0);
 
@@ -36,7 +38,7 @@ export function ToastProvider({ children }) {
         {toasts.map((t) => (
           <div key={t.id} className={`ui-toast ui-toast--${t.tone}`} role={t.tone === 'error' ? 'alert' : 'status'}>
             <span className="ui-toast__msg">{t.message}</span>
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm" onClick={() => dismiss(t.id)} aria-label="Dismiss">
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm" onClick={() => dismiss(t.id)} aria-label={tr('close')}>
               ✕
             </button>
           </div>

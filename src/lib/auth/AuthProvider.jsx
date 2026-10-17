@@ -60,7 +60,24 @@ export function AuthProvider({ children }) {
     clear();
   }, [clear]);
 
-  const value = useMemo(() => ({ session, login, logout, isAuthenticated: Boolean(session) }), [session, login, logout]);
+  /** Merge display fields into the session (e.g. after PATCH /profile/ changes the email). */
+  const updateSession = useCallback((patch) => {
+    setSession((s) => {
+      if (!s) return s;
+      const next = { ...s, ...patch };
+      try {
+        localStorage.setItem(USER_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
+
+  const value = useMemo(
+    () => ({ session, login, logout, updateSession, isAuthenticated: Boolean(session) }),
+    [session, login, logout, updateSession],
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

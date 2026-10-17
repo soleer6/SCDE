@@ -2,7 +2,7 @@
  *   import { Button, Panel, PageHeader } from '../../ui';
  * Features compose these; they do not restyle .ui-* classes.
  */
-import { useEffect, useId, useRef } from 'react';
+import { cloneElement, isValidElement, useEffect, useId, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import './ui.css';
@@ -107,7 +107,13 @@ export function TextLink({ to, children, ...rest }) {
 /** Wraps a control with label/hint/error. Pass a render function to get the id. */
 export function Field({ label, hint, error, children, className }) {
   const id = useId();
-  const control = typeof children === 'function' ? children(id) : children;
+  const descId = `${id}-desc`;
+  const described = error || hint ? descId : undefined;
+  let control = typeof children === 'function' ? children(id, { 'aria-describedby': described, 'aria-invalid': error ? true : undefined }) : children;
+  // Link hint/error to the control automatically (callers don't have to).
+  if (isValidElement(control) && described && !control.props['aria-describedby']) {
+    control = cloneElement(control, { 'aria-describedby': described, 'aria-invalid': error ? true : control.props['aria-invalid'] });
+  }
   return (
     <div className={cx('ui-field', error && 'ui-field--invalid', className)}>
       {label && (
@@ -117,11 +123,13 @@ export function Field({ label, hint, error, children, className }) {
       )}
       {control}
       {error ? (
-        <span className="ui-field__error" role="alert">
+        <span className="ui-field__error" id={descId} role="alert">
           {error}
         </span>
       ) : hint ? (
-        <span className="ui-field__hint">{hint}</span>
+        <span className="ui-field__hint" id={descId}>
+          {hint}
+        </span>
       ) : null}
     </div>
   );
@@ -343,7 +351,10 @@ export function ErrorState({ error, onRetry, title }) {
 
 /* ---------------- Dialog ---------------- */
 
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export function Dialog({ open, title, onClose, children, footer }) {
+  const { t } = useTranslation('common');
   const ref = useRef(null);
   useEffect(() => {
     if (!open) return undefined;
@@ -351,6 +362,20 @@ export function Dialog({ open, title, onClose, children, footer }) {
     ref.current?.focus();
     const onKey = (e) => {
       if (e.key === 'Escape') onClose?.();
+      if (e.key === 'Tab' && ref.current) {
+        // Focus trap: keep Tab / Shift+Tab inside the dialog.
+        const items = [...ref.current.querySelectorAll(FOCUSABLE)];
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (e.shiftKey && (document.activeElement === first || document.activeElement === ref.current)) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => {
@@ -365,7 +390,7 @@ export function Dialog({ open, title, onClose, children, footer }) {
       <div className="ui-dialog" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={ref}>
         <div className="ui-dialog__head">
           <h2 className="ui-panel__title">{title}</h2>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('close')}>
             ✕
           </Button>
         </div>
