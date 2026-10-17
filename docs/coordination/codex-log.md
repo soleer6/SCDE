@@ -29,5 +29,7 @@
 ### Entrega por commits
 
 - Primer bloque preparado: administración (usuarios/cursos/configuración/auditoría), primitivas locales reutilizadas por las áreas asignadas, utilidades de pruebas y documentación de decisiones/peticiones. Los otros módulos se entregan en commits separados. Antes de confirmar cada bloque se ejecutan check y audit:ownership y se inspecciona el índice.
+- Commit 6e61ca5: administración entregada. check previo correcto (20/20 pruebas, build y estilo); audit:ownership correcto y rutas preparadas revisadas, exclusivamente admin y documentación asignada.
+- Segundo bloque: perfil y notificaciones con sus pruebas. Se solicita sincronización del email del shell mediante una futura API pública de AuthProvider; se evita escribir desde la feature el almacenamiento interno del proveedor. Las preferencias y el email se guardan correctamente en /profile/.
 
 (Codex: append entries — date, task, decisions, errors found, fixes, commands + results.)
