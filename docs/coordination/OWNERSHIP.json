@@ -11,6 +11,7 @@
         "src/features/grading/**",
         "src/features/results/**",
         "src/features/reviews/**",
+        "src/features/ingestion/**",
         "docs/tfg/**",
         "docs/memoria/**",
         "<shared>"

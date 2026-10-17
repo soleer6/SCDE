@@ -7,7 +7,8 @@
     "publish": "Publish {{count}} grades",
     "openReview": "Open review",
     "configure": "Set up",
-    "newExam": "New exam"
+    "newExam": "New exam",
+    "issues": "Resolve issues ({{count}})"
   },
   "publish": {
     "done": "{{count}} grades published. Each student has been notified."

@@ -20,6 +20,21 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
 | 14 | Test de Codex falla solo al unir ramas | `npm run check` en `preview/integration` | el mock `GET /subjects/:id/` (registrado antes) capturaba `GET /subjects/export/` | el router elige la ruta más específica (menos parámetros), como Django con `<uuid:pk>`; test de regresión |
 | 15 | Conflicto de merge en `REQUESTS.md` | git | ambos agentes añaden líneas | resolución por unión (fichero de solo añadidos) |
 | 16 | **Dirección visual rechazada** ("parece un Binance") | usuario | se copió la paleta/tipografía de la referencia en vez de solo el minimalismo | v2 clara y educativa vía tokens; guía, skill y auditor actualizados |
+| 17 | El seed de páginas no se regeneraba entre tests | Vitest (`ingestion.test.jsx`) | `db.reset()` reasignaba solo las tablas del seed base; las de `extendSeed` sobrevivían y el extensor idempotente se saltaba | `reset()` borra todas las tablas antes de reaplicar extensores |
+| 18 | Respuesta binaria mock = "[object Blob]" (pedido por Codex) | Vitest | `Response` de Node no entiende el `Blob` de jsdom, que además no tiene `arrayBuffer()` | el router entrega bytes leídos con `FileReader`; test de regresión |
+| 19 | Sesión de gestor no reconocida en tests | Vitest | el helper de login guardaba `isStaff: false` fijo | derivar `isStaff` de los claims del JWT, como `AuthProvider` |
+| 20 | `POST /orphan-pages/{id}/attach/` inutilizable | lectura de la vista Django | la vista lee `instance_id` de un serializer que solo define `page_id` | usar `POST /instances/{id}/pages/attach/`; gap-5 |
+
+## Iteración 2026-10-18 · incidencias de escaneo (feature `ingestion`)
+- Nueva feature `src/features/ingestion`: `/exams/:examId/issues` (identificar estudiante y
+  modelo, reordenar, aceptar, mover y descartar páginas, adjuntar huérfanas, crear y borrar
+  instancias) y `/scans` para gestores (ingesta manual, motores OCR, páginas sin examen).
+- 13 operaciones nuevas cubiertas (instances create/patch/delete, 6 de páginas, orphan-pages,
+  engines, ingest). Se descarta a propósito `POST /orphan-pages/{id}/attach/` (gap-5).
+- Huecos nuevos documentados: gap-5, gap-6 (`MISSING_PAGE` nunca se limpia), gap-7 (sin
+  imagen de página, creación manual con `expected_pages = 0`, `PageResponse` sin fecha).
+- Verificación: `npm run check` (27 tests, 4 ficheros; 8 nuevos de la feature), auditoría de
+  propiedad OK. Cobertura de la rama claude: 48/94. Sin probar contra backend real.
 
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.

@@ -33,6 +33,37 @@ desde el frontend; son preguntas para el equipo backend.
 - `MySubject` no incluye `membership_id` ni permisos efectivos. Un usuario con
   `can_delegate_perms` sin `can_manage_members` no puede descubrir ids de membresía.
 
+## gap-5 · `POST /orphan-pages/{id}/attach/` falla siempre
+- **Evidencia**: `OrphanPageAttachView.post` valida con `AttachPageSerializer` (solo
+  define `page_id`, y lo exige) y después lee `serializer.validated_data["instance_id"]`
+  (`instances/views/instances.py`), que no existe → `KeyError` → 500. El OpenAPI declara
+  `AttachPageRequest {page_id}`, así que ningún cliente puede enviar el destino.
+- **Mitigación frontend**: se adjuntan huérfanas con `POST /instances/{id}/pages/attach/
+  {page_id}`, que sí es coherente (requiere `can_resolve_issues` en la asignatura).
+- **Propuesta**: serializer propio `{instance_id}` para esta vista, o retirarla.
+
+## gap-6 · `MISSING_PAGE` no se limpia nunca
+- **Evidencia**: `remove_issue` solo se llama para `STUDENT_NOT_IDENTIFIED` y
+  `DUPLICATE_STUDENT` (`update_instance`). `recalculate_issues` recalcula `has_issues` a
+  partir de `issue_types` + páginas, pero no toca `issue_types`. Al completar un examen
+  moviendo o adjuntando la página que faltaba, pasa a `RECEIVED` pero sigue marcado
+  `MISSING_PAGE` y `has_issues = true`.
+- **Mitigación**: ninguna posible desde el cliente; la UI muestra la incidencia tal cual
+  y el mock reproduce el comportamiento (test en `ingestion.test.jsx`).
+- **Propuesta**: en `check_assembling_complete`, `remove_issue(MISSING_PAGE)` al pasar a
+  `RECEIVED`, y `recalculate_issues` tras ello.
+
+## gap-7 · Incidencias de escaneo: datos que faltan
+- No hay URL para ver la imagen de una página (`PageResponse.storage_ref` es una clave de
+  MinIO, sin `download_url`): quien resuelve incidencias no puede ver la hoja que mueve,
+  acepta o descarta. Propuesta: `download_url` presignada como en anotaciones.
+- `POST /exams/{id}/instances/create/` crea con `expected_pages = 0` y sin comprobar
+  estudiante duplicado (a diferencia de `PATCH`): una instancia manual nunca pasa sola a
+  `RECEIVED`. La UI permite asignar después el modelo (el `PATCH` recalcula
+  `expected_pages`).
+- `PageResponse` no incluye `created_at`: la lista de huérfanas no puede mostrar cuándo
+  llegó cada hoja (el backend sí la ordena por esa fecha).
+
 ## Otras observaciones
 - `CreateReviewSerializer.notify_students` tiene `default=False`, pero la vista usa
   `get(..., True)`: el valor efectivo depende de si el cliente envía el campo. El frontend

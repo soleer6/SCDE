@@ -1,0 +1,129 @@
+{
+  "nav": "Scans",
+  "crumbs": { "subjects": "Subjects" },
+  "cols": { "student": "Student", "issues": "Issues", "status": "Status" },
+  "issues": {
+    "crumb": "Issues",
+    "title": "Scan issues",
+    "lede": "Scanned exams that could not be assembled automatically. Pick one to identify the student or check its pages.",
+    "back": "Back to the exam",
+    "denied": "You cannot resolve issues in this subject",
+    "deniedBody": "You need the resolve-issues permission. Ask the coordinator.",
+    "filterLabel": "Filter exams",
+    "filters": { "issues": "With issues", "all": "All" },
+    "caption": "Scanned exams",
+    "emptyTitle": "No issues",
+    "emptyBody": "Every scanned exam is complete and identified.",
+    "emptyAll": "No exam has been scanned yet"
+  },
+  "issueTypes": {
+    "MISSING_PAGE": "Missing pages",
+    "STUDENT_NOT_IDENTIFIED": "Not identified",
+    "DUPLICATE_STUDENT": "Duplicate student",
+    "QR_READ_ERROR": "Unreadable QR",
+    "QR_MISMATCH": "QR from another exam",
+    "ORPHAN_PAGE": "Assigned by proximity",
+    "EXTRA_PAGE": "Extra page",
+    "PAGES": "Pages to check"
+  },
+  "pageStatus": {
+    "PENDING_RECOGNITION": "Recognising",
+    "RECOGNIZED": "Recognised",
+    "ORPHAN": "No exam",
+    "DISCARDED": "Discarded"
+  },
+  "instance": {
+    "noneTitle": "Pick an exam",
+    "noneBody": "Select a row to see its pages and fix its details.",
+    "unidentified": "Not identified",
+    "expected": "Expected pages",
+    "student": "Student",
+    "noStudent": "Unassigned",
+    "model": "Model",
+    "noModel": "No model",
+    "modelLabel": "Model {{label}}",
+    "save": "Save details",
+    "saved": "Details saved",
+    "updatedAt": "Last changed: {{date}}",
+    "delete": "Delete scanned exam",
+    "deleteTitle": "Delete this scanned exam?",
+    "deleteBody": "The exam, its pages and its grades are deleted. This cannot be undone.",
+    "deleted": "Scanned exam deleted"
+  },
+  "pages": {
+    "title": "Pages",
+    "caption": "Scanned pages of the exam",
+    "empty": "This exam has no pages yet.",
+    "cols": { "number": "No.", "state": "Status", "actions": "Actions" },
+    "up": "Move page {{n}} up",
+    "down": "Move page {{n}} down",
+    "reordered": "Pages reordered",
+    "accept": "Accept",
+    "accepted": "Page accepted",
+    "move": "Move",
+    "moved": "Page moved",
+    "discard": "Discard",
+    "discardTitle": "Discard page {{n}}?",
+    "discardBody": "The page no longer counts for the exam. It stays recorded as discarded.",
+    "discarded": "Page discarded"
+  },
+  "move": {
+    "title": "Move page {{n}}",
+    "body": "It is now in the exam of {{from}}. It can only go to another exam of this same test.",
+    "target": "Target exam",
+    "choose": "Pick an exam"
+  },
+  "orphans": {
+    "title": "Pages without an exam",
+    "caption": "Scanned pages with no exam assigned",
+    "summary_one": "There is {{count}} page without an exam in the organisation. Select an exam to attach it.",
+    "summary_other": "There are {{count}} pages without an exam in the organisation. Select an exam to attach them.",
+    "empty": "No pages without an exam.",
+    "emptyTitle": "No pages without an exam",
+    "emptyBody": "When the scanner cannot read the QR of a sheet, it shows up here.",
+    "howTo": "To attach a page, open the issues of the exam it belongs to and pick the student's exam.",
+    "cols": { "file": "File", "recognized": "Recognised" },
+    "attach": "Attach here",
+    "attached": "Page attached"
+  },
+  "create": {
+    "action": "Create scanned exam",
+    "title": "Create scanned exam",
+    "body": "For cases the scanner did not assemble. You can then attach pages without an exam to it.",
+    "submit": "Create",
+    "done": "Scanned exam created"
+  },
+  "scans": {
+    "eyebrow": "Organisation",
+    "title": "Scans",
+    "lede": "Upload scans by hand when they do not arrive from the scanner and check pages that could not be assigned.",
+    "uploadTitle": "Upload scan",
+    "file": "File",
+    "fileHint": "PDF or image (PNG, JPG, TIFF). Every sheet must carry its QR code.",
+    "upload": "Upload scan",
+    "uploaded_one": "Scan uploaded: {{count}} page queued",
+    "uploaded_other": "Scan uploaded: {{count}} pages queued",
+    "receipt": {
+      "file": "File",
+      "pages": "Pages",
+      "status": "Status",
+      "task": "Task",
+      "queued": "Queued",
+      "next": "Recognition continues in the background. If the QR cannot be read, the page shows up under “Pages without an exam”."
+    }
+  },
+  "engines": {
+    "title": "Recognition engines",
+    "empty": "No engines registered.",
+    "note": "The default engine is chosen in the organisation settings. QR and checkboxes are not configurable.",
+    "types": { "OCR_TEXT": "Text (OCR)" }
+  },
+  "errors": {
+    "DIFFERENT_EXAM": "You can only move pages between exams of the same test.",
+    "TARGET_NOT_FOUND": "The target exam no longer exists. Reload the list.",
+    "PAGE_NOT_ORPHAN": "That page is already assigned to an exam.",
+    "DUPLICATE_STUDENT": "That student already has another scanned exam in this test.",
+    "USER_NOT_FOUND": "The student cannot be found.",
+    "MODEL_NOT_FOUND": "That model does not belong to this exam."
+  }
+}

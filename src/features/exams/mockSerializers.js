@@ -82,7 +82,8 @@ export function instanceOut(inst) {
     issue_types: inst.issue_types,
     total_score: dec(inst.total_score),
     expected_pages: inst.expected_pages,
-    page_ids: Array.from({ length: inst.expected_pages }, (_, i) => `${inst.id}-pg${i + 1}`),
+    // Scanned pages live in db.pages (seeded by the ingestion feature).
+    page_ids: (db.pages ?? []).filter((p) => p.instance_id === inst.id).sort((a, b) => a.page_number - b.page_number).map((p) => p.id),
     created_at: inst.created_at,
     updated_at: inst.updated_at,
   };
