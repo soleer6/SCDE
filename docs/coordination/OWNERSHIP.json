@@ -1,0 +1,46 @@
+{
+  "$comment": "Which agent may modify which paths. Checked by scripts/audit/ownership-check.mjs against the branch diff from frontend/base-v2. 'shared' paths are frozen: changes go through the auditor (Claude) via docs/coordination/REQUESTS.md.",
+  "base": "frontend/base-v2",
+  "agents": {
+    "claude": {
+      "branch": "claude/core-flows",
+      "paths": [
+        "src/features/auth/**",
+        "src/features/workspace/**",
+        "src/features/exams/**",
+        "src/features/grading/**",
+        "src/features/results/**",
+        "src/features/reviews/**",
+        "docs/tfg/**"
+      ]
+    },
+    "codex": {
+      "branch": "codex/admin-ops",
+      "paths": [
+        "src/features/admin/**",
+        "src/features/subject-admin/**",
+        "src/features/notifications/**",
+        "src/features/profile/**",
+        "docs/coordination/codex-log.md",
+        "docs/coordination/REQUESTS.md"
+      ]
+    }
+  },
+  "shared": [
+    "src/ui/**",
+    "src/styles/**",
+    "src/lib/**",
+    "src/app/**",
+    "src/main.jsx",
+    "package.json",
+    "package-lock.json",
+    "vite.config.js",
+    "eslint.config.js",
+    "index.html",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/frontend/**",
+    "scripts/**",
+    ".claude/**"
+  ]
+}
