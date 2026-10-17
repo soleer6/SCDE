@@ -1,0 +1,5 @@
+.admin-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); max-width: 44rem; min-width: 0; }
+.admin-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); margin-block: var(--s-4); }
+.admin-stack { display: grid; gap: var(--s-6); min-width: 0; }
+.admin-search { max-width: 32rem; margin-block: var(--s-4); }
+.admin-code { overflow-wrap: anywhere; white-space: pre-wrap; }

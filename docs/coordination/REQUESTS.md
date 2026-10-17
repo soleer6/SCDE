@@ -2,3 +2,10 @@
 
 Format: `- [agent] [date] what / why / workaround used`
 
+- [codex] [2026-10-17] El inventario no contiene GET /courses/ ni una operación para activar cursos (PATCH solo admite label/start_date/end_date). Se necesita documentar/proveer lista y activación para completar la gestión de cursos solicitada. Solución local: curso activo destacado, consulta por ID y creación/edición de campos permitidos; nunca se envía is_active.
+- [codex] [2026-10-17] Faltan esquemas de los elementos de /subjects/export/ (solo array), PaginatedCourseList de /search/, UserImportRequestRequest y SubjectFileUploadRequest. Solicito ampliar API_INVENTORY.md con estos contratos. Directorio usa provisionalmente los campos ya documentados de SubjectResponse; importaciones pendientes para no inventar nombres multipart ni columnas. Exportación de usuarios descarga la respuesta sin interpretarla.
+- [codex] [2026-10-17] No se enumeran filtros de usuarios/auditoría en el inventario: usuarios usa únicamente page y search autorizados expresamente por el brief; auditoría usa page y filtro local claramente etiquetado. Solicito documentar los filtros admitidos.
+- [codex] [2026-10-17] MySubject no expone membership_id ni permisos efectivos. Un usuario con solo can_delegate_perms puede acceder a permisos por ID conocido, pero no descubrir ese ID mediante /members/ (requiere can_manage_members). Solicito un mecanismo documentado para descubrir la membresía propia y los destinos delegables. Las pestañas son independientes y dejan que cada endpoint aplique permisos efectivos, sin bloquear por el rol predeterminado.
+- [codex] [2026-10-17] Primitivas compartidas: Dialog usa aria-label="Close" y no atrapa el foco; ToastProvider usa "Dismiss" sin traducción. Field no enlaza hint/error por aria-describedby. Solicito corregir accesibilidad/i18n en la base; no se modifican archivos compartidos.
+- [codex] [2026-10-17] audit:ownership compara solo commits (base...HEAD), no índice/worktree. Se complementa revisando git diff --cached --name-only antes del commit. Solicito ampliar el auditor para detectar también cambios preparados.
+
