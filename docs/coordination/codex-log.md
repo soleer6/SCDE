@@ -1,5 +1,15 @@
 # Codex log
 
+## 2026-10-17 — Corrección de la versión publicada
+
+- El usuario señala correctamente que la demo publicada conserva la estética rechazada. Error de selección de origen: se publicó únicamente codex/admin-ops, aunque la guía v2 ya estaba confirmada en claude/core-flows. La advertencia de alcance no resolvía su objetivo de revisar el trabajo conjunto.
+- Inspección en solo lectura de SCDE-claude: worktree limpio, HEAD c0ab07f; cambio visual confirmado en 15b20df (fondo claro, azul tinta, Atkinson Hyperlegible, Source Serif 4, primitivas, shell, login y visor PDF). No son cambios locales pendientes ni se necesita consultar GitHub. La lectura opcional de claude-log.md falló porque ese archivo no existe; se usaron commits, fuentes y guía v2 como evidencia.
+- Solución sin merge ni cambios compartidos: exportar el commit de Claude a una copia generada en dist, superponer únicamente los archivos versionados de las cuatro features propias y ejecutar check sobre la composición. Se comprueba que no haya cambios locales sin confirmar en Claude, que la rama sea la esperada y que ambos lockfiles coincidan antes de reutilizar dependencias. No se incluyen metadatos *.local ni credenciales en el origen generado.
+- prepare-demo usa ahora esa copia conjunta de forma predeterminada; deploy-vercel conserva el mismo proyecto y URL. Las fuentes compartidas de ambas ramas permanecen intactas. Se validarán los assets publicados para comprobar que sirven los tokens claros reales, además de las rutas HTTP.
+- Primera composición validada: 51/51 pruebas en 10 archivos, lint/build correctos y auditoría visual sin errores (5 avisos existentes en los flujos de Claude). jsdom emite avisos de canvas no implementado en pruebas del visor; todas las aserciones pasan, no equivalen a una prueba visual en navegador. No hay navegador automatizado instalado.
+- Ajustes tras inspeccionar el artefacto: Vite advertía que no vacía un outDir externo a la copia; se añade --emptyOutDir tras verificar que la salida permanece dentro del worktree. La plantilla HTML compartida conservaba theme-color oscuro: se deriva el color de fondo de los tokens v2 solo en el HTML generado. La verificación remota compara SHA256 del CSS servido con el artefacto validado para detectar una publicación equivocada.
+- Cierre: segundo pipeline completo con salida 0. check de la rama 36/36 y audit:ownership correctos; check conjunto 51/51, compilación y estilo correctos. Producción actualizada en la URL estable; cuatro rutas públicas correctas y CSS remoto idéntico por SHA256 (B03EF8A813756C4BBCD0A86221A94AD314D70C1B4975D5C5D98DC271E0ADED1E). Verificados en los bytes servidos --bg #f6f7f9, --accent #2d4fa3 y Atkinson Hyperlegible. theme-color del HTML generado también claro. Worktree de Claude sigue limpio; únicamente se confirman scripts propios y documentos de coordinación asignados.
+
 ## 2026-10-17 — Despliegue autónomo en Vercel
 
 - El usuario solicita publicar y actualizar en Vercel sin instrucciones técnicas sucesivas, y aclara que la sesión debe persistir en el PC para trabajo remoto desde móvil. Se conserva la prohibición de push/merge y la propiedad de archivos.

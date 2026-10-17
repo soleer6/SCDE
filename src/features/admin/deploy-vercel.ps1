@@ -46,6 +46,16 @@ try {
             throw "La ruta publica $route no sirve la aplicacion. Comprueba la proteccion de despliegue."
         }
     }
+    # Verificar el CSS servido contra el artefacto validado, no solo el shell HTML.
+    $index = [System.IO.File]::ReadAllText((Join-Path $outputPath 'index.html'))
+    $cssPath = [regex]::Match($index, 'href="(?<path>/assets/[^\"]+\.css)"').Groups['path'].Value
+    if (-not $cssPath) { throw 'No se puede identificar la hoja de estilo publicada.' }
+    $remoteCss = Join-Path $PSScriptRoot 'vercel-css.local'
+    Invoke-WebRequest -Uri ($baseUrl.TrimEnd('/') + $cssPath) -UseBasicParsing -TimeoutSec 30 -OutFile $remoteCss
+    $localCss = Join-Path $outputPath $cssPath.TrimStart('/')
+    if ((Get-FileHash -LiteralPath $remoteCss).Hash -ne (Get-FileHash -LiteralPath $localCss).Hash) {
+        throw 'El CSS publico no coincide con la demo validada.'
+    }
     Set-Content -LiteralPath $deploymentPath -Value ($json -join "`n") -Encoding UTF8
     Write-Output "Despliegue verificado: $baseUrl"
 } finally {

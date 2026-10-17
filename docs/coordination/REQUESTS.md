@@ -4,6 +4,9 @@ Format: `- [agent] [date] what / why / workaround used`
 
 ## Actualización tras consultar el OpenAPI real (2026-10-17)
 
+- [codex] [2026-10-17] La primera demo de Vercel publicó solo admin-ops y conservaba la base oscura, pese al objetivo de revisión conjunta. Se corrige el generador para compilar una copia temporal del HEAD limpio de claude/core-flows más las cuatro features propias, sin merge ni modificación de fuentes compartidas. Solicito al auditor realizar la integración definitiva de ramas/base v2; esta composición de artefacto no sustituye esa revisión. URL estable: https://scde-tutor-admin-ops.vercel.app.
+- [codex] [2026-10-17] index.html de la base educativa mantiene meta theme-color="#07080a" de v1. Solicito sincronizarlo con --bg claro en la fuente compartida; el generador de demo ajusta únicamente el HTML de salida con el valor real de los tokens.
+
 - [codex] [2026-10-17] El entorno de pruebas combina Response nativo de Node con Blob de jsdom: al exportar bytes se recibe la cadena "[object Blob]". Prueba de exportación resuelta con Blob de node:buffer acotado al test y restauración posterior; solicito homogeneizar estas APIs en el setup compartido para futuras pruebas binarias.
 
 - [codex] [2026-10-17] Imports desbloqueados: UserImportRequestRequest y SubjectFileUploadRequest exigen multipart file. UserImportResult y SubjectImportResult implementados. Sigue sin estar documentada la codificación de groups/teachers/students en CSV de asignaturas; el mock admite CSV plano de escalares y JSON completo con relaciones, sin inventar una codificación CSV para listas. La interfaz envía el archivo sin transformarlo; se recomienda JSON para relaciones. Los objetos errors[] son opacos (additionalProperties), se ofrecen completos para descarga sin asumir claves de diagnóstico del backend.
