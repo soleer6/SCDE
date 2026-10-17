@@ -184,9 +184,12 @@ export const db = {
   },
   reset() {
     const fresh = seed();
-    Object.keys(fresh).forEach((k) => {
-      this[k] = fresh[k];
+    // Drop every data table first, including those added by extendSeed, so the
+    // extenders rebuild them from scratch instead of skipping as "already seeded".
+    Object.keys(this).forEach((k) => {
+      if (typeof this[k] !== 'function') delete this[k];
     });
+    Object.assign(this, fresh);
     extenders.forEach((fn) => fn(this));
     this.persist();
   },
