@@ -66,10 +66,24 @@ export function paginate(items, query) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function toResponse(r) {
+/* jsdom's Blob has no arrayBuffer(); FileReader exists in both jsdom and browsers. */
+function blobBytes(blob) {
+  if (typeof blob.arrayBuffer === 'function') return blob.arrayBuffer();
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result);
+    fr.onerror = () => reject(fr.error);
+    fr.readAsArrayBuffer(blob);
+  });
+}
+
+async function toResponse(r) {
   if (r && r.__mockReply) {
     if (r.body instanceof Blob) {
-      return new Response(r.body, { status: r.status, headers: r.headers });
+      // Bytes, not the Blob itself: under Vitest, Response is Node's and Blob is
+      // jsdom's, and Node would serialise a foreign Blob as "[object Blob]".
+      const headers = { ...(r.body.type && { 'Content-Type': r.body.type }), ...r.headers };
+      return new Response(await blobBytes(r.body), { status: r.status, headers });
     }
     const hasBody = r.status !== 204 && r.body !== null && r.body !== undefined;
     return new Response(hasBody ? JSON.stringify(r.body) : null, {
@@ -135,7 +149,7 @@ export async function mockFetch(input, init = {}) {
   try {
     const result = await route.handler({ params, query: url.searchParams, body, form, user, db });
     db.persist();
-    return toResponse(result);
+    return await toResponse(result);
   } catch (err) {
     if (err.__mock) return toResponse(err.__mock);
     console.error('[mock] handler error', err);
