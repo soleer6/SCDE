@@ -7,7 +7,8 @@
     "publish": "Publicar {{count}} notas",
     "openReview": "Abrir revisión",
     "configure": "Configurar",
-    "newExam": "Nuevo examen"
+    "newExam": "Nuevo examen",
+    "issues": "Resolver incidencias ({{count}})"
   },
   "publish": {
     "done": "{{count}} notas publicadas. Se ha avisado a cada estudiante."

@@ -43,6 +43,8 @@ export default function TeacherExamView({ exam, role }) {
   const canPublish = can(session, role, 'can_publish_grades');
   const canReview = can(session, role, 'can_manage_reviews');
   const canExport = can(session, role, 'can_export_grades');
+  const canResolve = can(session, role, 'can_resolve_issues');
+  const issueCount = list.filter((i) => i.has_issues).length;
   const canSetup = ['can_create_exams', 'can_create_rubric', 'can_assign_correctors'].some((p) => can(session, role, p));
   const allPublished = list.length > 0 && list.every((i) => ['PUBLISHED', 'ARCHIVED'].includes(i.status));
 
@@ -81,6 +83,7 @@ export default function TeacherExamView({ exam, role }) {
         actions={
           <>
             {canSetup && <ButtonLink to={`/exams/${exam.id}/setup`}>{t('actions.configure')}</ButtonLink>}
+            {canResolve && issueCount > 0 && <ButtonLink to={`/exams/${exam.id}/issues`}>{t('actions.issues', { count: issueCount })}</ButtonLink>}
             {canExport && <Button onClick={onExport}>{t('actions.export')}</Button>}
             {canReview && allPublished && !review.data && (
               <Button variant="primary" onClick={() => setReviewOpen(true)}>

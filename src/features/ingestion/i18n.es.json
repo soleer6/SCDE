@@ -1,0 +1,129 @@
+{
+  "nav": "Escaneos",
+  "crumbs": { "subjects": "Asignaturas" },
+  "cols": { "student": "Estudiante", "issues": "Incidencias", "status": "Estado" },
+  "issues": {
+    "crumb": "Incidencias",
+    "title": "Incidencias de escaneo",
+    "lede": "Exámenes escaneados que no se han podido montar solos. Elige uno para identificar al estudiante o revisar sus páginas.",
+    "back": "Volver al examen",
+    "denied": "No puedes resolver incidencias en esta asignatura",
+    "deniedBody": "Hace falta el permiso de resolver incidencias. Pídeselo a la coordinación.",
+    "filterLabel": "Filtrar exámenes",
+    "filters": { "issues": "Con incidencias", "all": "Todos" },
+    "caption": "Exámenes escaneados",
+    "emptyTitle": "No hay incidencias",
+    "emptyBody": "Todos los exámenes escaneados están completos e identificados.",
+    "emptyAll": "Todavía no se ha escaneado ningún examen"
+  },
+  "issueTypes": {
+    "MISSING_PAGE": "Faltan páginas",
+    "STUDENT_NOT_IDENTIFIED": "Sin identificar",
+    "DUPLICATE_STUDENT": "Estudiante duplicado",
+    "QR_READ_ERROR": "QR ilegible",
+    "QR_MISMATCH": "QR de otro examen",
+    "ORPHAN_PAGE": "Asignada por proximidad",
+    "EXTRA_PAGE": "Página de más",
+    "PAGES": "Páginas por revisar"
+  },
+  "pageStatus": {
+    "PENDING_RECOGNITION": "Reconociendo",
+    "RECOGNIZED": "Reconocida",
+    "ORPHAN": "Sin examen",
+    "DISCARDED": "Descartada"
+  },
+  "instance": {
+    "noneTitle": "Elige un examen",
+    "noneBody": "Selecciona una fila para ver sus páginas y corregir sus datos.",
+    "unidentified": "Sin identificar",
+    "expected": "Páginas esperadas",
+    "student": "Estudiante",
+    "noStudent": "Sin asignar",
+    "model": "Modelo",
+    "noModel": "Sin modelo",
+    "modelLabel": "Modelo {{label}}",
+    "save": "Guardar datos",
+    "saved": "Datos guardados",
+    "updatedAt": "Última modificación: {{date}}",
+    "delete": "Eliminar examen escaneado",
+    "deleteTitle": "¿Eliminar este examen escaneado?",
+    "deleteBody": "Se borran el examen, sus páginas y sus notas. No se puede deshacer.",
+    "deleted": "Examen escaneado eliminado"
+  },
+  "pages": {
+    "title": "Páginas",
+    "caption": "Páginas escaneadas del examen",
+    "empty": "Este examen no tiene páginas todavía.",
+    "cols": { "number": "Nº", "state": "Estado", "actions": "Acciones" },
+    "up": "Subir la página {{n}}",
+    "down": "Bajar la página {{n}}",
+    "reordered": "Páginas reordenadas",
+    "accept": "Aceptar",
+    "accepted": "Página aceptada",
+    "move": "Mover",
+    "moved": "Página movida",
+    "discard": "Descartar",
+    "discardTitle": "¿Descartar la página {{n}}?",
+    "discardBody": "La página deja de contar para el examen. Queda registrada como descartada.",
+    "discarded": "Página descartada"
+  },
+  "move": {
+    "title": "Mover la página {{n}}",
+    "body": "Ahora está en el examen de {{from}}. Solo puede ir a otro examen de esta misma prueba.",
+    "target": "Examen de destino",
+    "choose": "Elige un examen"
+  },
+  "orphans": {
+    "title": "Páginas sin examen",
+    "caption": "Páginas escaneadas sin examen asignado",
+    "summary_one": "Hay {{count}} página sin examen en la organización. Selecciona un examen para adjuntarla.",
+    "summary_other": "Hay {{count}} páginas sin examen en la organización. Selecciona un examen para adjuntarlas.",
+    "empty": "No hay páginas sin examen.",
+    "emptyTitle": "No hay páginas sin examen",
+    "emptyBody": "Cuando el escáner no pueda leer el QR de una hoja, aparecerá aquí.",
+    "howTo": "Para adjuntar una página, abre las incidencias del examen al que pertenece y elige el examen del estudiante.",
+    "cols": { "file": "Archivo", "recognized": "Reconocida" },
+    "attach": "Adjuntar aquí",
+    "attached": "Página adjuntada"
+  },
+  "create": {
+    "action": "Crear examen escaneado",
+    "title": "Crear examen escaneado",
+    "body": "Para casos que el escáner no ha montado. Después podrás adjuntarle páginas sin examen.",
+    "submit": "Crear",
+    "done": "Examen escaneado creado"
+  },
+  "scans": {
+    "eyebrow": "Organización",
+    "title": "Escaneos",
+    "lede": "Sube escaneos a mano cuando no lleguen por el escáner y revisa las páginas que no se han podido asignar.",
+    "uploadTitle": "Subir escaneo",
+    "file": "Archivo",
+    "fileHint": "PDF o imagen (PNG, JPG, TIFF). Cada hoja debe llevar su código QR.",
+    "upload": "Subir escaneo",
+    "uploaded_one": "Escaneo subido: {{count}} página en cola",
+    "uploaded_other": "Escaneo subido: {{count}} páginas en cola",
+    "receipt": {
+      "file": "Archivo",
+      "pages": "Páginas",
+      "status": "Estado",
+      "task": "Tarea",
+      "queued": "En cola",
+      "next": "El reconocimiento sigue en segundo plano. Si no se lee el QR, la página aparecerá en «Páginas sin examen»."
+    }
+  },
+  "engines": {
+    "title": "Motores de reconocimiento",
+    "empty": "No hay motores registrados.",
+    "note": "El motor por defecto se elige en la configuración de la organización. QR y casillas no son configurables.",
+    "types": { "OCR_TEXT": "Texto (OCR)" }
+  },
+  "errors": {
+    "DIFFERENT_EXAM": "Solo puedes mover páginas entre exámenes de la misma prueba.",
+    "TARGET_NOT_FOUND": "El examen de destino ya no existe. Recarga la lista.",
+    "PAGE_NOT_ORPHAN": "Esa página ya está asignada a un examen.",
+    "DUPLICATE_STUDENT": "Ese estudiante ya tiene otro examen escaneado en esta prueba.",
+    "USER_NOT_FOUND": "No se encuentra al estudiante.",
+    "MODEL_NOT_FOUND": "Ese modelo no pertenece a este examen."
+  }
+}
