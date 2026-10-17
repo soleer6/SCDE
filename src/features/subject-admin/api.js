@@ -9,4 +9,4 @@ export const updateGroup = (id, group, body) => api.patch(`${root(id)}/groups/${
 export const deleteGroup = (id, group) => api.del(`${root(id)}/groups/${group}/`);
 export const getPermissions = (id) => api.get(`/memberships/${encodeURIComponent(id)}/permissions/`);
 export const updatePermissions = (id, permissions) => api.patch(`/memberships/${encodeURIComponent(id)}/permissions/`, { permissions });
-export const exportSubjects = () => api.get('/subjects/export/');
+export const exportSubjects = (course_id) => api.get('/subjects/export/', { course_id, export_format: 'json' });

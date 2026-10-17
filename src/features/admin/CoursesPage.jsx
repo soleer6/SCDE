@@ -1,33 +1,37 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Badge, Button, Dialog, ErrorState, Field, Input, Loader, PageHeader, Panel } from '../../ui';
+import { Badge, Button, Dialog, Field, Input, PageHeader } from '../../ui';
 import { useApi } from '../../lib/hooks.js';
-import { createCourse, getCourse, getCurrentCourse, updateCourse } from './api.js';
-import { RecordForm } from './components.jsx';
+import { createCourse, searchCatalog, updateCourse } from './api.js';
+import { Pagination, RecordForm, Records } from './components.jsx';
 
 export default function CoursesPage() {
   const { t } = useTranslation('admin');
-  const current = useApi(getCurrentCourse);
-  const [id, setId] = useState('');
-  const [lookup, setLookup] = useState('');
-  const other = useApi(lookup ? () => getCourse(lookup) : null, [lookup]);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
   const [editing, setEditing] = useState(null);
-  const course = (row) => <Panel key={row.id} title={row.label} actions={<Button onClick={() => setEditing(row)}>{t('editCourse')}</Button>}>
-    <p>{row.id}</p><p>{row.start_date ?? '—'} → {row.end_date ?? '—'}</p><Badge tone={row.is_active ? 'gold' : undefined}>{t(row.is_active ? 'current' : 'inactive')}</Badge>
-  </Panel>;
-  return <div className="admin-stack">
-    <PageHeader eyebrow={t('management')} title={t('courses')} lede={t('courseHint')} actions={<Button variant="primary" onClick={() => setEditing({ label: '', start_date: '', end_date: '' })}>{t('newCourse')}</Button>} />
-    {current.loading ? <Loader /> : current.error ? <ErrorState error={current.error} onRetry={current.reload} /> : current.data && course(current.data)}
-    <form className="admin-actions" onSubmit={(e) => { e.preventDefault(); setLookup(id.trim()); if (id.trim() === lookup) other.reload(); }}>
-      <Field label={t('courseId')} hint={t('findCourse')}>{(inputId) => <Input id={inputId} value={id} onChange={(e) => setId(e.target.value)} required />}</Field><Button type="submit">{t('find')}</Button>
+  const courses = useApi(() => searchCatalog({ page, search: query }), [page, query]);
+  return <>
+    <PageHeader eyebrow={t('management')} title={t('courses')} lede={t('courseListHint')} actions={<Button variant="primary" onClick={() => setEditing({ label: '', start_date: '', end_date: '' })}>{t('newCourse')}</Button>} />
+    <form className="admin-actions" onSubmit={(e) => { e.preventDefault(); setQuery(search); setPage(1); }}>
+      <Field label={t('searchCourses')}>{(id) => <Input id={id} value={search} onChange={(e) => setSearch(e.target.value)} />}</Field>
+      <Button type="submit">{t('common:search')}</Button>
     </form>
-    {lookup && (other.loading ? <Loader /> : other.error ? <ErrorState error={other.error} onRetry={other.reload} /> : other.data && course(other.data))}
-    <Dialog open={Boolean(editing)} title={t(editing?.id ? 'courses' : 'newCourse')} onClose={() => setEditing(null)}>
+    <Records state={courses} action={<Button onClick={() => setEditing({ label: '', start_date: '', end_date: '' })}>{t('newCourse')}</Button>} columns={[
+      { key: 'label', header: t('label') },
+      { key: 'is_active', header: t('status'), render: (c) => <Badge tone={c.is_active ? 'accent' : undefined}>{t(c.is_active ? 'current' : 'inactive')}</Badge> },
+      { key: 'start_date', header: t('start_date') }, { key: 'end_date', header: t('end_date') },
+      { key: 'subject_count', header: t('subjectCount'), align: 'num' },
+      { key: 'actions', header: t('actions'), render: (c) => <Button size="sm" onClick={() => setEditing(c)}>{t('editCourse')}</Button> },
+    ]} />
+    <Pagination data={courses.data} page={page} onChange={setPage} />
+    <Dialog open={Boolean(editing)} title={t(editing?.id ? 'editCourse' : 'newCourse')} onClose={() => setEditing(null)}>
       {editing && <RecordForm key={editing.id ?? 'new'} initial={editing} fields={['label', 'start_date', 'end_date'].map((name) => ({ name, label: t(name), type: name === 'label' ? 'text' : 'date', required: name === 'label' }))} onSave={async (v) => {
         const body = { label: v.label, start_date: v.start_date || null, end_date: v.end_date || null };
-        const result = editing.id ? await updateCourse(editing.id, body) : await createCourse(body);
-        setId(result.id); setLookup(result.id); setEditing(null); current.reload(); other.reload();
+        if (editing.id) await updateCourse(editing.id, body); else await createCourse(body);
+        setEditing(null); setQuery(''); setSearch(''); setPage(1); courses.reload();
       }} />}
     </Dialog>
-  </div>;
+  </>;
 }

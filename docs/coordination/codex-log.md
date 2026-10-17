@@ -1,5 +1,16 @@
 # Codex log
 
+## 2026-10-17 — Continuación P1 y revisión visual v2
+
+- Releídos AGENTS, brief, propiedad, skill local, arquitectura e inventario. Por autorización explícita del usuario, leídos únicamente STYLE_GUIDE v2 del worktree de Claude y el YAML real del backend; no se modifican esas rutas. Se priorizan la nueva dirección clara/educativa y el YAML sobre las referencias anteriores al estilo oscuro/inventario incompleto.
+- Estilo: las features no contenían uppercase, letter-spacing amplio ni colores crudos. Se conservan tablas para registros y se elimina la composición de paneles de cursos al ofrecer la lista real. Los códigos/IDs/NIA usan --mono; el resto hereda la tipografía de las primitivas. Activo es accent, pendiente conserva el tono gold documentado por v2 como amber. No se copian tokens ni primitivas; la base clara se integrará en revisión.
+- Contrato verificado: imports multipart usan file; /subjects/export/ devuelve SubjectImportExportItem (sin id/course_id). Corregido el mock anterior que devolvía SubjectResponse y trasladado el directorio a /search/?course_id. Exportaciones solicitan export_format=json explícitamente.
+- /search/ permite listar/paginar/buscar cursos sin identificadores y asignaturas por course_id. Se usa el sobre plano del esquema; los ejemplos doblemente anidados son inconsistentes y quedan señalados en REQUESTS.
+- Auditoría: filtros exactos de evento, actor, entidad, IP y rango temporal, conversión de hora local a ISO y paginación después de filtrar en mocks. Usuarios: solo page/page_size están declarados; búsqueda local por página etiquetada, sin parámetros de servidor inventados.
+- Edición: un intento de reemplazo delete/add en un único parche fue rechazado por el editor; se aplicaron operaciones separadas, sin pérdida de cambios ni modificación de rutas compartidas.
+- Pruebas añadidas: cursos históricos/paginación/búsqueda, parámetros de usuarios, filtros de auditoría anteriores a paginación y exportación de asignaturas sin identificadores. Comprobaciones previas al primer commit en curso.
+- Primer bloque validado: npm run check correcto (24/24 pruebas en 6 archivos, lint y build correctos, audit:style 0 errores y los 2 avisos preexistentes de auth); npm run audit:ownership correcto. El índice de este commit excluye los nuevos auxiliares de importación, que se entregarán en el siguiente bloque.
+
 ## 2026-10-17 — Implementación admin-ops
 
 - Rama comprobada: codex/admin-ops; trabajo limitado a este worktree y rutas asignadas. Leídos AGENTS, estilo, skill local, arquitectura, inventario, brief y ownership. Sin push/merge ni acceso a otros worktrees.

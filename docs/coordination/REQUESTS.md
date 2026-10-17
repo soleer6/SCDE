@@ -2,6 +2,13 @@
 
 Format: `- [agent] [date] what / why / workaround used`
 
+## Actualización tras consultar el OpenAPI real (2026-10-17)
+
+- [codex] [2026-10-17] Resueltos los bloqueos anteriores de lista de cursos, multipart, export de asignaturas y filtros de auditoría: autorización expresa para leer el YAML real. /search/ sin IDs devuelve PaginatedCourseList; con course_id lista asignaturas según descripción y ejemplo SubjectDetail. Los ejemplos de /search/ están doblemente envueltos y contradicen el esquema plano; se respeta el sobre de paginación definido, sin doble envoltura. Solicito corregir/documentar la respuesta polimórfica en el esquema.
+- [codex] [2026-10-17] /users/ solo declara page y page_size en el YAML, pese a su descripción de filtros. No se añaden is_active/is_staff/search de servidor: búsqueda local etiquetada por página y page_size real. Solicito completar los parámetros OpenAPI si el backend admite más filtros. /audit-logs/ sí declara actor_id, entity_id, entity_type, event_type, ip_address, timestamp_from, timestamp_to, page y page_size; implementados.
+- [codex] [2026-10-17] Sigue sin existir activación de curso en PatchedUpdateCourseRequest. La lista ya funciona mediante /search/; se mantiene pendiente únicamente la activación.
+- [codex] [2026-10-17] Guía visual v2 leída en solo lectura del worktree de Claude por indicación del usuario. Features preparadas sin copiar tokens/primitivas: sentence case, códigos con --mono, estados neutros/activos con tono accent, pendientes con tono gold (la guía v2 lo mapea a amber). La base local sigue siendo oscura y uppercase: su apariencia final depende de la integración de la base v2 por el auditor.
+
 - [codex] [2026-10-17] El inventario no contiene GET /courses/ ni una operación para activar cursos (PATCH solo admite label/start_date/end_date). Se necesita documentar/proveer lista y activación para completar la gestión de cursos solicitada. Solución local: curso activo destacado, consulta por ID y creación/edición de campos permitidos; nunca se envía is_active.
 - [codex] [2026-10-17] Faltan esquemas de los elementos de /subjects/export/ (solo array), PaginatedCourseList de /search/, UserImportRequestRequest y SubjectFileUploadRequest. Solicito ampliar API_INVENTORY.md con estos contratos. Directorio usa provisionalmente los campos ya documentados de SubjectResponse; importaciones pendientes para no inventar nombres multipart ni columnas. Exportación de usuarios descarga la respuesta sin interpretarla.
 - [codex] [2026-10-17] No se enumeran filtros de usuarios/auditoría en el inventario: usuarios usa únicamente page y search autorizados expresamente por el brief; auditoría usa page y filtro local claramente etiquetado. Solicito documentar los filtros admitidos.

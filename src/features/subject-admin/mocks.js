@@ -26,9 +26,15 @@ const permissionTarget = (db, user, id, editing) => {
   return m;
 };
 export const mocks = [
-  { method: 'GET', path: '/subjects/export/', handler: ({ db, user }) => {
+  { method: 'GET', path: '/subjects/export/', handler: ({ db, user, query }) => {
     requireStaff(user);
-    return db.subjects.map((s) => ({ id: s.id, name: s.name, code: s.code, semester: s.semester, course_id: s.course_id, coordinator_id: s.coordinator_id, coordinator_email: db.users.find((u) => u.id === s.coordinator_id)?.email ?? '', created_at: s.created_at ?? '2026-09-01T00:00:00Z', updated_at: s.updated_at ?? '2026-09-01T00:00:00Z' }));
+    return db.subjects.filter((s) => !query.get('course_id') || s.course_id === query.get('course_id')).map((s) => ({
+      name: s.name, code: s.code, semester: s.semester,
+      coordinator_email: db.users.find((u) => u.id === s.coordinator_id)?.email ?? '',
+      groups: db.groups.filter((g) => g.subject_id === s.id).map((g) => g.label),
+      teachers: db.memberships.filter((m) => m.subject_id === s.id && m.is_active && m.role === 'TEACHER').map((m) => db.users.find((u) => u.id === m.user_id)?.email),
+      students: db.memberships.filter((m) => m.subject_id === s.id && m.is_active && m.role === 'STUDENT').map((m) => ({ email: db.users.find((u) => u.id === m.user_id)?.email, group: db.groups.find((g) => g.id === m.group_id)?.label ?? '' })),
+    }));
   } },
   { method: 'GET', path: '/subjects/:subject/members/', handler: ({ db, user, params, query }) => {
     permit(db, user, params.subject, 'can_manage_members');
