@@ -33,9 +33,11 @@ try {
 
     $json = & $cli deploy $outputPath --prod --yes --non-interactive --json
     if ($LASTEXITCODE -ne 0) { throw 'El despliegue de Vercel ha fallado.' }
-    $deployment = ($json -join "`n") | ConvertFrom-Json
-    if (-not $deployment.url) { throw 'Vercel no ha devuelto una URL verificable.' }
-    $baseUrl = if ($deployment.url -match '^https://') { $deployment.url } else { 'https://' + $deployment.url }
+    $result = ($json -join "`n") | ConvertFrom-Json
+    $deployment = if ($result.deployment) { $result.deployment } else { $result }
+    $publicUrl = if ($deployment.productionUrl) { $deployment.productionUrl } else { $deployment.url }
+    if (-not $publicUrl) { throw 'Vercel no ha devuelto una URL verificable.' }
+    $baseUrl = if ($publicUrl -match '^https://') { $publicUrl } else { 'https://' + $publicUrl }
 
     # Public checks deliberately do not reuse CLI credentials or bypass deployment protection.
     foreach ($route in @('/', '/admin/users', '/notifications', '/profile')) {
@@ -46,7 +48,6 @@ try {
     }
     Set-Content -LiteralPath $deploymentPath -Value ($json -join "`n") -Encoding UTF8
     Write-Output "Despliegue verificado: $baseUrl"
-    if ($deployment.alias) { Write-Output ('Dominios asignados: ' + ($deployment.alias -join ', ')) }
 } finally {
     Pop-Location
 }
