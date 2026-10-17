@@ -1,0 +1,102 @@
+/* Global reset + element defaults. Only element selectors and a few
+   utilities live here; component styles live next to components. */
+
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@300;400;500&display=swap');
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  background: var(--bg);
+  color-scheme: dark;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  font: 300 var(--fs-body)/1.6 var(--mono);
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+b,
+strong {
+  font-weight: 500;
+}
+
+kbd {
+  font: inherit;
+  font-size: var(--fs-micro);
+  border: 1px solid var(--line-2);
+  padding: 0 5px;
+  color: var(--muted);
+}
+
+::selection {
+  background: var(--gold-dim);
+  color: var(--fg);
+}
+
+:focus-visible {
+  outline: 1px solid var(--gold);
+  outline-offset: 3px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--line-3);
+}
+
+/* ---- Utilities (keep this list short) ---- */
+.u-muted { color: var(--muted); }
+.u-gold { color: var(--gold); }
+.u-green { color: var(--green); }
+.u-rust { color: var(--rust); }
+.u-serif { font-family: var(--serif); font-weight: 400; }
+.u-num { font-variant-numeric: tabular-nums; }
+.u-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

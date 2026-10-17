@@ -1,0 +1,104 @@
+/* =====================================================================
+   SCDE design tokens — single source of truth for the visual language.
+   Direction: dark, minimal, technical (reference: breachr prototype).
+   Rule: components NEVER hardcode colours, fonts or spacing; they use
+   these variables. See docs/frontend/STYLE_GUIDE.md.
+   ===================================================================== */
+
+:root {
+  /* ---- Surfaces ---- */
+  --bg: #07080a;          /* page */
+  --bg-2: #0b0d10;        /* panels, inputs */
+  --bg-3: #11141a;        /* hover / raised row */
+  --overlay: rgba(7, 8, 10, 0.86);
+
+  /* ---- Hairlines ---- */
+  --line: #1a1e24;        /* default 1px rule */
+  --line-2: #262b33;      /* stronger rule, input borders */
+  --line-3: #363c46;      /* hover border */
+
+  /* ---- Text ---- */
+  --fg: #e9e5db;          /* primary text (warm off-white) */
+  --muted: #8a8c92;       /* secondary text, labels (AA on --bg) */
+  --dim: #5a5e66;         /* decorative / disabled only — never for essential copy */
+
+  /* ---- Signal colours (meaningful, never decorative) ---- */
+  --gold: #c9a45c;        /* primary action, current step, focus */
+  --gold-dim: #6b5833;
+  --gold-wash: rgba(201, 164, 92, 0.08);
+  --green: #79a283;       /* pass, done, healthy */
+  --green-dim: #34483a;
+  --green-wash: rgba(121, 162, 131, 0.08);
+  --rust: #b8674f;        /* fail, error, destructive */
+  --rust-dim: #5a3328;
+  --rust-wash: rgba(184, 103, 79, 0.08);
+  --steel: #7f93a8;       /* info, in-progress (cool neutral) */
+  --steel-wash: rgba(127, 147, 168, 0.08);
+
+  /* ---- Annotation ink (on white paper, not on UI) ---- */
+  --ink-red: #d6342c;
+  --ink-blue: #2357c9;
+  --ink-green: #1f8a4c;
+  --ink-black: #111111;
+
+  /* ---- Type ---- */
+  --serif: "Instrument Serif", "Times New Roman", serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --fs-micro: 10px;       /* meta, table headers */
+  --fs-label: 11px;       /* labels, eyebrows, buttons (uppercase) */
+  --fs-body: 13px;        /* default text */
+  --fs-lead: 14px;        /* lede paragraphs */
+  --fs-h3: 22px;          /* serif */
+  --fs-h2: 36px;          /* serif */
+  --fs-h1: 52px;          /* serif page titles */
+  --fs-display: clamp(48px, 7vw, 96px); /* login / hero only */
+
+  --track-label: 0.16em;
+  --track-eyebrow: 0.22em;
+
+  /* ---- Space (4px base) ---- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+
+  /* ---- Layout ---- */
+  --topbar-h: 52px;
+  --rail-w: 220px;
+  --content-max: 1280px;
+  --gutter: 40px;
+  --grid-cell: 80px;
+
+  /* ---- Shape & motion ---- */
+  --radius: 0;            /* square everywhere; hierarchy comes from lines */
+  --ease: cubic-bezier(0.7, 0, 0.2, 1);
+  --t-fast: 0.15s;
+  --t-med: 0.3s;
+  --t-slow: 0.6s;
+
+  --z-topbar: 50;
+  --z-overlay: 80;
+  --z-toast: 100;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --gutter: 16px;
+    --fs-h1: 36px;
+    --fs-h2: 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-fast: 0s;
+    --t-med: 0s;
+    --t-slow: 0s;
+  }
+}
