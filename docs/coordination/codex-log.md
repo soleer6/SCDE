@@ -31,5 +31,17 @@
 - Primer bloque preparado: administración (usuarios/cursos/configuración/auditoría), primitivas locales reutilizadas por las áreas asignadas, utilidades de pruebas y documentación de decisiones/peticiones. Los otros módulos se entregan en commits separados. Antes de confirmar cada bloque se ejecutan check y audit:ownership y se inspecciona el índice.
 - Commit 6e61ca5: administración entregada. check previo correcto (20/20 pruebas, build y estilo); audit:ownership correcto y rutas preparadas revisadas, exclusivamente admin y documentación asignada.
 - Segundo bloque: perfil y notificaciones con sus pruebas. Se solicita sincronización del email del shell mediante una futura API pública de AuthProvider; se evita escribir desde la feature el almacenamiento interno del proveedor. Las preferencias y el email se guardan correctamente en /profile/.
+- Commit db84773: perfil y notificaciones entregados. check previo completo correcto (20/20 pruebas) y audit:ownership correcto; índice limitado a estas features y documentos asignados.
+- Tercer bloque: administración por asignatura. Se muestran también identificadores de usuario, membresía y grupo para que la asignación por ID documentada sea operable; no se inventa un buscador público de usuarios para coordinadores. Los identificadores de usuario se consultan en administración por gestores. Los endpoints de permisos rechazan también cuentas inactivas en mocks.
+
+### Guía para la auditoría final
+
+- Gestor admin@uam.es / admin123: /admin/users, /admin/courses, /admin/config, /admin/audit y /admin/subjects. En cursos se puede consultar c-2526 como ejemplo de curso histórico; no se ofrece activación no documentada.
+- Coordinación maria.perez@uam.es / prof123: /subjects/s-mat101/manage, con pestañas independientes para miembros, grupos y permisos. Ejemplo de docente: membresía m-2. La prueba cubre permitir gestionar grupos y restaurar la herencia del rol.
+- Estudiante elena.rodriguez@estudiante.uam.es / est123: /profile y /notifications; dos avisos sin leer en la demo. No ve navegación de administración y los endpoints de gestión rechazan sus peticiones.
+- Docente javier.ruiz@uam.es / prof123: gestión de MAT101 denegada por defecto; un override de can_manage_groups habilita solo esa operación, sin conceder gestión de miembros (ver prueba).
+- P1 entregado en lo documentado: exportación de usuarios y asignaturas, registro de auditoría paginado y pruebas de las cuatro features. Importaciones no implementadas hasta disponer de los contratos multipart de la petición. No se añadieron dependencias ni se modificó la base compartida.
+- Límites pendientes en REQUESTS: cursos (lista/activación), contrato de exportación de asignaturas y búsqueda jerárquica, importaciones, filtros de servidor, descubrimiento de membresías, integración del enlace de gestión desde workspace, sesión tras cambiar email y accesibilidad de primitivas compartidas.
+- Validación previa al tercer commit: npm run check correcto, 20/20 pruebas en 5 archivos, lint y build correctos, audit:style 0 errores (solo 2 avisos preexistentes de auth). npm run audit:ownership correcto; índice revisado sin rutas compartidas y git diff --cached --check sin incidencias. Se entrega el bloque de asignaturas junto con los identificadores necesarios en la tabla de usuarios. No se ha hecho push ni merge.
 
 (Codex: append entries — date, task, decisions, errors found, fixes, commands + results.)
