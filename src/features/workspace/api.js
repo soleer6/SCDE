@@ -1,5 +1,7 @@
 import { api, asList } from '../../lib/api/client.js';
+import { useEffect } from 'react';
 import { useApi } from '../../lib/hooks.js';
+import { useAuth } from '../../lib/auth/AuthProvider.jsx';
 import { decodeJwt, tokenStore } from '../../lib/api/tokens.js';
 
 /* GET /my-subjects/ -> MySubject[] (role is per subject) */
@@ -34,6 +36,12 @@ export const clearSubjectsCache = () => {
 /** Returns { subjects, loading, error } and helper roleOf(subjectId). */
 export function useMySubjects() {
   const res = useApi(() => getMySubjectsCached(), []);
+  const { session, updateSession } = useAuth();
+  // Teach the session whether the user teaches anywhere (nav uses it).
+  const teaches = res.data ? res.data.some((s) => s.role !== 'STUDENT') : undefined;
+  useEffect(() => {
+    if (teaches !== undefined && session && session.teaches !== teaches) updateSession({ teaches });
+  }, [teaches, session, updateSession]);
   const roleOf = (subjectId) => res.data?.find((s) => s.id === subjectId)?.role ?? null;
   return { ...res, subjects: res.data ?? [], roleOf };
 }
