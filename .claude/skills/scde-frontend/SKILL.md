@@ -1,15 +1,17 @@
 ---
 name: scde-frontend
-description: Build or modify any UI in the SCDE frontend (React + Vite) following its fixed minimal/technical dark visual language and feature-module architecture. Use before writing any page, component, CSS or mock handler in this repo.
+description: Build or modify any UI in the SCDE frontend (React + Vite) following its fixed minimal, light, educational visual language (v2) and feature-module architecture. Use before writing any page, component, CSS or mock handler in this repo.
 ---
 
 # SCDE frontend skill
 
 Adapted from Anthropic's `frontend-design` skill (anthropics/skills). The upstream
 skill asks the designer to choose a distinctive direction; **here the direction is
-already fixed by the client brief** (dark, minimal, technical — BREACHR reference),
-so this skill keeps the upstream discipline (restraint, intentional structure,
-copy quality, self-critique) and pins the aesthetic.
+fixed by the client**: minimal and educational (a calm, light, Moodle-like study
+tool done with restraint). A first dark/gold/monospace version copied the client's
+reference site too literally and was rejected — references inform one axis
+(minimalism), not the palette. This skill keeps the upstream discipline (restraint,
+intentional structure, copy quality, self-critique) and pins the aesthetic.
 
 ## Before writing code
 1. Read `docs/frontend/STYLE_GUIDE.md` (binding) and `docs/frontend/ARCHITECTURE.md`.
@@ -31,6 +33,8 @@ copy quality, self-critique) and pins the aesthetic.
 ## Design discipline (from upstream, kept)
 - Spend boldness in one place per screen: usually the key number (grade, pending
   count) set in large serif. Everything else quiet.
+- Think of the audience: a teacher with 120 exams to grade and a nervous student
+  checking a grade. Legibility and calm over spectacle; sentence case, no shouting.
 - Structure is information: borders, numbering, eyebrows only when they encode
   something true (a real sequence, real context).
 - Motion only answers user actions. One loader style.
@@ -43,7 +47,7 @@ copy quality, self-critique) and pins the aesthetic.
 ## Self-critique checklist (run before every commit)
 - [ ] `npm run check` passes (lint, tests, build, style audit).
 - [ ] `npm run audit:ownership` passes.
-- [ ] No raw colours / radius / shadows; no restyled `.ui-*`.
+- [ ] No raw colours; radius/shadows only via tokens; no uppercase; no restyled `.ui-*`.
 - [ ] Every string translated ES/EN.
 - [ ] Loading, empty, error and permission-denied states exist for every data view.
 - [ ] Works in mock mode with every demo account that can reach the view.

@@ -23,7 +23,7 @@ export default function AppShell() {
     <div className="shell">
       <header className="shell-topbar">
         <NavLink to="/" className="shell-brand">
-          <span className="shell-brand__mark" aria-hidden="true" />
+          <span className="shell-brand__mark" aria-hidden="true">S</span>
           {t('brand')}
         </NavLink>
         <span className="shell-topbar__meta">{t('brandLong')}</span>
@@ -41,7 +41,13 @@ export default function AppShell() {
             {i18n.resolvedLanguage === 'es' ? 'EN' : 'ES'}
           </button>
           <span className="shell-topbar__user" title={session?.email}>
-            {session?.firstName} {session?.lastName}
+            <span className="shell-topbar__avatar" aria-hidden="true">
+              {session?.firstName?.[0]}
+              {session?.lastName?.[0]}
+            </span>
+            <span className="shell-topbar__name">
+              {session?.firstName} {session?.lastName}
+            </span>
           </span>
           <button type="button" className="shell-topbar__btn" onClick={onLogout}>
             {t('logout')}

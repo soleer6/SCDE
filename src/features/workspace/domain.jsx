@@ -21,7 +21,7 @@ export function StatusBadge({ status }) {
 export function RoleBadge({ role }) {
   const { t } = useTranslation();
   return (
-    <Badge plain tone={role === 'STUDENT' ? undefined : 'gold'}>
+    <Badge plain tone={role === 'STUDENT' ? undefined : 'accent'}>
       {t(`roles.${role}`, { defaultValue: role })}
     </Badge>
   );

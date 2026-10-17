@@ -1,71 +1,73 @@
-# SCDE — Style guide (binding for every agent)
+# SCDE — Style guide (binding for every agent) · v2
 
-Direction: **minimal, technical, dark**. Reference: the BREACHR prototype
-(https://dtt-prodigys.vercel.app/) — near-black canvas, warm off-white text, one
-gold signal colour, hairline rules, monospace body, serif display. We are building
-a *working tool* for graders and students, not a landing page: density and
-clarity beat spectacle.
+**Direction: minimal and educational.** A calm, light study environment for
+teachers and students — the role Moodle plays, done with restraint. The BREACHR
+site shared by the user is a reference for *minimalism only* (hierarchy from space,
+hairlines, few elements); its dark palette, gold accent, uppercase monospace labels
+and "terminal" feel are explicitly **not** part of this product.
+
+> v1 (dark/gold/mono, Oct 2026) was rejected by the user: "parece un Binance, no una
+> app educativa". Token *names* from v1 (`--gold*`) remain as aliases of `--accent*`
+> so older CSS keeps working; new code must use the v2 names.
 
 ## 1. Tokens (src/styles/tokens.css) — never hardcode
 | Role | Token | Use |
 |---|---|---|
-| page | `--bg` #07080a | body |
-| panel / input | `--bg-2` | forms, dialogs, raised blocks |
-| hover row | `--bg-3` | table hover, button hover |
-| rules | `--line`, `--line-2`, `--line-3` | 1px borders, dividers |
-| text | `--fg`, `--muted`, `--dim` | `--dim` is decorative/disabled only |
-| signal | `--gold` | primary action, current step, focus, selection |
-| pass | `--green` | passed, done, healthy |
-| fail | `--rust` | failed, errors, destructive |
-| info | `--steel` | in progress, neutral info |
+| page | `--bg` #f6f7f9 | body background (cool paper) |
+| surface | `--bg-2` #fff | panels, tables, inputs, cards |
+| hover/selected | `--bg-3`, `--accent-wash` | row hover, active nav |
+| PDF desk | `--desk` | background behind exam sheets |
+| rules | `--line`, `--line-2`, `--line-3` | 1px borders |
+| text | `--fg`, `--muted`, `--dim` | `--dim` only placeholders/disabled |
+| primary | `--accent` ink blue (+ `-strong`, `-line`, `-wash`) | actions, links, current step, focus |
+| pass | `--green*` | passed, done, published |
+| attention | `--amber*` | pending, to grade, in review |
+| fail/error | `--rust*` (red pen) | fail, errors, destructive |
+| neutral info | `--steel*` | processing states |
 
-Type: `--mono` (JetBrains Mono 300, 13px) for everything; `--serif` (Instrument
-Serif 400) only for page titles (`.ui-h1/.ui-h2/.ui-h3`), big numbers (grades,
-stats) and the login display. Sizes via `--fs-*`. Spacing via `--s-1..9` (4px base).
+Type: `--sans` (Atkinson Hyperlegible — built for legibility) for all UI text;
+`--serif` (Source Serif 4, 600) for page titles and big numbers (grades, stats);
+`--mono` only for codes (subject codes, NIA, ids). Sizes `--fs-*` (body 15px).
+Shape: `--radius` (10px) panels/cards/dialogs, `--radius-sm` (6px) buttons/inputs,
+`--radius-pill` badges. Elevation: only `--shadow-sheet` (PDF sheet, dialogs, toasts).
 
 ## 2. Hard rules (checked by `npm run audit:style`)
-1. No raw colours, no `font-family`, no `border-radius`, no `box-shadow` in features.
-2. Never restyle `.ui-*` classes. Compose primitives; feature CSS uses its own
-   prefix (`.grading-*`, `.admin-*`, …).
-3. All visible copy goes through i18n (`t('ns:key')`), ES and EN.
-4. Square corners. Hierarchy comes from hairlines, spacing and type — not shadows/cards.
-5. Inline `style` only for dynamic geometry (canvas size, progress width).
+1. No raw colours / fonts; radius and shadows only through tokens.
+2. Never restyle `.ui-*` classes in a feature. Feature CSS uses its own prefix.
+3. All visible copy through i18n (ES + EN).
+4. **Sentence case.** No `text-transform: uppercase`, no wide letter-spacing.
+5. Inline `style` only for dynamic geometry.
 
 ## 3. Composition rules (reviewed by the auditor)
-- **Pages** start with `<PageHeader crumbs eyebrow title lede actions />`. Eyebrow =
-  real context (subject code · course), not decoration.
-- **Lists of records** → `DataTable` (dense rows, tabular numbers, row click to drill in).
-  Not card grids. Card-like `Panel` only for genuinely distinct blocks.
-- **Numbers that matter** (grade, totals) → serif, large, `u-num`. Colour only if it
-  carries meaning (green ≥ pass threshold, rust < pass).
-- **Status** → `Badge` with tone mapped from the state machine (see §4).
-- **Sequences** (instance lifecycle, wizard steps) → `StatusRail` with `01 → 02`.
-  Numbering is ONLY for real sequences.
-- **Primary action**: at most one `variant="solid"` per view. Others `primary` / default / `ghost`.
-- **Destructive** → `variant="danger"` + `Dialog` confirmation.
-- **Empty states** say what to do next and offer the action. **Errors** use
-  `ErrorState` (symbolic backend code → translated message + retry).
-- **Loading** → `Loader` (thin gold scan line); never spinners.
-- Motion: only in response to user action, or the single loader. No entrance animations.
-- Copy: sentence case in prose, UPPERCASE only for labels/buttons via CSS (the
-  primitives already do it — never type caps in the source). Active verbs:
-  "Publicar notas", toast "Notas publicadas".
+- Pages start with `<PageHeader crumbs eyebrow title lede actions />`. The eyebrow is
+  real context (subject · date), short, muted.
+- Records → `DataTable` (white table in a rounded frame). Distinct objects (subjects)
+  may be cards. Avoid dashboards made of identical cards.
+- Key numbers (grade, totals) → serif, large. Colour only when meaningful
+  (green ≥ 5, red < 5).
+- Status → `Badge` (soft pill) with tone from §4.
+- Real sequences (instance lifecycle, onboarding steps) → `StatusRail` / numbered circles.
+- One `variant="solid"` (filled blue) per view; secondary `primary` (blue outline) or default.
+- Destructive → `variant="danger"` + `Dialog`.
+- Empty states say what happens next; errors use `ErrorState`; loading uses `Loader`.
+- Motion only in response to the user (and the loader).
+- Copy: plain, friendly, active verbs; the same verb from button to toast
+  ("Publicar notas" → "Notas publicadas"). Address users as "tú".
 
-## 4. Status → tone (instance state machine, backend `InstanceStatus`)
+## 4. Status → tone
 | Status | Tone |
 |---|---|
 | ASSEMBLING, RECEIVED, QUEUED | steel |
-| PENDING_GRADING | gold |
-| GRADED | green (plain for teacher lists) |
-| PUBLISHED | green |
-| IN_REVIEW, PENDING_REVIEW | gold |
-| FINALIZED, ARCHIVED | none (muted) |
+| PENDING_GRADING | gold (= amber, attention) |
+| GRADED, PUBLISHED | green |
+| IN_REVIEW, PENDING_REVIEW | gold (amber) |
+| FINALIZED, ARCHIVED | none |
+Badge tones: `accent`, `gold` (amber), `green`, `rust`, `steel`.
 
 ## 5. Accessibility floor
-Visible focus (gold 1px outline, built in), labels on every control (`Field`),
-keyboard row navigation (`DataTable` rows are focusable), `--muted` is the minimum
-contrast for real text, reduced motion respected (tokens collapse durations).
+2px blue focus ring (built in), labels on every control, keyboard row navigation,
+`--muted` minimum for real text, reduced motion respected.
 
 ## 6. Responsive
-≥900px: top bar + left rail + content. <900px: rail becomes a horizontal strip.
-Tables scroll horizontally inside `.ui-table-wrap`; nothing else may overflow the page.
+≥900px: top bar + white left nav + content. <900px: nav becomes a horizontal strip.
+Tables scroll inside their frame; nothing else may overflow.

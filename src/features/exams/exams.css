@@ -1,5 +1,5 @@
 .ex-body {
-  margin-top: var(--s-7);
+  margin-top: var(--s-6);
 }
 .ex-student {
   display: flex;
@@ -23,5 +23,6 @@
   border-bottom: 0;
 }
 .ex-problems__total {
-  color: var(--gold);
+  font-weight: 700;
+  background: var(--bg);
 }

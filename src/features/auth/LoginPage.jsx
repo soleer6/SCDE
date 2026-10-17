@@ -47,10 +47,9 @@ export default function LoginPage() {
 
   return (
     <div className="login">
-      <div className="login__grid" aria-hidden="true" />
       <header className="login__top">
         <span className="login__brand">
-          <span className="login__mark" aria-hidden="true" />
+          <span className="login__mark" aria-hidden="true">S</span>
           {tc('brand')}
         </span>
         <span className="login__meta">{t('meta')}</span>
@@ -59,10 +58,20 @@ export default function LoginPage() {
       <section className="login__hero">
         <h1 className="login__display">{t('headline')}</h1>
         <p className="login__sub">{t('sub')}</p>
+        <ol className="login__steps">
+          {['scan', 'grade', 'review'].map((k, i) => (
+            <li key={k}>
+              <span className="login__step-idx">{i + 1}</span>
+              <span>
+                <b>{t(`steps.${k}.title`)}</b> {t(`steps.${k}.body`)}
+              </span>
+            </li>
+          ))}
+        </ol>
       </section>
 
       <form className="login__form" onSubmit={submit} noValidate>
-        <h2 className="ui-eyebrow">{t('title')}</h2>
+        <h2 className="login__title">{t('title')}</h2>
         <Field label={t('email')} error={fieldErr('email')}>
           {(id) => <Input id={id} type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />}
         </Field>
@@ -82,7 +91,7 @@ export default function LoginPage() {
 
         {USE_MOCK && (
           <div className="login__demo">
-            <p className="ui-eyebrow">{t('demo')}</p>
+            <p className="login__demo-title">{t('demo')}</p>
             <ul>
               {DEMO.map(([e, p, role]) => (
                 <li key={e}>
@@ -102,6 +111,7 @@ export default function LoginPage() {
           </div>
         )}
       </form>
+      <footer className="login__foot">{t('foot')}</footer>
     </div>
   );
 }
