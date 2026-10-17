@@ -34,7 +34,7 @@ export default function UsersPage() {
     </form>
     {error && <ErrorState error={error} />}{notice && <p role="status">{notice}</p>}
     <Records state={users} action={<Button onClick={create}>{t('create')}</Button>} columns={[
-      { key: 'email', header: t('email') }, { key: 'first_name', header: t('first_name'), render: (u) => `${u.first_name} ${u.last_name}` }, { key: 'nia', header: t('nia') },
+      { key: 'email', header: t('email') }, { key: 'id', header: t('id') }, { key: 'first_name', header: t('first_name'), render: (u) => `${u.first_name} ${u.last_name}` }, { key: 'nia', header: t('nia') },
       { key: 'is_active', header: t('status'), render: (u) => <Badge tone={u.is_active ? 'green' : undefined}>{t(u.is_active ? 'active' : 'inactive')}</Badge> },
       { key: 'actions', header: t('actions'), render: (u) => <div className="admin-actions"><Button size="sm" onClick={() => setEditing(u)}>{t('edit')}</Button><Button size="sm" variant="danger" onClick={() => { setError(null); setConfirm({ user: u, type: 'toggle' }); }}>{t('toggle')}</Button><Button size="sm" variant="danger" onClick={() => { setError(null); setConfirm({ user: u, type: 'reset' }); }}>{t('reset')}</Button></div> },
     ]} />

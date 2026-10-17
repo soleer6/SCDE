@@ -1,0 +1,12 @@
+import { api } from '../../lib/api/client.js';
+const root = (id) => `/subjects/${encodeURIComponent(id)}`;
+export const getMembers = (id, page = 1) => api.get(`${root(id)}/members/`, { page });
+export const assignMember = (id, body) => api.post(`${root(id)}/members/`, body);
+export const removeMember = (id, membership) => api.del(`${root(id)}/members/${membership}/`);
+export const getGroups = (id, page = 1) => api.get(`${root(id)}/groups/`, { page });
+export const createGroup = (id, body) => api.post(`${root(id)}/groups/`, body);
+export const updateGroup = (id, group, body) => api.patch(`${root(id)}/groups/${group}/`, body);
+export const deleteGroup = (id, group) => api.del(`${root(id)}/groups/${group}/`);
+export const getPermissions = (id) => api.get(`/memberships/${encodeURIComponent(id)}/permissions/`);
+export const updatePermissions = (id, permissions) => api.patch(`/memberships/${encodeURIComponent(id)}/permissions/`, { permissions });
+export const exportSubjects = () => api.get('/subjects/export/');
