@@ -1,0 +1,76 @@
+.setup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--s-4);
+  align-items: start;
+}
+.setup-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+}
+.setup-pad {
+  padding: var(--s-4);
+}
+.setup-pad ul {
+  margin-top: var(--s-2);
+  padding-left: var(--s-5);
+}
+.setup-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+  padding: var(--s-4);
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+}
+.setup-inline {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+.setup-inline .ui-field {
+  min-width: 200px;
+}
+.setup-num {
+  width: 96px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.setup-inline .ui-field:has(.setup-num) {
+  min-width: 0;
+}
+.setup-rubric {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  counter-reset: crit;
+}
+.setup-rubric li {
+  display: grid;
+  grid-template-columns: 1fr 96px auto;
+  gap: var(--s-2);
+  align-items: center;
+}
+.setup-two {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--s-5);
+}
+.setup-fieldset {
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.setup-fieldset legend {
+  font-size: var(--fs-label);
+  font-weight: 700;
+  margin-bottom: var(--s-2);
+}

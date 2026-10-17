@@ -6,7 +6,7 @@ import { useAction, useApi } from '../../lib/hooks.js';
 import { formatDate, formatDateTime, formatScore, toNumber } from '../../lib/format.js';
 import { can } from '../../lib/permissions.js';
 import {
-  Badge, Button, DataTable, Dialog, EmptyState, ErrorState, Field, Input, KeyValue, Loader, PageHeader, Panel, Stats, Tabs, useToast,
+  Badge, Button, ButtonLink, DataTable, Dialog, EmptyState, ErrorState, Field, Input, KeyValue, Loader, PageHeader, Panel, Stats, Tabs, useToast,
 } from '../../ui';
 import { Score, StatusBadge } from '../workspace/domain.jsx';
 import { GRADED_STATES, studentName } from '../workspace/model.js';
@@ -43,6 +43,7 @@ export default function TeacherExamView({ exam, role }) {
   const canPublish = can(session, role, 'can_publish_grades');
   const canReview = can(session, role, 'can_manage_reviews');
   const canExport = can(session, role, 'can_export_grades');
+  const canSetup = ['can_create_exams', 'can_create_rubric', 'can_assign_correctors'].some((p) => can(session, role, p));
   const allPublished = list.length > 0 && list.every((i) => ['PUBLISHED', 'ARCHIVED'].includes(i.status));
 
   const onPublish = async () => {
@@ -79,6 +80,7 @@ export default function TeacherExamView({ exam, role }) {
         title={exam.name}
         actions={
           <>
+            {canSetup && <ButtonLink to={`/exams/${exam.id}/setup`}>{t('actions.configure')}</ButtonLink>}
             {canExport && <Button onClick={onExport}>{t('actions.export')}</Button>}
             {canReview && allPublished && !review.data && (
               <Button variant="primary" onClick={() => setReviewOpen(true)}>

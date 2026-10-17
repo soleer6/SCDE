@@ -1,5 +1,8 @@
 {
-  "nav": { "overview": "Inicio", "subjects": "Asignaturas" },
+  "nav": {
+    "overview": "Inicio",
+    "subjects": "Asignaturas"
+  },
   "overview": {
     "eyebrow": "Curso 2026-2027",
     "title": "Hola, {{name}}",
@@ -33,10 +36,19 @@
     "details": "Detalles",
     "coordinator": "Coordinación",
     "groups": "Grupos",
-    "manage": "Gestionar asignatura"
+    "manage": "Gestionar asignatura",
+    "newExam": "Nuevo examen"
   },
   "cols": {
-    "exam": "Examen", "student": "Estudiante", "progress": "Progreso", "problem": "Problema", "received": "Recibida",
-    "subject": "Asignatura", "date": "Fecha", "problems": "Problemas", "students": "Convocados", "graded": "Corregidos"
+    "exam": "Examen",
+    "student": "Estudiante",
+    "progress": "Progreso",
+    "problem": "Problema",
+    "received": "Recibida",
+    "subject": "Asignatura",
+    "date": "Fecha",
+    "problems": "Problemas",
+    "students": "Convocados",
+    "graded": "Corregidos"
   }
 }

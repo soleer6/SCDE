@@ -125,7 +125,7 @@ export const mocks = [
         complete: covered.length === problems.length,
         total_problems: problems.length,
         covered_problems: covered.length,
-        uncovered: problems.filter((p) => !covered.includes(p)).map((p) => ({ problem_id: p.id, problem_name: p.name, model: models.find((m) => m.id === p.exam_model_id)?.label ?? '' })),
+        uncovered_problems: problems.filter((p) => !covered.includes(p)).map((p) => ({ problem_id: p.id, problem_name: p.name, model: models.find((m) => m.id === p.exam_model_id)?.label ?? '' })),
         total_instances: db.instances.filter((i) => i.exam_id === e.id && i.status !== 'ARCHIVED').length,
         rules_count: rules.length,
       };

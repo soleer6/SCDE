@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../lib/auth/AuthProvider.jsx';
 import { useApi } from '../../lib/hooks.js';
 import { formatDate } from '../../lib/format.js';
 import { can, isTeachingRole } from '../../lib/permissions.js';
-import { ButtonLink, DataTable, EmptyState, ErrorState, KeyValue, Loader, PageHeader, Panel } from '../../ui';
+import { Button, ButtonLink, DataTable, EmptyState, ErrorState, KeyValue, Loader, PageHeader, Panel } from '../../ui';
 import { getAllExamInstances } from '../exams/api.js';
+import NewExamDialog from '../exams/setup/NewExamDialog.jsx';
 import { getSubject, getSubjectExams, useMySubjects } from './api.js';
 import { Progress, RoleBadge } from './domain.jsx';
 import { GRADED_STATES } from './model.js';
@@ -15,6 +17,7 @@ export default function SubjectPage() {
   const { t } = useTranslation('workspace');
   const { session } = useAuth();
   const navigate = useNavigate();
+  const [creating, setCreating] = useState(false);
   const { roleOf, loading: rolesLoading } = useMySubjects();
   const role = roleOf(subjectId);
   const teaching = isTeachingRole(role) || session?.isStaff;
@@ -40,6 +43,7 @@ export default function SubjectPage() {
   if (subject.error) return <ErrorState error={subject.error} onRetry={subject.reload} />;
   const s = subject.data;
   const canManage = can(session, role, 'can_manage_members') || can(session, role, 'can_manage_groups');
+  const canCreate = can(session, role, 'can_create_exams');
 
   const columns = [
     { key: 'name', header: t('cols.exam') },
@@ -66,6 +70,11 @@ export default function SubjectPage() {
               <ButtonLink to={`/subjects/${s.id}/manage`} variant="primary">
                 {t('subject.manage')}
               </ButtonLink>
+            )}
+            {canCreate && (
+              <Button variant="solid" onClick={() => setCreating(true)}>
+                {t('subject.newExam')}
+              </Button>
             )}
           </>
         }
@@ -98,6 +107,7 @@ export default function SubjectPage() {
           />
         </Panel>
       </div>
+      {canCreate && <NewExamDialog subjectId={s.id} open={creating} onClose={() => setCreating(false)} />}
     </>
   );
 }
