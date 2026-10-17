@@ -1,0 +1,167 @@
+% =============================================================================
+%  Memoria del TFG — Frontend del Sistema de Corrección Digital de Exámenes Escritos
+%  Autor: Alejandro Soler Sichling
+%  Tutor: PENDIENTE (ver preamble/metadata.tex)
+%  Grado en Ingeniería Informática — EPS, Universidad Autónoma de Madrid
+%  Curso: 2026/2027
+% =============================================================================
+%  ESTADO: ESQUELETO. Estructura + material factual verificado + marcas \pendiente.
+%  No se ha compilado: no había distribución LaTeX en la máquina de desarrollo.
+%  Ver README.md (origen de la plantilla y receta de compilación).
+%
+%  Clase: tfgtfmthesisuam (E. Anguiano Rey, EPS-UAM), la misma que usa la memoria
+%  del TFG de backend (repositorio SCDEE, docs/main.tex), para que ambas memorias
+%  sean coherentes. Según la Normativa de TFG de la EPS (8/5/2026, art. 5.1.1) la
+%  memoria sigue "las directrices establecidas en la plataforma de TFG": CONFIRMAR
+%  en tfg.eps.uam.es / Moodle que esta plantilla es la exigida para el curso 26/27.
+%
+%  Receta (igual que la memoria del backend):
+%    pdflatex main ; bibtex main ; makeglossaries main ;
+%    makeindex -s main.ist main ; pdflatex main ; pdflatex main
+% =============================================================================
+
+\documentclass[epsbased,tfg,covers,final,printable,extendedindex,%
+               firstnumbered,lof,lot,loc]{tfgtfmthesisuam}
+
+\input{preamble/metadata}
+\input{preamble/acronyms}
+\input{preamble/definitions}
+
+\begin{document}
+\crefname{table}{tabla}{tablas}
+\Crefname{table}{Tabla}{Tablas}
+\crefname{code}{código}{códigos}
+\Crefname{code}{Código}{Códigos}
+
+% -----------------------------------------------------------------------------
+\chapter{Introducción\label{CAP:INTRODUCTION}}
+  \section{Motivación\label{SEC:INTRO-MOTIVATION}}%
+          {chapters/01-introduction/11-motivation}
+  \section{Objetivos\label{SEC:INTRO-OBJECTIVES}}%
+          {chapters/01-introduction/12-objectives}
+  \section[Contexto y coordinación con el TFG de backend]%
+          {Contexto del proyecto y coordinación con el \acs{tfg} de
+           \textit{backend}\label{SEC:INTRO-CONTEXT}}%
+          {chapters/01-introduction/13-context}
+  \section{Estructura del documento\label{SEC:INTRO-STRUCTURE}}%
+          {chapters/01-introduction/14-structure}
+
+% -----------------------------------------------------------------------------
+\chapter{Estado del arte\label{CAP:STATE-OF-THE-ART}}
+  \section[Interfaces de plataformas de corrección]%
+          {Interfaces de plataformas de corrección digital\label{SEC:SOTA-UI}}%
+          {chapters/02-state-of-the-art/21-correction-uis}
+  \section{Tecnologías de \textit{frontend}\label{SEC:SOTA-TECH}}%
+          {chapters/02-state-of-the-art/22-frontend-tech}
+  \section[Contratos de API y desarrollo dirigido por contrato]%
+          {Contratos de \acs{api} y desarrollo dirigido por
+           contrato\label{SEC:SOTA-CONTRACT}}%
+          {chapters/02-state-of-the-art/23-api-contracts}
+  \section[Agentes de programación basados en LLM]%
+          {Agentes de programación basados en modelos de
+           lenguaje\label{SEC:SOTA-AGENTS}}%
+          {chapters/02-state-of-the-art/24-coding-agents}
+  \section{Sistemas de diseño y accesibilidad\label{SEC:SOTA-DESIGN}}%
+          {chapters/02-state-of-the-art/25-design-systems}
+
+% -----------------------------------------------------------------------------
+\chapter{Análisis\label{CAP:ANALYSIS}}
+  \section[Análisis del backend existente]%
+          {Análisis del \textit{backend} existente\label{SEC:AN-BACKEND}}%
+          {chapters/03-analysis/31-backend-analysis}
+  \section{Actores, roles y permisos\label{SEC:AN-ACTORS}}%
+          {chapters/03-analysis/32-actors}
+  \section{Requisitos funcionales del \textit{frontend}\label{SEC:AN-RF}}%
+          {chapters/03-analysis/33-functional}
+  \section{Requisitos no funcionales\label{SEC:AN-RNF}}%
+          {chapters/03-analysis/34-nonfunctional}
+  \section[Huecos del contrato]%
+          {Huecos detectados en el contrato del
+           \textit{backend}\label{SEC:AN-GAPS}}%
+          {chapters/03-analysis/35-gaps}
+
+% -----------------------------------------------------------------------------
+\chapter{Diseño\label{CAP:DESIGN}}
+  \section{Arquitectura general\label{SEC:DES-ARCH}}%
+          {chapters/04-design/41-architecture}
+  \section[Capa de datos, autenticación y simulación]%
+          {Capa de datos, autenticación y simulación del
+           \textit{backend}\label{SEC:DES-DATA}}%
+          {chapters/04-design/42-data-layer}
+  \section{Diseño de la interacción\label{SEC:DES-INTERACTION}}%
+          {chapters/04-design/43-interaction}
+  \section{Sistema de diseño visual\label{SEC:DES-VISUAL}}%
+          {chapters/04-design/44-visual-system}
+  \section{Anotación sobre el examen escaneado\label{SEC:DES-ANNOTATION}}%
+          {chapters/04-design/45-annotation}
+
+% -----------------------------------------------------------------------------
+\chapter{Implementación\label{CAP:IMPLEMENTATION}}
+  \section[Metodología: desarrollo asistido por agentes]%
+          {Metodología: desarrollo asistido por agentes de
+           programación\label{SEC:IMP-METHOD}}%
+          {chapters/05-implementation/51-methodology}
+  \section{Herramientas\label{SEC:IMP-TOOLS}}%
+          {chapters/05-implementation/52-tooling}
+  \section{Partes críticas\label{SEC:IMP-CRITICAL}}%
+          {chapters/05-implementation/53-critical}
+  \section[Coordinación y auditoría del trabajo paralelo]%
+          {Coordinación y auditoría del trabajo en
+           paralelo\label{SEC:IMP-PARALLEL}}%
+          {chapters/05-implementation/54-parallel}
+  \section[Uso de herramientas de IA]%
+          {Uso de herramientas de inteligencia
+           artificial\label{SEC:IMP-AI}}%
+          {chapters/05-implementation/55-ai-use}
+
+% -----------------------------------------------------------------------------
+\chapter{Pruebas y validación\label{CAP:TESTING}}
+  \section{Estrategia de pruebas\label{SEC:TEST-STRATEGY}}%
+          {chapters/06-testing/61-strategy}
+  \section{Pruebas de flujo\label{SEC:TEST-FLOWS}}%
+          {chapters/06-testing/62-flow-tests}
+  \section{Verificación determinista\label{SEC:TEST-AUDITS}}%
+          {chapters/06-testing/63-audits}
+  \section{Cobertura del contrato\label{SEC:TEST-COVERAGE}}%
+          {chapters/06-testing/64-api-coverage}
+  \section[Validación con el backend real]%
+          {Validación con el \textit{backend} real\label{SEC:TEST-REAL}}%
+          {chapters/06-testing/65-real-backend}
+
+% -----------------------------------------------------------------------------
+\chapter[Hacia la generación agéntica de frontends]%
+        {Hacia la generación agéntica de \textit{frontends} a partir
+         de un \textit{backend}\label{CAP:GENERALIZATION}}
+  \section{El proceso como \textit{pipeline}\label{SEC:GEN-PIPELINE}}%
+          {chapters/07-generalization/71-pipeline}
+  \section[Qué es determinista y qué requiere razonamiento]%
+          {Qué es determinista, qué requiere razonamiento y qué
+           requiere a una persona\label{SEC:GEN-CLASSIFICATION}}%
+          {chapters/07-generalization/72-classification}
+  \section{Propuesta de arquitectura\label{SEC:GEN-PROPOSAL}}%
+          {chapters/07-generalization/73-proposal}
+
+% -----------------------------------------------------------------------------
+\chapter{Conclusiones y trabajo futuro\label{CAP:CONCLUSIONS}}
+  \section{Conclusiones\label{SEC:CONC-CONCLUSIONS}}%
+          {chapters/08-conclusions/81-conclusions}
+  \section{Trabajo futuro\label{SEC:CONC-FUTURE}}%
+          {chapters/08-conclusions/82-future-work}
+
+% -----------------------------------------------------------------------------
+\appendix
+
+\chapter{Inventario y cobertura de la API\label{AP:API}}%
+        {appendices/A-api/A-overview}
+\chapter{Manual de instalación y ejecución\label{AP:INSTALL}}%
+        {appendices/B-install/B-overview}
+\chapter{Registro de iteraciones\label{AP:ITERATIONS}}%
+        {appendices/C-iterations/C-overview}
+\chapter[Declaración detallada de uso de IA]%
+        {Declaración detallada del uso de herramientas de
+         IA\label{AP:AI}}%
+        {appendices/D-ai-use/D-overview}
+\chapter{Guía de estilo visual\label{AP:STYLE}}%
+        {appendices/E-style/E-overview}
+
+\end{document}

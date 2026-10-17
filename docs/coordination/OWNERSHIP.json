@@ -12,6 +12,7 @@
         "src/features/results/**",
         "src/features/reviews/**",
         "docs/tfg/**",
+        "docs/memoria/**",
         "<shared>"
       ]
     },

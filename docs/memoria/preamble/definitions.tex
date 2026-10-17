@@ -1,0 +1,27 @@
+% =============================================================================
+%  Definiciones (\newdefinition de la clase) y macros de redacción
+% =============================================================================
+\usepackage{xcolor}
+% Marca visible para lo que falta redactar o decidir. Eliminar todas antes de entregar:
+%   grep -rn "pendiente" chapters appendices front-matter
+\newcommand{\pendiente}[1]{\textcolor{red}{\textbf{[PENDIENTE:} #1\textbf{]}}}
+
+\newdefinition{backend}{backend}{backends}%
+  {Parte del sistema responsable de la lógica de negocio, la persistencia y la
+   exposición de servicios, sin contacto directo con la interfaz de usuario}
+\newdefinition{frontend}{frontend}{frontends}%
+  {Parte del sistema responsable de la interacción con el usuario y de la
+   presentación de la información}
+\newdefinition{instancia}{instancia de examen}{instancias de examen}%
+  {Examen escaneado de un estudiante concreto, con sus páginas, anotaciones y notas}
+\newdefinition{rubrica}{rúbrica}{rúbricas}%
+  {Conjunto de criterios con puntuación con los que se califica un problema}
+\newdefinition{mock}{simulación del backend}{simulaciones del backend}%
+  {Implementación en el navegador que responde a las peticiones con los mismos
+   formatos que el backend real, usada para desarrollar y probar sin él}
+\newdefinition{agente}{agente de programación}{agentes de programación}%
+  {Sistema basado en un modelo de lenguaje que lee y modifica código, ejecuta
+   órdenes y verifica resultados con un grado de autonomía configurable}
+\newdefinition{worktree}{worktree}{worktrees}%
+  {Directorio de trabajo adicional de Git asociado a otra rama del mismo
+   repositorio, que permite trabajar en paralelo sin compartir ficheros}

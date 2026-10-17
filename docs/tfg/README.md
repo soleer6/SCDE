@@ -15,3 +15,6 @@ pensado como materia prima para redactar la memoria. No es texto de memoria.
 Ramas: `frontend/base-v2` (base común), `claude/core-flows`, `codex/admin-ops`,
 `preview/integration` (temporal, solo para ver ambas partes juntas).
 Versión previa conservada en `legacy/modulo-profesor-v1`.
+
+## Memoria LaTeX
+Esqueleto en [`docs/memoria/`](../memoria/README.md) (clase `tfgtfmthesisuam`, normativa EPS 8/5/2026). Comprobación estática: `python docs/memoria/check_tex.py`. Cobertura del contrato: `python scripts/analyze/coverage.py docs/frontend/API_INVENTORY.md src/features --missing`.

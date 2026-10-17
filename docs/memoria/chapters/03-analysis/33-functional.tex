@@ -1,0 +1,18 @@
+\pendiente{Convertir en requisitos numerados (RF-F-x) con trazabilidad a las operaciones de la API (apéndice \ref{AP:API}).}
+
+Requisitos implementados (resumen):
+\begin{itemize}
+  \item Acceso: inicio/cierre de sesión, renovación transparente del \acs{jwt}.
+  \item Inicio por usuario: cola de corrección y revisiones pendientes (\texttt{/my-tasks/}),
+        asignaturas, exámenes del estudiante.
+  \item Docencia: panel de examen (instancias filtrables por estado, publicación de notas,
+        exportación, apertura del periodo de revisión).
+  \item Corrección: \acs{pdf} con anotación a mano alzada, nota por problema manual o por
+        \dfn{rubrica}, comentario, transición de estado.
+  \item Estudiante: nota, desglose, examen corregido y solicitud de revisión, según los
+        permisos del examen y la ventana de revisión.
+  \item Revisión: bandeja docente y resolución de solicitudes.
+  \item Gestión (implementado en la línea paralela): usuarios, cursos, configuración,
+        auditoría, miembros/grupos/permisos de asignatura, notificaciones, perfil.
+\end{itemize}
+Requisitos no cubiertos todavía: ver \cref{SEC:TEST-COVERAGE}.

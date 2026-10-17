@@ -1,0 +1,18 @@
+\pendiente{Redactar a partir de docs/tfg/01-analysis.md.}
+
+Material verificado:
+\begin{itemize}
+  \item Fuente de verdad: \texttt{docs/files/spectacular/SCDEE API.yaml} del \dfn{backend}:
+        96 operaciones, 127 esquemas, autenticación \textit{Bearer} \acs{jwt}.
+  \item Extracción determinista con dos scripts (\texttt{scripts/analyze/endpoints.py},
+        \texttt{schemas.py}) $\rightarrow$ \texttt{docs/frontend/API\_INVENTORY.md}.
+  \item Verificación en el código de lo que el esquema no expresa: \texttt{jwt\_plugin.py}
+        (\textit{claims}), \texttt{MySubjectsView} (rol por asignatura),
+        \texttt{access\_control.py} (visibilidad del estudiante), \texttt{grading.py}
+        (concurrencia optimista), \texttt{VALID\_TRANSITIONS} (máquina de estados).
+  \item Desajustes del prototipo previo con el \dfn{backend} real (6), p.\,ej. nombres de los
+        campos de \textit{token}, rol global inexistente, lectura de un campo
+        \texttt{payload} que la respuesta no contiene.
+  \item Obstáculos técnicos del análisis: clonado fallido por binarios grandes (resuelto con
+        clon parcial y \textit{sparse checkout}).
+\end{itemize}

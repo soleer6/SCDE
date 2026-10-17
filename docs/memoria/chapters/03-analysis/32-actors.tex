@@ -1,0 +1,11 @@
+\pendiente{Redactar; incluir tabla actores × permisos.}
+
+Material:
+\begin{itemize}
+  \item Roles por asignatura: \texttt{COORDINATOR}, \texttt{TEACHER}, \texttt{STUDENT}
+        (una misma persona puede tener roles distintos en asignaturas distintas).
+  \item \texttt{is\_staff}: gestor de la organización (omite permisos de asignatura);
+        \texttt{is\_superadmin}: administración del sistema. Ambos solo en el \acs{jwt}.
+  \item Once permisos \texttt{can\_*} con valores por defecto por rol y excepciones por
+        membresía (tabla \texttt{DEFAULT\_PERMISSIONS}).
+\end{itemize}
