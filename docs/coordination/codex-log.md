@@ -1,5 +1,16 @@
 # Codex log
 
+## 2026-10-17 — Despliegue autónomo en Vercel
+
+- El usuario solicita publicar y actualizar en Vercel sin instrucciones técnicas sucesivas, y aclara que la sesión debe persistir en el PC para trabajo remoto desde móvil. Se conserva la prohibición de push/merge y la propiedad de archivos.
+- Al inicio no existían CLI ni sesión local. Se consultó la integración de Vercel disponible, todavía no instalada/conectada, y se ofreció la conexión sin asumir autorización. El usuario instaló después la CLI global; no se modificaron dependencias del proyecto.
+- CLI verificada: Vercel 64.5.0, Node 24.19.0; whoami indica Logged out. El primer intento dentro del sandbox falló por spawn EPERM; la repetición autorizada funcionó. Una consulta de procesos con CIM fue denegada; no era necesaria y no se repitió porque la CLI ya estaba disponible.
+- Iniciado vercel login mediante dispositivo; enlace de autorización entregado al usuario, válido también desde móvil. No se registran tokens ni códigos temporales en esta bitácora. La sesión está pendiente de aprobación; no se afirma que exista un despliegue remoto.
+- Pipeline preparado en ruta propia: deploy-vercel.ps1 comprueba autenticación, check y ownership, genera demo con mocks, configura fallback SPA, vincula una vez scde-tutor-admin-ops y publica con --prod/--yes/--non-interactive. Metadatos de vínculo/despliegue en archivos *.local ignorados por Git, fuera de dist para sobrevivir al siguiente build. La configuración vercel.json se genera solo dentro del artefacto ignorado; la raíz compartida permanece intacta.
+- Tras publicar, el pipeline comprueba por HTTP sin credenciales que raíz y rutas de administración/cuenta sirvan index.html. La sesión persistente permite que ambos agentes bajo el mismo usuario Windows ejecuten futuras entregas sin repetir login, mientras Vercel mantenga válida la autorización. Un acceso persistente no equivale por sí solo a un proceso remoto siempre activo.
+- Validación local: sintaxis PowerShell y JSON correctos; estados *.local confirmados como ignorados; npm run check correcto (36/36 pruebas, lint/build/estilo correctos con los 2 avisos preexistentes). Artefacto reconstruido con mocks y configuración SPA de Vercel. Incluso deploy --dry exige credenciales y quedó rechazado antes de inspeccionar/subir: sigue pendiente la aprobación del usuario. Las verificaciones HTTP y la URL estable no se declaran probadas hasta completar el despliegue real.
+- Preferencia operativa autorizada: en futuras entregas de esta sesión, ejecutar el pipeline y actualizar el mismo proyecto sin pedir instrucciones de despliegue de nuevo. La instalación/autorización inicial y posibles revocaciones de cuenta son dependencias externas; no se crean tareas del sistema ni procesos de publicación permanente sin acceso válido.
+
 ## 2026-10-17 — Continuación P1 y revisión visual v2
 
 - Releídos AGENTS, brief, propiedad, skill local, arquitectura e inventario. Por autorización explícita del usuario, leídos únicamente STYLE_GUIDE v2 del worktree de Claude y el YAML real del backend; no se modifican esas rutas. Se priorizan la nueva dirección clara/educativa y el YAML sobre las referencias anteriores al estilo oscuro/inventario incompleto.

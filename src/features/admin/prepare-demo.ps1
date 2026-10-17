@@ -18,7 +18,7 @@ try {
     npm run build -- --outDir $outputPath
     if ($LASTEXITCODE -ne 0) { throw 'El build de demostracion ha fallado.' }
     if (-not (Test-Path -LiteralPath (Join-Path $outputPath 'index.html'))) { throw 'Falta index.html.' }
-    if (Test-Path -LiteralPath (Join-Path $outputPath '404.html')) { throw 'Cloudflare Pages necesita el fallback SPA sin 404.html.' }
+    if (Test-Path -LiteralPath (Join-Path $outputPath '404.html')) { throw 'La demo SPA no debe incluir un 404.html estatico.' }
 
     $review = @'
 SCDE - Demo de la rama admin-ops con datos ficticios
@@ -39,14 +39,13 @@ Revisar /notifications y /profile.
 Esta rama no incluye los flujos paralelos ni la integracion de la base visual v2.
 Para una revision completa, regenera el ZIP desde la version integrada.
 
-Publicacion manual: Cloudflare Pages > Direct Upload, arrastra este ZIP y
-publica el sitio. Comparte la URL pages.dev con el tutor.
-https://developers.cloudflare.com/pages/get-started/direct-upload/
+La publicacion y las actualizaciones se gestionan desde el PC mediante
+src/features/admin/deploy-vercel.ps1, con la sesion autorizada de Vercel.
 '@
     Set-Content -LiteralPath (Join-Path $outputPath 'review.txt') -Value $review -Encoding UTF8
     $assets = @(Get-ChildItem -LiteralPath $outputPath -File -Recurse)
     if ($assets.Count -gt 1000 -or @($assets | Where-Object Length -GT 25MB).Count -gt 0) {
-        throw 'El paquete supera los limites documentados de subida directa.'
+        throw 'El paquete supera el presupuesto de archivos de esta demo.'
     }
     Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
