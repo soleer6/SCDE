@@ -1,13 +1,13 @@
 .dm-score {
   font-family: var(--serif);
-  font-weight: 400;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1;
   white-space: nowrap;
 }
 .dm-score--sm { font-size: var(--fs-h3); }
 .dm-score--md { font-size: var(--fs-h2); }
-.dm-score--lg { font-size: 88px; letter-spacing: -0.02em; }
+.dm-score--lg { font-size: 72px; }
 .dm-score.is-pass { color: var(--green); }
 .dm-score.is-fail { color: var(--rust); }
 .dm-score__max {
@@ -24,13 +24,16 @@
 .dm-progress__bar {
   position: relative;
   flex: 1;
-  height: 1px;
-  background: var(--line-2);
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-3);
+  overflow: hidden;
 }
 .dm-progress__bar span {
   position: absolute;
   inset: 0 auto 0 0;
-  background: var(--gold);
+  border-radius: inherit;
+  background: var(--accent);
   transition: width var(--t-slow) var(--ease);
 }
 .dm-progress__txt {
@@ -57,33 +60,36 @@
 .dm-subjects {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  border-top: 1px solid var(--line);
-  border-left: 1px solid var(--line);
+  gap: var(--s-3);
 }
 .dm-subject {
   display: flex;
   flex-direction: column;
   gap: var(--s-3);
   padding: var(--s-5);
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  transition: background-color var(--t-fast);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--accent-line);
+  border-radius: var(--radius);
+  transition: border-color var(--t-fast);
   min-height: 150px;
 }
 .dm-subject:hover,
 .dm-subject:focus-visible {
-  background: var(--bg-3);
+  border-color: var(--accent-line);
+  border-top-color: var(--accent);
 }
 .dm-subject__code {
-  font-size: var(--fs-label);
-  letter-spacing: var(--track-eyebrow);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
   color: var(--muted);
 }
 .dm-subject__name {
-  font: 400 var(--fs-h3)/1.15 var(--serif);
+  font: 600 var(--fs-h3)/1.25 var(--serif);
 }
 .dm-subject__meta {
   margin-top: auto;
+  padding-top: var(--s-3);
   display: flex;
   justify-content: space-between;
   align-items: center;

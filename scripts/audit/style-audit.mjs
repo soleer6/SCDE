@@ -20,10 +20,12 @@ const files = [];
 const RULES = [
   // [id, severity, appliesTo regex on filename, regex on line, message]
   ['raw-color', 'error', /\.(css|jsx)$/, /#[0-9a-fA-F]{3,8}\b|rgba?\(/, 'Raw colour — use a token from src/styles/tokens.css'],
-  ['font-family', 'error', /\.(css|jsx)$/, /font-family\s*:(?!\s*var\(--(mono|serif)\))|fontFamily\s*:/, 'Fonts only via var(--mono) / var(--serif)'],
-  ['radius', 'error', /\.(css|jsx)$/, /border-radius\s*:\s*(?!var\(--radius\)|0\b)|borderRadius/, 'Rounded corners are not part of the language (radius: 0)'],
-  ['shadow', 'error', /\.(css|jsx)$/, /box-shadow\s*:(?!\s*none)|boxShadow/, 'No shadows — use hairlines (1px var(--line))'],
-  ['gradient-deco', 'warn', /\.css$/, /linear-gradient|radial-gradient/, 'Gradients only for grid backgrounds / masks; check intent'],
+  ['font-family', 'error', /\.(css|jsx)$/, /font-family\s*:(?!\s*var\(--(sans|mono|serif)\))|fontFamily\s*:/, 'Fonts only via var(--sans) / var(--serif) / var(--mono)'],
+  ['radius', 'error', /\.(css|jsx)$/, /border-radius\s*:(?!\s*(var\(--radius(-sm|-pill)?\)|0\b|0 var\(--radius|50%|inherit|2px))|borderRadius/, 'Radius only via var(--radius) / var(--radius-sm) / var(--radius-pill)'],
+  ['shadow', 'error', /\.(css|jsx)$/, /box-shadow\s*:(?!\s*(none|var\(--shadow-sheet\)|0 0 0 [123]px var\(--))|boxShadow/, 'Shadows only var(--shadow-sheet) or focus rings (0 0 0 Npx var(--token))'],
+  ['uppercase', 'warn', /\.(css|jsx)$/, /text-transform\s*:\s*uppercase|textTransform/, 'Sentence case: no forced uppercase (educational direction v2)'],
+  ['legacy-token', 'warn', /\.(css|jsx)$/, /var\(--gold/, 'Legacy token --gold*: use --accent* (pending/attention: --amber*)'],
+  ['gradient-deco', 'warn', /\.css$/, /linear-gradient|radial-gradient/, 'Gradients only for functional backgrounds / masks; check intent'],
   ['inline-style', 'warn', /\.jsx$/, /style=\{\{/, 'Inline style — prefer a class; allowed for dynamic geometry only'],
   ['px-font', 'warn', /\.css$/, /font-size\s*:\s*\d+px/, 'Font size in px — use --fs-* tokens'],
   ['ui-restyle', 'error', /\.css$/, /^\s*\.ui-[a-z]/, 'Do not restyle shared .ui-* classes inside a feature'],

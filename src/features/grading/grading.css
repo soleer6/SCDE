@@ -4,6 +4,8 @@
   flex-direction: column;
   min-width: 0;
   border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
 }
 .gr-toolbar {
   display: flex;
@@ -25,7 +27,6 @@
 }
 .gr-pager {
   font-size: var(--fs-label);
-  letter-spacing: 0.1em;
   min-width: 56px;
   text-align: center;
 }
@@ -36,62 +37,59 @@
   margin: 0 var(--s-2);
 }
 .gr-tool {
-  height: 28px;
+  height: 30px;
   padding: 0 var(--s-3);
-  font-size: var(--fs-micro);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
+  font-size: var(--fs-label);
+  font-weight: 700;
   color: var(--muted);
-  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
 }
 .gr-tool:hover {
   color: var(--fg);
 }
 .gr-tool.is-on {
-  color: var(--gold);
-  border-color: var(--gold-dim);
+  color: var(--accent);
+  background: var(--accent-wash);
 }
 .gr-swatch {
   width: 18px;
   height: 18px;
   margin: 0 3px;
+  border-radius: 50%;
   background: var(--sw);
-  border: 1px solid var(--line-3);
-  outline-offset: 2px;
+  border: 2px solid var(--bg-2);
+  box-shadow: 0 0 0 1px var(--line-2);
 }
 .gr-swatch.is-on {
-  outline: 1px solid var(--gold);
+  box-shadow: 0 0 0 2px var(--accent);
 }
 .gr-width {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: 1px solid transparent;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
 }
 .gr-width i {
   display: block;
   width: 14px;
+  border-radius: 2px;
   background: var(--muted);
 }
 .gr-width.is-on {
-  border-color: var(--gold-dim);
+  background: var(--accent-wash);
 }
 .gr-width.is-on i {
-  background: var(--gold);
+  background: var(--accent);
 }
 
 .gr-stage {
   position: relative;
   min-height: 70vh;
   overflow: auto;
-  padding: var(--s-6) var(--s-6);
-  background-color: var(--bg);
-  background-image: linear-gradient(var(--line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line) 1px, transparent 1px);
-  background-size: var(--grid-cell) var(--grid-cell);
-  background-position: -1px -1px;
+  padding: var(--s-6);
+  background: var(--desk);
 }
 .gr-stage__msg {
   padding: var(--s-6);
@@ -102,11 +100,10 @@
 }
 .gr-sheet {
   position: relative;
-  outline: 1px solid var(--line-3);
-  outline-offset: 6px;
+  box-shadow: var(--shadow-sheet);
 }
 .gr-sheet .react-pdf__Page {
-  background: var(--fg);
+  background: var(--bg-2);
 }
 .gr-sheet canvas.react-pdf__Page__canvas {
   display: block;
@@ -161,15 +158,23 @@
   border-bottom: 0;
 }
 .gr-problem.is-active {
-  background: var(--gold-wash);
+  background: var(--accent-wash);
 }
 .gr-problem__head {
   display: grid;
   grid-template-columns: 24px 1fr auto;
+  font-weight: 700;
   gap: var(--s-3);
   align-items: center;
 }
 .gr-problem__idx {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-3);
   font-size: var(--fs-micro);
   color: var(--muted);
 }
@@ -191,9 +196,8 @@
 }
 .gr-problem__state {
   font-size: var(--fs-micro);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: var(--dim);
+  padding-left: 36px;
 }
 .gr-problem__state.is-saved { color: var(--green); }
 .gr-problem__state.is-error { color: var(--rust); }
@@ -212,14 +216,13 @@
 
 .gr-save {
   font-size: var(--fs-micro);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-weight: 700;
   color: var(--dim);
 }
 .gr-save.is-saved { color: var(--green); }
 .gr-save.is-error { color: var(--rust); }
 .gr-save.is-saving,
-.gr-save.is-pending { color: var(--gold); }
+.gr-save.is-pending { color: var(--amber); }
 
 @media (max-width: 1100px) {
   .gr-layout {

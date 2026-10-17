@@ -3,8 +3,10 @@
   grid-template-columns: max-content 1fr;
   gap: var(--s-7);
   align-items: end;
-  padding-bottom: var(--s-6);
-  border-bottom: 1px solid var(--line);
+  padding: var(--s-5) var(--s-6);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
 }
 .rs-hero__score {
   display: flex;
@@ -26,8 +28,8 @@
 .rs-comment {
   white-space: pre-wrap;
   font-family: var(--serif);
-  font-size: var(--fs-h3);
-  line-height: 1.35;
+  font-size: var(--fs-lead);
+  line-height: 1.55;
 }
 .rs-requests {
   list-style: none;
@@ -42,7 +44,7 @@
   border-bottom: 1px solid var(--line);
 }
 .rs-reply {
-  border-left: 1px solid var(--gold-dim);
+  border-left: 3px solid var(--accent-line);
   padding-left: var(--s-3);
 }
 .rs-form__item {

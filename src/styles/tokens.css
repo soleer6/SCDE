@@ -1,61 +1,75 @@
 /* =====================================================================
    SCDE design tokens — single source of truth for the visual language.
-   Direction: dark, minimal, technical (reference: breachr prototype).
-   Rule: components NEVER hardcode colours, fonts or spacing; they use
-   these variables. See docs/frontend/STYLE_GUIDE.md.
+   Direction (v2, after user feedback): minimal and EDUCATIONAL — a calm,
+   light study environment (think Moodle, done with restraint). Colour is
+   reserved for meaning: ink-blue for actions, red-pen for errors/fails.
+   Rule: components NEVER hardcode colours, fonts or spacing.
+   See docs/frontend/STYLE_GUIDE.md.
    ===================================================================== */
 
 :root {
   /* ---- Surfaces ---- */
-  --bg: #07080a;          /* page */
-  --bg-2: #0b0d10;        /* panels, inputs */
-  --bg-3: #11141a;        /* hover / raised row */
-  --overlay: rgba(7, 8, 10, 0.86);
+  --bg: #f6f7f9;          /* page (cool paper) */
+  --bg-2: #ffffff;        /* panels, inputs, cards */
+  --bg-3: #eef1f5;        /* hover / selected row */
+  --desk: #e9ecf1;        /* PDF light table behind the sheet */
+  --overlay: rgba(27, 34, 48, 0.4);
 
   /* ---- Hairlines ---- */
-  --line: #1a1e24;        /* default 1px rule */
-  --line-2: #262b33;      /* stronger rule, input borders */
-  --line-3: #363c46;      /* hover border */
+  --line: #e4e7ec;
+  --line-2: #d3d8df;
+  --line-3: #b9c0ca;
 
   /* ---- Text ---- */
-  --fg: #e9e5db;          /* primary text (warm off-white) */
-  --muted: #8a8c92;       /* secondary text, labels (AA on --bg) */
-  --dim: #5a5e66;         /* decorative / disabled only — never for essential copy */
+  --fg: #1b2230;          /* ink */
+  --muted: #5a6372;       /* secondary text (AA on --bg and --bg-2) */
+  --dim: #8a93a1;         /* placeholders, disabled, decoration only */
+  --on-accent: #ffffff;
 
   /* ---- Signal colours (meaningful, never decorative) ---- */
-  --gold: #c9a45c;        /* primary action, current step, focus */
-  --gold-dim: #6b5833;
-  --gold-wash: rgba(201, 164, 92, 0.08);
-  --green: #79a283;       /* pass, done, healthy */
-  --green-dim: #34483a;
-  --green-wash: rgba(121, 162, 131, 0.08);
-  --rust: #b8674f;        /* fail, error, destructive */
-  --rust-dim: #5a3328;
-  --rust-wash: rgba(184, 103, 79, 0.08);
-  --steel: #7f93a8;       /* info, in-progress (cool neutral) */
-  --steel-wash: rgba(127, 147, 168, 0.08);
+  --accent: #2d4fa3;          /* fountain-pen ink blue: primary actions, current step, focus */
+  --accent-strong: #213d84;
+  --accent-line: #b9c6e6;
+  --accent-wash: #edf1fa;
+  --green: #2e7d4f;           /* pass, done */
+  --green-dim: #b7d9c4;
+  --green-wash: #e9f4ee;
+  --rust: #b83a2e;            /* red pen: fail, error, destructive */
+  --rust-dim: #ebc0ba;
+  --rust-wash: #fbedeb;
+  --amber: #9a6410;           /* pending, needs attention */
+  --amber-dim: #ecd3a6;
+  --amber-wash: #fbf3e4;
+  --steel: #5e6b7e;           /* in progress / neutral info */
+  --steel-wash: #eef1f5;
 
-  /* ---- Annotation ink (on white paper, not on UI) ---- */
+  /* Legacy names kept as aliases (v1 used them; feature CSS may still refer to them). */
+  --gold: var(--accent);
+  --gold-dim: var(--accent-line);
+  --gold-wash: var(--accent-wash);
+
+  /* ---- Annotation ink (on white paper) ---- */
   --ink-red: #d6342c;
   --ink-blue: #2357c9;
   --ink-green: #1f8a4c;
   --ink-black: #111111;
 
   /* ---- Type ---- */
-  --serif: "Instrument Serif", "Times New Roman", serif;
-  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; /* codes (NIA, ids) only */
 
-  --fs-micro: 10px;       /* meta, table headers */
-  --fs-label: 11px;       /* labels, eyebrows, buttons (uppercase) */
-  --fs-body: 13px;        /* default text */
-  --fs-lead: 14px;        /* lede paragraphs */
-  --fs-h3: 22px;          /* serif */
-  --fs-h2: 36px;          /* serif */
-  --fs-h1: 52px;          /* serif page titles */
-  --fs-display: clamp(48px, 7vw, 96px); /* login / hero only */
+  --fs-micro: 12px;
+  --fs-label: 13px;
+  --fs-body: 15px;
+  --fs-lead: 16px;
+  --fs-h3: 20px;
+  --fs-h2: 26px;
+  --fs-h1: 34px;
+  --fs-display: clamp(34px, 4.5vw, 48px);
 
-  --track-label: 0.16em;
-  --track-eyebrow: 0.22em;
+  --track-label: 0.01em;
+  --track-eyebrow: 0.02em;
 
   /* ---- Space (4px base) ---- */
   --s-1: 4px;
@@ -69,18 +83,23 @@
   --s-9: 96px;
 
   /* ---- Layout ---- */
-  --topbar-h: 52px;
-  --rail-w: 220px;
-  --content-max: 1280px;
+  --topbar-h: 60px;
+  --rail-w: 240px;
+  --content-max: 1240px;
   --gutter: 40px;
   --grid-cell: 80px;
 
-  /* ---- Shape & motion ---- */
-  --radius: 0;            /* square everywhere; hierarchy comes from lines */
-  --ease: cubic-bezier(0.7, 0, 0.2, 1);
+  /* ---- Shape & elevation ---- */
+  --radius: 10px;         /* panels, cards, dialogs */
+  --radius-sm: 6px;       /* buttons, inputs */
+  --radius-pill: 999px;   /* badges */
+  --shadow-sheet: 0 1px 2px rgba(27, 34, 48, 0.08), 0 8px 24px rgba(27, 34, 48, 0.08); /* PDF sheet + dialogs only */
+
+  /* ---- Motion ---- */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
   --t-fast: 0.15s;
-  --t-med: 0.3s;
-  --t-slow: 0.6s;
+  --t-med: 0.25s;
+  --t-slow: 0.4s;
 
   --z-topbar: 50;
   --z-overlay: 80;
@@ -90,8 +109,8 @@
 @media (max-width: 720px) {
   :root {
     --gutter: 16px;
-    --fs-h1: 36px;
-    --fs-h2: 28px;
+    --fs-h1: 28px;
+    --fs-h2: 22px;
   }
 }
 
