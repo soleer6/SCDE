@@ -2,6 +2,6 @@
 .admin-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); margin-block: var(--s-4); }
 .admin-stack { display: grid; gap: var(--s-6); min-width: 0; }
 .admin-search { max-width: 32rem; margin-block: var(--s-4); }
-.admin-code { overflow-wrap: anywhere; white-space: pre-wrap; }
+.admin-code { font: inherit; overflow-wrap: anywhere; white-space: pre-wrap; }
 .admin-identifier { font: 400 var(--fs-body)/1.5 var(--mono); overflow-wrap: anywhere; }
 .admin-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--s-4); margin-block: var(--s-4); }

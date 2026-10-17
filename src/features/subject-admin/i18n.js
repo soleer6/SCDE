@@ -1,5 +1,6 @@
 export const i18n = {
   es: {
+    import: 'Importar asignaturas', importHint: 'Se importan en el curso activo. JSON: lista con name, code, coordinator_email y opcionalmente semester, groups, teachers y students. Para CSV sencillo usa name,code,coordinator_email,semester. Usa JSON para conservar grupos y miembros.',
     search: 'Buscar asignaturas', courseHint: 'Identificador del curso. Por defecto se muestra el curso activo.',
     title: 'Administrar asignatura', directory: 'Asignaturas', context: 'Gestión por asignatura', members: 'Miembros', groups: 'Grupos', permissions: 'Permisos',
     user_id: 'Identificador de usuario', role: 'Rol en esta asignatura', group_id: 'Identificador de grupo (opcional)', membership: 'Identificador de membresía', membershipHint: 'Usa el identificador de una membresía de esta asignatura si solo tienes permiso de delegación.',
@@ -8,6 +9,7 @@ export const i18n = {
     permissionNames: { can_create_exams: 'Crear exámenes', can_assign_correctors: 'Asignar correctores', can_create_rubric: 'Crear rúbricas', can_resolve_issues: 'Resolver incidencias', can_publish_grades: 'Publicar notas', can_manage_reviews: 'Gestionar revisiones', can_view_all_instances: 'Ver todas las entregas', can_export_grades: 'Exportar notas', can_manage_members: 'Gestionar miembros', can_delegate_perms: 'Delegar permisos', can_manage_groups: 'Gestionar grupos' },
   },
   en: {
+    import: 'Import subjects', importHint: 'Subjects are imported into the active course. JSON: an array with name, code, coordinator_email and optional semester, groups, teachers and students. For simple CSV use name,code,coordinator_email,semester. Use JSON to preserve groups and members.',
     search: 'Search subjects', courseHint: 'Course ID. The active course is shown by default.',
     title: 'Manage subject', directory: 'Subjects', context: 'Subject administration', members: 'Members', groups: 'Groups', permissions: 'Permissions',
     user_id: 'User ID', role: 'Role in this subject', group_id: 'Group ID (optional)', membership: 'Membership ID', membershipHint: 'Use a membership ID from this subject if you only have delegation permission.',

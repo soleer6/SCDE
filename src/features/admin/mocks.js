@@ -1,4 +1,5 @@
 import { mockError, paginate, reply } from '../../lib/mock/router.js';
+import { importRowError, readImportFile } from './import-files.js';
 
 export function requireStaff(user) {
   if (!user?.is_active || !(user.is_staff || user.is_superadmin)) throw mockError(403, 'PERMISSION_DENIED');
@@ -26,7 +27,33 @@ function validateCourse(body) {
   if (body.start_date && body.end_date && body.start_date > body.end_date) throw mockError(400, 'VALIDATION_ERROR', { end_date: ['INVALID'] });
 }
 const staff = (handler) => (ctx) => { requireStaff(ctx.user); return handler(ctx); };
+async function importUsers({ db, form, user }) {
+  const rows = await readImportFile(form);
+  const result = { created: 0, reactivated: 0, updated: 0, total_processed: rows.length, total_errors: 0, errors: [] };
+  rows.forEach((value, index) => {
+    try {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) throw mockError(400, 'VALIDATION_ERROR');
+      for (const key of ['first_name', 'last_name', 'email']) if (typeof value[key] !== 'string' || !value[key].trim()) throw mockError(400, 'VALIDATION_ERROR', { [key]: ['FIELD_REQUIRED'] });
+      for (const key of ['dni', 'nia']) if (value[key] !== undefined && typeof value[key] !== 'string') throw mockError(400, 'VALIDATION_ERROR', { [key]: ['INVALID'] });
+      const email = value.email.trim();
+      const existing = db.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+      if (existing && existing.organization_id !== user.organization_id) throw mockError(400, 'VALIDATION_ERROR', { email: ['EMAIL_ALREADY_EXISTS'] });
+      validateEmail(email, db, existing?.id);
+      const fields = { email, first_name: value.first_name.trim(), last_name: value.last_name.trim(), ...(value.dni !== undefined ? { dni: value.dni } : {}), ...(value.nia !== undefined ? { nia: value.nia } : {}), updated_at: now() };
+      if (existing) {
+        result[existing.is_active ? 'updated' : 'reactivated']++;
+        Object.assign(existing, fields, { is_active: true });
+      } else {
+        db.users.push({ ...fields, id: crypto.randomUUID(), nia: fields.nia ?? '', dni: fields.dni ?? '', organization_id: user.organization_id, is_active: true, is_staff: false, email_notifications_enabled: true, created_at: now() });
+        result.created++;
+      }
+    } catch (err) { result.errors.push(importRowError(index, err)); }
+  });
+  result.total_errors = result.errors.length;
+  return result;
+}
 export const mocks = [
+  { method: 'POST', path: '/users/import/', handler: staff(importUsers) },
   { method: 'GET', path: '/users/', handler: staff(({ db, query, user }) => {
     return paginate(db.users.filter((u) => u.organization_id === user.organization_id).map(userShape), query);
   }) },
@@ -38,7 +65,7 @@ export const mocks = [
       : db.courses.filter((c) => c.label.toLowerCase().includes(search)).map((c) => courseShape(c, db));
     return paginate(rows, query);
   }) },
-  { method: 'GET', path: '/users/export/', handler: staff(({ db, user }) => reply(200, new Blob([JSON.stringify(db.users.filter((u) => u.organization_id === user.organization_id).map(userShape))], { type: 'application/json' }))) },
+  { method: 'GET', path: '/users/export/', handler: staff(({ db, user }) => reply(200, new Blob([JSON.stringify(db.users.filter((u) => u.organization_id === user.organization_id).map((u) => ({ ...userShape(u), dni: u.dni ?? '' })))], { type: 'application/json' }))) },
   { method: 'POST', path: '/users/', handler: staff(({ body, db, user }) => {
     validateEmail(body.email, db);
     for (const key of ['first_name', 'last_name']) if (!body[key]?.trim()) throw mockError(400, 'VALIDATION_ERROR', { [key]: ['FIELD_REQUIRED'] });
