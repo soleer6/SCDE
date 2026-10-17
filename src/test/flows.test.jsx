@@ -134,6 +134,14 @@ describe('student result and review', () => {
     expect(db.review_requests.some((r) => r.instance_id === 'i-e-mat-p1-1' && r.student_message === 'Revisad el apartado b')).toBe(true);
   });
 
+  it('does not offer the teacher review inbox to a student-only user', async () => {
+    await loginAs('elena.rodriguez@estudiante.uam.es', 'est123');
+    renderAt('/');
+    expect(await screen.findByRole('heading', { name: 'Mis exámenes' })).toBeInTheDocument();
+    await screen.findByRole('link', { name: 'Asignaturas' });
+    expect(screen.queryByRole('link', { name: 'Revisiones' })).not.toBeInTheDocument();
+  });
+
   it('hides unpublished results', async () => {
     await loginAs('elena.rodriguez@estudiante.uam.es', 'est123');
     renderAt('/exams/e-fis-p1');

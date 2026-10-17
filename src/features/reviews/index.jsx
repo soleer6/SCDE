@@ -3,13 +3,14 @@ import { mocks } from './mocks.js';
 
 const ReviewsPage = lazy(() => import('./ReviewsPage.jsx'));
 
-/* Owner: Claude. Teacher review inbox. TODO: hide the nav entry for users who are only students
+/* Owner: Claude. Teacher review inbox
    (roles are per subject; the page itself shows only what /my-tasks/ returns). */
 export default {
   id: 'reviews',
   order: 40,
   routes: [{ path: '/reviews', element: <ReviewsPage /> }],
-  nav: [{ to: '/reviews', label: 'reviews:nav', section: 'work' }],
+  // Hidden for users known to be only students (session.teaches is set by workspace once my-subjects loads).
+  nav: [{ to: '/reviews', label: 'reviews:nav', section: 'work', when: (s) => s.isStaff || s.teaches !== false }],
   mocks,
   i18n: {
     es: {
