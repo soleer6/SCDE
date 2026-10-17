@@ -14,6 +14,13 @@ export function validateEmail(email, db, id) {
 export const userShape = (u) => Object.fromEntries(['id', 'email', 'first_name', 'last_name', 'nia', 'is_active', 'is_staff', 'organization_id', 'email_notifications_enabled', 'created_at', 'updated_at'].map((k) => [k, u[k]]));
 const now = () => new Date().toISOString();
 const courseShape = (c, db) => ({ id: c.id, label: c.label, start_date: c.start_date, end_date: c.end_date, is_active: c.is_active, subject_count: db.subjects.filter((s) => s.course_id === c.id).length, created_at: c.created_at ?? '2026-09-01T00:00:00Z', updated_at: c.updated_at ?? '2026-09-01T00:00:00Z' });
+const subjectDetail = (s, db) => ({
+  id: s.id, name: s.name, code: s.code, semester: s.semester, course_id: s.course_id,
+  coordinator_id: s.coordinator_id, coordinator_email: db.users.find((u) => u.id === s.coordinator_id)?.email ?? '',
+  created_at: s.created_at ?? '2026-09-01T00:00:00Z', updated_at: s.updated_at ?? '2026-09-01T00:00:00Z',
+  groups: db.groups.filter((g) => g.subject_id === s.id).map((g) => ({ id: g.id, label: g.label })),
+  member_counts: Object.fromEntries(['COORDINATOR', 'TEACHER', 'STUDENT'].map((role, i) => [ ['coordinators', 'teachers', 'students'][i], db.memberships.filter((m) => m.subject_id === s.id && m.is_active && m.role === role).length ])),
+});
 function validateCourse(body) {
   if (!body.label?.trim()) throw mockError(400, 'VALIDATION_ERROR', { label: ['FIELD_REQUIRED'] });
   if (body.start_date && body.end_date && body.start_date > body.end_date) throw mockError(400, 'VALIDATION_ERROR', { end_date: ['INVALID'] });
@@ -21,8 +28,15 @@ function validateCourse(body) {
 const staff = (handler) => (ctx) => { requireStaff(ctx.user); return handler(ctx); };
 export const mocks = [
   { method: 'GET', path: '/users/', handler: staff(({ db, query, user }) => {
+    return paginate(db.users.filter((u) => u.organization_id === user.organization_id).map(userShape), query);
+  }) },
+  { method: 'GET', path: '/search/', handler: staff(({ db, query }) => {
     const search = (query.get('search') ?? '').toLowerCase();
-    return paginate(db.users.filter((u) => u.organization_id === user.organization_id && `${u.email} ${u.first_name} ${u.last_name} ${u.nia}`.toLowerCase().includes(search)).map(userShape), query);
+    const course = query.get('course_id');
+    const rows = course
+      ? db.subjects.filter((s) => s.course_id === course && `${s.name} ${s.code}`.toLowerCase().includes(search)).map((s) => subjectDetail(s, db))
+      : db.courses.filter((c) => c.label.toLowerCase().includes(search)).map((c) => courseShape(c, db));
+    return paginate(rows, query);
   }) },
   { method: 'GET', path: '/users/export/', handler: staff(({ db, user }) => reply(200, new Blob([JSON.stringify(db.users.filter((u) => u.organization_id === user.organization_id).map(userShape))], { type: 'application/json' }))) },
   { method: 'POST', path: '/users/', handler: staff(({ body, db, user }) => {
@@ -54,5 +68,14 @@ export const mocks = [
   }) },
   { method: 'GET', path: '/config/', handler: staff(({ db }) => db.org_config) },
   { method: 'PATCH', path: '/config/', handler: staff(({ db, body }) => { Object.assign(db.org_config, body); return db.org_config; }) },
-  { method: 'GET', path: '/audit-logs/', handler: staff(({ db, query }) => paginate(db.audit_logs, query)) },
+  { method: 'GET', path: '/audit-logs/', handler: staff(({ db, query }) => {
+    const rows = db.audit_logs.filter((row) => {
+      for (const [param, field] of [['actor_id', 'actor'], ['entity_id', 'entity_id'], ['entity_type', 'entity_type'], ['event_type', 'event_type'], ['ip_address', 'ip_address']]) {
+        if (query.get(param) && row[field] !== query.get(param)) return false;
+      }
+      return (!query.get('timestamp_from') || Date.parse(row.timestamp) >= Date.parse(query.get('timestamp_from')))
+        && (!query.get('timestamp_to') || Date.parse(row.timestamp) <= Date.parse(query.get('timestamp_to')));
+    });
+    return paginate(rows, query);
+  }) },
 ];

@@ -60,8 +60,12 @@ it('honors permission overrides and denies unrelated teachers and students', asy
   await loginAs('elena.rodriguez@estudiante.uam.es', 'est123');
   manage(); expect(await screen.findByText('No tienes permiso para esta acción.')).toBeInTheDocument();
 });
-it('offers management links to staff via the subject export', async () => {
+it('offers management links through hierarchical search, independent of the export shape', async () => {
   await loginAs(); renderPage(<SubjectsPage />);
   await screen.findByText('MAT101');
   expect(screen.getAllByRole('link', { name: 'Administrar' })[0]).toHaveAttribute('href', '/subjects/s-mat101/manage');
+  const exported = await api.get('/subjects/export/', { export_format: 'json', course_id: 'c-2627' });
+  expect(exported[0]).not.toHaveProperty('id');
+  expect(exported[0]).toMatchObject({ code: 'MAT101', coordinator_email: 'maria.perez@uam.es', groups: ['Grupo 611', 'Grupo 612'] });
+  expect(exported[0].teachers).toContain('javier.ruiz@uam.es');
 });

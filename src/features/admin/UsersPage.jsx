@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Badge, Button, Dialog, ErrorState, Field, Input, PageHeader } from '../../ui';
+import { Badge, Button, Dialog, ErrorState, Field, Input, PageHeader, Select } from '../../ui';
 import { useApi } from '../../lib/hooks.js';
 import { createUser, exportUsers, getUsers, resetPassword, updateUser } from './api.js';
 import { Pagination, RecordForm, Records } from './components.jsx';
@@ -10,12 +10,14 @@ export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
+  const [pageSize, setPageSize] = useState('25');
   const [editing, setEditing] = useState(null);
   const [confirm, setConfirm] = useState(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState('');
-  const users = useApi(() => getUsers({ page, search: query }), [page, query]);
+  const users = useApi(() => getUsers({ page, page_size: pageSize }), [page, pageSize]);
+  const filtered = users.data && { ...users.data, results: users.data.results.filter((u) => `${u.email} ${u.first_name} ${u.last_name} ${u.nia}`.toLowerCase().includes(query.toLowerCase())) };
   async function act(fn) {
     setPending(true); setError(null); setNotice('');
     try { await fn(); } catch (err) { setError(err); } finally { setPending(false); }
@@ -27,15 +29,16 @@ export default function UsersPage() {
     <form className="admin-actions" onSubmit={(e) => { e.preventDefault(); setQuery(search); setPage(1); }}>
       <Field label={t('search')} hint={t('searchHint')}>{(id) => <Input id={id} value={search} onChange={(e) => setSearch(e.target.value)} />}</Field>
       <Button type="submit">{t('common:search')}</Button>
+      <Field label={t('pageSize')}>{(id) => <Select id={id} value={pageSize} onChange={(e) => { setPageSize(e.target.value); setPage(1); }} options={['25', '50', '100'].map((value) => ({ value, label: value }))} />}</Field>
       <Button disabled={pending} onClick={() => act(async () => {
         const blob = await exportUsers(); const url = URL.createObjectURL(blob); const link = document.createElement('a');
         link.href = url; link.download = blob.type.includes('json') ? 'users.json' : 'users.csv'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
       })}>{t('export')}</Button>
     </form>
     {error && <ErrorState error={error} />}{notice && <p role="status">{notice}</p>}
-    <Records state={users} action={<Button onClick={create}>{t('create')}</Button>} columns={[
-      { key: 'email', header: t('email') }, { key: 'id', header: t('id') }, { key: 'first_name', header: t('first_name'), render: (u) => `${u.first_name} ${u.last_name}` }, { key: 'nia', header: t('nia') },
-      { key: 'is_active', header: t('status'), render: (u) => <Badge tone={u.is_active ? 'green' : undefined}>{t(u.is_active ? 'active' : 'inactive')}</Badge> },
+    <Records state={{ ...users, data: filtered }} action={<Button onClick={create}>{t('create')}</Button>} columns={[
+      { key: 'email', header: t('email') }, { key: 'id', header: t('id'), render: (u) => <code className="admin-identifier">{u.id}</code> }, { key: 'first_name', header: t('first_name'), render: (u) => `${u.first_name} ${u.last_name}` }, { key: 'nia', header: t('nia'), render: (u) => <code className="admin-identifier">{u.nia}</code> },
+      { key: 'is_active', header: t('status'), render: (u) => <Badge tone={u.is_active ? 'accent' : undefined}>{t(u.is_active ? 'active' : 'inactive')}</Badge> },
       { key: 'actions', header: t('actions'), render: (u) => <div className="admin-actions"><Button size="sm" onClick={() => setEditing(u)}>{t('edit')}</Button><Button size="sm" variant="danger" onClick={() => { setError(null); setConfirm({ user: u, type: 'toggle' }); }}>{t('toggle')}</Button><Button size="sm" variant="danger" onClick={() => { setError(null); setConfirm({ user: u, type: 'reset' }); }}>{t('reset')}</Button></div> },
     ]} />
     <Pagination data={users.data} page={page} onChange={setPage} />
