@@ -1,0 +1,30 @@
+{
+  "crumbs": { "subjects": "Asignaturas" },
+  "actions": { "export": "Exportar notas", "publish": "Publicar {{count}} notas", "openReview": "Abrir revisión" },
+  "publish": { "done": "{{count}} notas publicadas. Se ha avisado a cada estudiante." },
+  "stats": { "enrolled": "Convocados", "todo": "Por corregir", "graded": "Corregidos", "average": "Media" },
+  "filters": { "label": "Filtrar instancias", "all": "Todas", "todo": "Por corregir", "graded": "Corregidas", "published": "Publicadas", "review": "En revisión", "issues": "Incidencias" },
+  "instances": {
+    "caption": "Instancias del examen",
+    "empty": "Ninguna instancia en este estado",
+    "emptyAll": "Todavía no hay exámenes escaneados",
+    "emptyAllBody": "Las instancias aparecen cuando se procesan los escaneos o se ingieren a mano.",
+    "unidentified": "Sin identificar"
+  },
+  "cols": { "student": "Estudiante", "model": "Modelo", "status": "Estado", "score": "Nota" },
+  "problems": { "title": "Problemas", "total": "Total" },
+  "review": {
+    "title": "Revisión",
+    "status": "Estado",
+    "from": "Desde",
+    "to": "Hasta",
+    "requests": "Solicitudes",
+    "none": "Aún no hay periodo de revisión. Ábrelo para que el alumnado pueda reclamar.",
+    "needsPublish": "Publica todas las notas para poder abrir la revisión.",
+    "created": "Periodo de revisión creado",
+    "dialogTitle": "Abrir periodo de revisión",
+    "dialogBody": "Durante este periodo cada estudiante podrá ver su examen corregido y pedir revisión de problemas concretos.",
+    "states": { "SCHEDULED": "Programada", "OPEN": "Abierta", "CLOSED": "Cerrada", "COMPLETED": "Completada" },
+    "errors": { "NOT_ALL_PUBLISHED": "Todas las notas deben estar publicadas.", "INVALID_DATES": "La fecha de inicio debe ser anterior a la de fin.", "REVIEW_ALREADY_EXISTS": "Este examen ya tiene un periodo de revisión." }
+  }
+}

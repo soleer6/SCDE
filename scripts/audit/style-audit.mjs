@@ -20,7 +20,7 @@ const files = [];
 const RULES = [
   // [id, severity, appliesTo regex on filename, regex on line, message]
   ['raw-color', 'error', /\.(css|jsx)$/, /#[0-9a-fA-F]{3,8}\b|rgba?\(/, 'Raw colour — use a token from src/styles/tokens.css'],
-  ['font-family', 'error', /\.(css|jsx)$/, /font-family\s*:|fontFamily\s*:/, 'Set fonts via var(--mono)/var(--serif) shorthands only (in CSS)'],
+  ['font-family', 'error', /\.(css|jsx)$/, /font-family\s*:(?!\s*var\(--(mono|serif)\))|fontFamily\s*:/, 'Fonts only via var(--mono) / var(--serif)'],
   ['radius', 'error', /\.(css|jsx)$/, /border-radius\s*:\s*(?!var\(--radius\)|0\b)|borderRadius/, 'Rounded corners are not part of the language (radius: 0)'],
   ['shadow', 'error', /\.(css|jsx)$/, /box-shadow\s*:(?!\s*none)|boxShadow/, 'No shadows — use hairlines (1px var(--line))'],
   ['gradient-deco', 'warn', /\.css$/, /linear-gradient|radial-gradient/, 'Gradients only for grid backgrounds / masks; check intent'],

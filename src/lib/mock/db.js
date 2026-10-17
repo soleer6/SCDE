@@ -7,7 +7,7 @@
  * `extendSeed(fn)` from their own mocks module instead.
  */
 
-const KEY = 'scde.mockdb.v2';
+const KEY = 'scde.mockdb.v3';
 const ORG = 'org-uam';
 const iso = (d) => new Date(d).toISOString();
 
@@ -93,7 +93,7 @@ function seed() {
 
   const pdfs = ['/mock-pdfs/exam_101.pdf', '/mock-pdfs/exam_102.pdf', '/mock-pdfs/exam_103.pdf'];
   const statusPlan = {
-    'e-mat-p1': ['PUBLISHED', 'PUBLISHED', 'IN_REVIEW', 'PUBLISHED', 'PUBLISHED', 'PUBLISHED', 'PUBLISHED', 'PUBLISHED'],
+    'e-mat-p1': Array(8).fill('IN_REVIEW'),
     'e-mat-p2': ['GRADED', 'GRADED', 'PENDING_GRADING', 'PENDING_GRADING', 'PENDING_GRADING', 'GRADED', 'PENDING_GRADING', 'QUEUED'],
     'e-fis-p1': ['PENDING_GRADING', 'PENDING_GRADING', 'PENDING_GRADING', 'PENDING_GRADING', 'RECEIVED', 'ASSEMBLING'],
     'e-prg-pr1': ['GRADED', 'GRADED', 'GRADED', 'PENDING_GRADING'],
@@ -111,9 +111,8 @@ function seed() {
       const graded = ['GRADED', 'PUBLISHED', 'IN_REVIEW', 'PENDING_REVIEW', 'FINALIZED'].includes(status);
       const examProblems = problems.filter((p) => p.exam_model_id === `mdl-${examId}`);
       let total = null;
-      if (graded || (status === 'PENDING_GRADING' && i === 0)) {
+      if (graded) {
         examProblems.forEach((p, k) => {
-          if (!graded && k > 0) return; // partially graded instance
           const score = Math.round(p.max_score * (0.35 + rnd() * 0.65) * 4) / 4;
           grades.push({ id: `gr-${id}-${k}`, instance_id: id, problem_id: p.id, score, grader_id: 'u-maria', rubric_selections: [] });
         });
@@ -143,6 +142,7 @@ function seed() {
   ];
 
   const assignment_rules = [
+    { id: 'ar-mat-p2', exam_id: 'e-mat-p2', groups: [], models_filter: [], problems: ['p-e-mat-p2-2', 'p-e-mat-p2-3'], correctors: ['u-javier'], created_at: iso('2026-10-14'), updated_at: iso('2026-10-14') },
     { id: 'ar-1', exam_id: 'e-fis-p1', groups: [], models_filter: [], problems: problems.filter((p) => p.exam_model_id === 'mdl-e-fis-p1').map((p) => p.id), correctors: ['u-maria'], created_at: iso('2026-10-09'), updated_at: iso('2026-10-09') },
   ];
 

@@ -1,0 +1,28 @@
+{
+  "header": { "model": "Model {{label}}", "unidentified": "Unidentified student" },
+  "actions": { "next": "Next to grade", "finish": "Mark as graded", "reopen": "Reopen grading" },
+  "toast": { "graded": "Exam marked as graded", "reopened": "Grading reopened" },
+  "toolbar": {
+    "label": "Annotation tools", "prev": "Previous page", "next": "Next page",
+    "pen": "Pen", "eraser": "Eraser", "undo": "Undo", "clear": "Clear page",
+    "zoomIn": "Zoom in", "zoomOut": "Zoom out", "width": "Width {{n}}",
+    "inks": { "red": "Red ink", "blue": "Blue ink", "green": "Green ink", "black": "Black ink" }
+  },
+  "stage": { "loadingPdf": "Loading exam", "pdfError": "Couldn't load the exam PDF." },
+  "save": { "idle": "No changes", "pending": "Unsaved changes", "saving": "Saving", "saved": "Saved", "error": "Save failed" },
+  "side": {
+    "total": "Total grade",
+    "progress": "{{done}}/{{total}} problems",
+    "problems": "Problems",
+    "comment": "Comment for the student",
+    "commentHint": "Saved automatically. The student sees it during review.",
+    "commentPlaceholder": "Write an overall assessment",
+    "locked": "Read only · {{status}}",
+    "unknownGrades": "This exam was already graded from another session. The API can't return per-problem grades, so re-grading may conflict.",
+    "shortcuts": "← → change page · Ctrl+Z undo stroke"
+  },
+  "problem": {
+    "scoreFor": "Grade for {{name}}",
+    "state": { "idle": "Not graded", "saving": "Saving", "saved": "Saved", "error": "Error" }
+  }
+}

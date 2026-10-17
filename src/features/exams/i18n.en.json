@@ -1,0 +1,30 @@
+{
+  "crumbs": { "subjects": "Subjects" },
+  "actions": { "export": "Export grades", "publish": "Publish {{count}} grades", "openReview": "Open review" },
+  "publish": { "done": "{{count}} grades published. Each student has been notified." },
+  "stats": { "enrolled": "Enrolled", "todo": "To grade", "graded": "Graded", "average": "Average" },
+  "filters": { "label": "Filter instances", "all": "All", "todo": "To grade", "graded": "Graded", "published": "Published", "review": "In review", "issues": "Issues" },
+  "instances": {
+    "caption": "Exam instances",
+    "empty": "No instances in this state",
+    "emptyAll": "No scanned exams yet",
+    "emptyAllBody": "Instances appear once scans are processed or ingested manually.",
+    "unidentified": "Unidentified"
+  },
+  "cols": { "student": "Student", "model": "Model", "status": "Status", "score": "Grade" },
+  "problems": { "title": "Problems", "total": "Total" },
+  "review": {
+    "title": "Review",
+    "status": "Status",
+    "from": "From",
+    "to": "Until",
+    "requests": "Requests",
+    "none": "No review period yet. Open one so students can appeal.",
+    "needsPublish": "Publish every grade before opening the review.",
+    "created": "Review period created",
+    "dialogTitle": "Open review period",
+    "dialogBody": "During this period each student can see their graded exam and request a review of specific problems.",
+    "states": { "SCHEDULED": "Scheduled", "OPEN": "Open", "CLOSED": "Closed", "COMPLETED": "Completed" },
+    "errors": { "NOT_ALL_PUBLISHED": "Every grade must be published.", "INVALID_DATES": "Start must be before end.", "REVIEW_ALREADY_EXISTS": "This exam already has a review period." }
+  }
+}

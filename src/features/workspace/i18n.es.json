@@ -1,0 +1,42 @@
+{
+  "nav": { "overview": "Inicio", "subjects": "Asignaturas" },
+  "overview": {
+    "eyebrow": "Curso 2026-2027",
+    "title": "Hola, {{name}}",
+    "ledeTeacher": "Esto es lo que tienes pendiente de corregir y revisar.",
+    "ledeStudent": "Tus exámenes y resultados del curso.",
+    "statExams": "Exámenes por corregir",
+    "statProblems": "Problemas sin nota",
+    "statReviews": "Revisiones pendientes",
+    "queue": "Cola de corrección",
+    "queueEmptyTitle": "No tienes nada pendiente",
+    "queueEmptyBody": "Cuando se te asignen problemas de un examen aparecerán aquí.",
+    "reviews": "Solicitudes de revisión",
+    "allReviews": "Ver todas",
+    "myExams": "Mis exámenes",
+    "myExamsEmpty": "Todavía no tienes exámenes este curso",
+    "subjects": "Asignaturas",
+    "allSubjects": "Ver todas"
+  },
+  "subjects": {
+    "title": "Asignaturas",
+    "lede": "Asignaturas del curso activo en las que participas.",
+    "semester": "Semestre {{n}}",
+    "emptyTitle": "No participas en ninguna asignatura",
+    "emptyBody": "Si crees que es un error, contacta con la coordinación de tu asignatura.",
+    "emptyStaff": "Como gestor, administra asignaturas y miembros desde Gestión."
+  },
+  "subject": {
+    "exams": "Exámenes",
+    "noExams": "Esta asignatura aún no tiene exámenes",
+    "noExamsTeacher": "La coordinación crea los exámenes y sus modelos.",
+    "details": "Detalles",
+    "coordinator": "Coordinación",
+    "groups": "Grupos",
+    "manage": "Gestionar asignatura"
+  },
+  "cols": {
+    "exam": "Examen", "student": "Estudiante", "progress": "Progreso", "problem": "Problema", "received": "Recibida",
+    "subject": "Asignatura", "date": "Fecha", "problems": "Problemas", "students": "Convocados", "graded": "Corregidos"
+  }
+}
