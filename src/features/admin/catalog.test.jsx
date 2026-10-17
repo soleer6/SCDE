@@ -25,6 +25,7 @@ it('lists historical courses, searches on the server and paginates', async () =>
 });
 
 it('uses only documented users parameters and filters the current page locally', async () => {
+  db.users.push(...Array.from({ length: 26 }, (_, i) => ({ ...db.users[0], id: `extra-${i}`, email: `extra${i}@uam.es`, is_staff: false })));
   const get = vi.spyOn(api, 'get');
   const user = userEvent.setup(); renderPage(<UsersPage />);
   await screen.findByText('admin@uam.es');
@@ -32,6 +33,12 @@ it('uses only documented users parameters and filters the current page locally',
   await user.click(screen.getByRole('button', { name: 'Buscar' }));
   expect(screen.queryByText('admin@uam.es')).not.toBeInTheDocument();
   expect(get.mock.calls.filter(([path]) => path === '/users/')).toEqual([['/users/', { page: 1, page_size: '25' }]]);
+  await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+  await screen.findByText(/Página 2 de 2/);
+  fireEvent.change(screen.getByLabelText('Buscar usuarios'), { target: { value: 'extra25' } });
+  await user.click(screen.getByRole('button', { name: 'Buscar' }));
+  await screen.findByText('extra25@uam.es');
+  expect(get).toHaveBeenLastCalledWith('/users/', { page: 2, page_size: '25' });
   await user.selectOptions(screen.getByLabelText('Registros por página'), '50');
   await waitFor(() => expect(get).toHaveBeenLastCalledWith('/users/', { page: 1, page_size: '50' }));
 });
