@@ -2,7 +2,7 @@
 
 Usage: python docs/memoria/check_tex.py
 Checks: included files exist, braces balanced, \\ref/\\cref targets defined,
-acronyms (\\ac*) and definitions (\\dfn*) declared.
+\\cite keys present in references.bib, acronyms (\\ac*) and definitions (\\dfn*) declared.
 """
 import pathlib
 import re
@@ -44,6 +44,14 @@ for p in texs:
     ud |= set(re.findall(r'\\dfn(?:pl)?\{([^}]+)\}', t))
 print(f'undefined acronyms: {sorted(ua - acr)}; undefined definitions: {sorted(ud - dfn)}')
 errors += len(ua - acr) + len(ud - dfn)
+
+bib = set(re.findall(r'@\w+\{([^,\s]+),', (root / 'bibliography/references.bib').read_text(encoding='utf-8')))
+cited = set()
+for p in texs:
+    for grp in re.findall(r'\\cite[pt]?\{([^}]+)\}', p.read_text(encoding='utf-8')):
+        cited |= {x.strip() for x in grp.split(',')}
+print(f'bib entries: {len(bib)}, cited: {len(cited)}, undefined citations: {sorted(cited - bib)}')
+errors += len(cited - bib)
 
 pending = sum(t.count('\\pendiente{') for t in (p.read_text(encoding='utf-8') for p in texs))
 print(f'\\pendiente marks: {pending}')

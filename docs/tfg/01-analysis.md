@@ -26,7 +26,7 @@ Fecha: 2026-10-17. Punto de partida: rama `modulo-profesor` @ `7ca9b72` (15 comm
 ## 2. Qué se infirió automáticamente
 | Información | Fuente | Método |
 |---|---|---|
-| 96 operaciones REST, tags, request/response | OpenAPI | script |
+| 95 operaciones REST en 73 rutas (94 sin `/health/`), tags, request/response | OpenAPI | script |
 | 127 schemas con campos, tipos, requeridos | OpenAPI | script |
 | Esquema de auth (Bearer JWT) | `securitySchemes` | script |
 | Nombres de campos de tokens (`access_token`, `refresh_token`) | OpenAPI + `views/auth.py` | script + lectura |

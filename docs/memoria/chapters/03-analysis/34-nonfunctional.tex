@@ -1,5 +1,46 @@
-\pendiente{Redactar como RNF verificables.}
+Los requisitos no funcionales se formulan de manera que se puedan comprobar en el
+repositorio, indicando en cada caso con qué evidencia. Cuando la comprobación disponible es
+parcial se dice expresamente; la evaluación completa queda para \cref{CAP:TESTING}.
 
-Candidatos: accesibilidad (foco visible, etiquetas asociadas, contraste, movimiento
-reducido); internacionalización ES/EN; errores del \dfn{backend} como códigos simbólicos
-traducidos; uso sin \dfn{backend} (\dfn{mock}); diseño adaptable desde 360\,px.
+\begin{description}
+  \item[RNF-1. Fidelidad al contrato.] Los nombres de campos, valores y rutas se usan tal cual
+        los define el \dfn{backend} y solo se invocan operaciones del inventario.
+        \emph{Comprobación:} el inventario generado del OpenAPI y el \textit{script} de
+        cobertura, que relaciona cada llamada del código con una operación del contrato.
+  \item[RNF-2. Funcionamiento sin \dfn{backend}.] La aplicación debe poder ejecutarse,
+        demostrarse y probarse sin el servicio real, mediante una \dfn{mock} activada con
+        \texttt{VITE\_MOCK\_API=true} que reproduce las respuestas del contrato y las reglas
+        relevantes (estados, permisos, conflictos). \emph{Comprobación:} las pruebas
+        automatizadas se ejecutan contra esa simulación.
+  \item[RNF-3. Accesibilidad.] Tomando WCAG~2.2 como referencia~\cite{wcag22}: foco visible
+        en todos los controles, etiquetas asociadas a cada campo con su ayuda y su error,
+        diálogos que retienen y devuelven el foco, estados que no se comunican solo por color,
+        contraste suficiente del texto secundario y respeto a la preferencia de movimiento
+        reducido. \emph{Comprobación:} parcial; las pruebas consultan los controles por su rol
+        y etiqueta accesibles y la hoja de estilos implementa foco visible y movimiento
+        reducido, pero no se ha hecho una auditoría de conformidad ni pruebas con tecnologías
+        de apoyo.
+  \item[RNF-4. Internacionalización.] Todos los textos de la interfaz en español e inglés,
+        organizados por módulo funcional. \emph{Comprobación:} cada módulo declara sus textos
+        en ambos idiomas.
+  \item[RNF-5. Errores comprensibles.] Ningún error se muestra en crudo: los códigos
+        simbólicos del servicio (\texttt{error\_code} y códigos de validación por campo) se
+        traducen mediante claves de idioma. \emph{Comprobación:} el cliente \acs{http}
+        normaliza las respuestas de error y la interfaz las presenta con un componente común.
+  \item[RNF-6. Coherencia visual.] Todas las pantallas usan los \textit{tokens} y las
+        primitivas del sistema de diseño (\cref{SEC:DES-VISUAL}), sin colores escritos
+        directamente ni redefiniciones locales de las clases comunes. \emph{Comprobación:} un
+        auditor de estilo automático que forma parte de la comprobación previa a cada commit.
+  \item[RNF-7. Diseño adaptable.] Las pantallas se reorganizan en anchos reducidos (punto de
+        corte en 720\,px). \emph{Comprobación:} parcial; existe el punto de corte, pero no se
+        han registrado pruebas en dispositivos.
+  \item[RNF-8. Seguridad en el cliente.] Los \textit{tokens} se renuevan de forma
+        transparente, una sesión que no se puede renovar se cierra, y el contenido procedente
+        del servicio se representa como texto, nunca como \acs{html}, para evitar
+        \acs{xss}. Los permisos replicados en el cliente solo deciden qué se muestra; la
+        autorización la aplica el servicio (\cref{SEC:AN-ACTORS}).
+  \item[RNF-9. Mantenibilidad.] Organización por módulos funcionales con dependencias en un
+        solo sentido hacia una base compartida (\cref{SEC:DES-ARCH}), y una comprobación
+        única (\texttt{npm run check}: análisis estático, pruebas, construcción y auditoría
+        de estilo) que debe superarse antes de cada commit.
+\end{description}

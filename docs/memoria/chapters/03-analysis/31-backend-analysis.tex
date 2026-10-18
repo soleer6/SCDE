@@ -1,18 +1,137 @@
-\pendiente{Redactar a partir de docs/tfg/01-analysis.md.}
+El \dfn{frontend} se construye sobre un \dfn{backend} que ya existía y que no forma parte
+de este trabajo: el servicio Django REST del TFG de backend~\cite{scdee_backend_repo}.
+La primera tarea fue, por tanto, de análisis y no de diseño: averiguar qué ofrece realmente
+ese servicio, con qué reglas, y en qué se diferenciaba de lo que suponía el prototipo de
+interfaz heredado. Esta sección describe cómo se hizo y qué se obtuvo; las conclusiones
+alimentan los requisitos de las secciones siguientes.
 
-Material verificado:
-\begin{itemize}
-  \item Fuente de verdad: \texttt{docs/files/spectacular/SCDEE API.yaml} del \dfn{backend}:
-        96 operaciones, 127 esquemas, autenticación \textit{Bearer} \acs{jwt}.
-  \item Extracción determinista con dos scripts (\texttt{scripts/analyze/endpoints.py},
-        \texttt{schemas.py}) $\rightarrow$ \texttt{docs/frontend/API\_INVENTORY.md}.
-  \item Verificación en el código de lo que el esquema no expresa: \texttt{jwt\_plugin.py}
-        (\textit{claims}), \texttt{MySubjectsView} (rol por asignatura),
-        \texttt{access\_control.py} (visibilidad del estudiante), \texttt{grading.py}
-        (concurrencia optimista), \texttt{VALID\_TRANSITIONS} (máquina de estados).
-  \item Desajustes del prototipo previo con el \dfn{backend} real (6), p.\,ej. nombres de los
-        campos de \textit{token}, rol global inexistente, lectura de un campo
-        \texttt{payload} que la respuesta no contiene.
-  \item Obstáculos técnicos del análisis: clonado fallido por binarios grandes (resuelto con
-        clon parcial y \textit{sparse checkout}).
-\end{itemize}
+\subsection{Punto de partida}
+
+El repositorio del \dfn{frontend} contenía un prototipo del módulo del profesor (rama
+\texttt{modulo-profesor}, 15 commits) desarrollado antes de que el \dfn{backend} estuviera
+disponible. Su documento de contrato describía una primera fase del servicio en la que solo
+existía la comprobación de salud y una lista de operaciones \emph{planificadas}. El
+\dfn{backend} real se localizó en su propio repositorio, rama \texttt{backend}, cuyo último
+commit (\texttt{a8eb9f43}, 19/05/2026) se tomó como versión de referencia para todo el
+trabajo.
+
+La obtención del código ya planteó un primer obstáculo: tanto el clonado completo como el
+superficial fallaban al descargar ficheros binarios voluminosos de la documentación. Se
+resolvió consultando primero el árbol del repositorio mediante la \acs{api} de GitHub (791
+entradas) para decidir qué hacía falta, y clonando después de forma parcial
+(\texttt{--filter=blob:none}) con \textit{sparse checkout} limitado al código del servicio y a
+la especificación OpenAPI.
+
+\subsection{El contrato como fuente de verdad}
+
+El \dfn{backend} publica una descripción OpenAPI~3.0.3 generada con drf-spectacular
+(\texttt{docs/files/spectacular/SCDEE API.yaml}, unos 534\,KB)~\cite{codex_openapi303,codex_drfspectacular}.
+Contiene 95 operaciones sobre 73 rutas ---94 si se descuenta la comprobación de salud---,
+127 esquemas de datos y un único esquema de seguridad, \textit{Bearer} con \acs{jwt}.
+
+Un documento de ese tamaño no se puede consultar de forma fiable a mano ni, por la misma
+razón, dejárselo leer entero a un \dfn{agente} cada vez que necesita un dato. Se escribieron
+dos \textit{scripts} deterministas (\texttt{scripts/analyze/endpoints.py} y
+\texttt{schemas.py}) que extraen del YAML una línea por operación (método, ruta, etiqueta,
+cuerpo de la petición, respuestas y resumen) y una ficha por esquema (campos, tipos,
+obligatoriedad). El resultado, \texttt{docs/frontend/API\_INVENTORY.md}, se convirtió en el
+índice de consulta del proyecto y en una regla explícita de trabajo: ninguna pantalla usa
+una operación o un campo que no figure en él (\cref{AP:API}). El mismo inventario sirve
+después para medir la cobertura del contrato (\cref{SEC:TEST-COVERAGE}).
+
+La extracción automática resolvió la parte estructural: operaciones, formas de los mensajes,
+paginación por desplazamiento (\texttt{count}, \texttt{page}, \texttt{page\_size},
+\texttt{total\_pages}, \texttt{results}), formato simbólico de los errores
+(\texttt{error\_code} y, en validación, códigos por campo) y nombres exactos de los
+\textit{tokens} (\texttt{access\_token}, \texttt{refresh\_token}).
+
+\subsection{Lo que el esquema no expresa}
+
+Un esquema describe la forma de los mensajes, pero no quién puede ver qué, en qué momento ni
+qué ocurre si dos personas actúan a la vez. Para una interfaz esas reglas son tan
+importantes como los campos, porque deciden qué botones se muestran, qué variantes tiene
+cada vista y qué errores hay que explicar. Se leyeron por ello las partes del código del
+\dfn{backend} donde el esquema podía no reflejar el comportamiento:
+\begin{description}
+  \item[Identidad y roles.] El complemento de autenticación (\texttt{jwt\_plugin.py}) añade
+        al \acs{jwt} los indicadores \texttt{is\_staff} e \texttt{is\_superadmin} y la
+        organización; la respuesta del inicio de sesión no los incluye. El rol docente no es
+        global: \texttt{MySubjectsView} devuelve un rol por asignatura
+        (\cref{SEC:AN-ACTORS}).
+  \item[Permisos.] La tabla \texttt{DEFAULT\_PERMISSIONS} fija once permisos
+        \texttt{can\_*} por rol, que pueden sobrescribirse por membresía.
+  \item[Ciclo de vida de una \dfn{instancia}.] \texttt{VALID\_TRANSITIONS} define una
+        máquina de estados de diez estados: \texttt{ASSEMBLING} $\rightarrow$
+        \texttt{RECEIVED} $\rightarrow$ \texttt{QUEUED} $\rightarrow$
+        \texttt{PENDING\_GRADING} $\rightarrow$ \texttt{GRADED} $\rightarrow$
+        \texttt{PUBLISHED} $\rightarrow$ \texttt{IN\_REVIEW} $\rightarrow$
+        \texttt{FINALIZED} $\rightarrow$ \texttt{ARCHIVED}, con un estado
+        \texttt{PENDING\_REVIEW} para las revisiones aceptadas y varios retrocesos
+        permitidos (por ejemplo, de \texttt{GRADED} a \texttt{PENDING\_GRADING}).
+  \item[Visibilidad para el estudiante.] \texttt{access\_control.py} solo muestra la
+        información básica a partir de la publicación; el acceso a páginas, anotaciones,
+        \dfn{rubrica} o desglose depende además de seis permisos del examen
+        (\texttt{student\_permissions}) y de que el periodo de revisión esté abierto, salvo
+        que el examen permita seguir viendo las páginas tras la revisión.
+  \item[Concurrencia.] \texttt{grading.py} aplica control optimista: para modificar una
+        nota existente hay que enviar la anterior (\texttt{old\_score}); si no coincide, el
+        servicio responde 409 con \texttt{VERSION\_CONFLICT}.
+  \item[Representación según el rol.] Un mismo recurso se serializa de forma distinta según
+        quién lo pide (por ejemplo, tres representaciones del examen y una específica de la
+        \dfn{instancia} para el estudiante), de modo que la interfaz no puede suponer los
+        mismos campos para todos.
+  \item[Anotaciones.] El contenido de una anotación se guarda en almacenamiento de objetos
+        y la respuesta solo ofrece una dirección de descarga firmada
+        (\texttt{download\_url}), no el contenido.
+\end{description}
+Algunas de estas lecturas sirvieron también para descartar hipótesis. Al revisar
+\texttt{MySubjectsView} se sospechó una fuga entre organizaciones, porque busca el curso
+activo sin filtrar explícitamente por organización; la lectura del gestor
+\textit{multi-tenant} del modelo mostró que el filtro se aplica siempre, así que no hay tal
+fuga. Se documenta como ejemplo de una sospecha que se verificó antes de comunicarla.
+
+\subsection{Desajustes del prototipo previo}
+
+La comparación del prototipo con el \dfn{backend} real arrojó seis desajustes:
+\begin{enumerate}
+  \item El inicio de sesión leía \texttt{access}/\texttt{refresh}, pero el servicio devuelve
+        \texttt{access\_token}/\texttt{refresh\_token}; la renovación y el cierre de sesión
+        enviaban el campo con el nombre equivocado.
+  \item El rol se deducía de \texttt{is\_staff} como si fuera global (profesor o estudiante),
+        cuando \texttt{is\_staff} identifica al gestor de la organización y el rol docente
+        depende de la asignatura.
+  \item Se esperaba \texttt{is\_staff} en la respuesta del inicio de sesión, pero solo
+        viaja dentro del \acs{jwt}.
+  \item La precarga de anotaciones leía un campo \texttt{payload} que la respuesta no
+        contiene.
+  \item Se usaban estados simplificados de la \dfn{instancia} que no existen en el servicio.
+  \item El estado de la corrección y las anotaciones se guardaban en
+        \texttt{localStorage} como fuente de verdad.
+\end{enumerate}
+Afectaban a la autenticación, al modelo de roles y a la persistencia, es decir, a la base de
+toda la aplicación. Se concluyó que era más económico reescribir la capa de datos y las
+pantallas que adaptarlas. La versión anterior se conservó en la etiqueta
+\texttt{legacy/modulo-profesor-v1} y se reutilizó de ella la lógica de dibujo sobre el
+documento con coordenadas relativas (\cref{SEC:DES-ANNOTATION}).
+
+\subsection{Del contrato a los requisitos}
+
+Para pasar del conocimiento del servicio a requisitos de interfaz se siguió un procedimiento
+repetible:
+\begin{enumerate}
+  \item Agrupar las operaciones por etiqueta y por actor (gestor, coordinación, docente,
+        estudiante).
+  \item Para cada actor, ordenarlas según el ciclo de vida del recurso principal, la
+        \dfn{instancia} de examen.
+  \item Asociar cada transición o acción a un control con su permiso \texttt{can\_*} y su
+        error esperado.
+  \item Tratar cada lista paginada como una tabla con estados vacío, de carga, de error y
+        sin permiso.
+  \item Convertir cada condición de visibilidad del servicio en una variante de vista (por
+        ejemplo, el estudiante solo ve su examen corregido con la revisión abierta).
+  \item Registrar como hueco del contrato cada dato que la interfaz necesita y ninguna
+        operación proporciona (\cref{SEC:AN-GAPS}).
+\end{enumerate}
+El procedimiento no elimina el juicio: dos decisiones no se pudieron deducir del contrato y
+se tomaron por convención (la nota de aprobado, 5 sobre 10, no existe en el modelo de
+datos) o tras la corrección del autor (la dirección visual, \cref{SEC:DES-VISUAL}).

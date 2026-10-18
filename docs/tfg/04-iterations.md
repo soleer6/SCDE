@@ -59,6 +59,18 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
   la cobertura real pasa de 48 a 54/94 (Exams 18/18).
 - Tests nuevos: `exams/zones.test.jsx` (4) y `grading/useAnnotations.test.jsx` (2).
 
+## Iteración 2026-10-18 · memoria: estado del arte (Codex) y capítulo 3
+- Integrados los borradores de Codex del capítulo 2 (2.1-2.5) tras revisarlos: se enlaza 2.1
+  con la memoria del backend y con el artículo de Gradescope (Singh et al., 2017); en 2.5 se
+  corrige un párrafo desfasado (las carencias de `Dialog`/`Field` que describía ya se
+  resolvieron en la base, commit 96fac49). 26 referencias fusionadas en `references.bib`.
+- Capítulo 3 redactado: análisis del backend, actores con tabla de permisos, 20 requisitos
+  RF-F trazados a etiquetas del contrato, 9 RNF con su comprobación y tabla de huecos gap-1..8.
+- Corrección de un dato: el OpenAPI tiene 95 operaciones en 73 rutas (94 sin `/health/`), no
+  96 como decía el análisis inicial. Cobertura conjunta medida en ambas ramas: 85/94 desde
+  las features + refresh/logout en el cliente común; quedan 7 operaciones sin interfaz.
+- `check_tex.py` comprueba ahora que toda cita tiene entrada en `references.bib`.
+
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.
 - 2 tests con timeout bajo carga → ampliados localmente; entrada de texto con `change`.

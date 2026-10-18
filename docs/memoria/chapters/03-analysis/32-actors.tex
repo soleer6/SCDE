@@ -1,11 +1,98 @@
-\pendiente{Redactar; incluir tabla actores × permisos.}
+El modelo de autorización del \dfn{backend} combina dos niveles: unos indicadores globales
+de la cuenta, que viajan en el \acs{jwt}, y un rol con permisos en cada asignatura, que se
+obtiene de la membresía. Entenderlo bien fue condición previa para diseñar la navegación,
+porque el error más grave del prototipo previo era precisamente tratar el rol docente como
+algo global (\cref{SEC:AN-BACKEND}).
 
-Material:
-\begin{itemize}
-  \item Roles por asignatura: \texttt{COORDINATOR}, \texttt{TEACHER}, \texttt{STUDENT}
-        (una misma persona puede tener roles distintos en asignaturas distintas).
-  \item \texttt{is\_staff}: gestor de la organización (omite permisos de asignatura);
-        \texttt{is\_superadmin}: administración del sistema. Ambos solo en el \acs{jwt}.
-  \item Once permisos \texttt{can\_*} con valores por defecto por rol y excepciones por
-        membresía (tabla \texttt{DEFAULT\_PERMISSIONS}).
-\end{itemize}
+\subsection{Nivel de la organización}
+
+El servicio es \textit{multi-tenant}: cada usuario pertenece a una organización y las
+consultas se filtran por ella. Dentro de ese marco, dos indicadores de la cuenta tienen
+efecto en toda la aplicación:
+\begin{description}
+  \item[\texttt{is\_staff}.] Identifica al gestor de la organización. Gestiona usuarios,
+        cursos académicos, asignaturas, configuración y registro de auditoría y, además,
+        omite las comprobaciones de permisos de asignatura: puede actuar en cualquiera de
+        ellas.
+  \item[\texttt{is\_superadmin}.] Administración del sistema. Es el único perfil que puede
+        crear organizaciones y el que permite consultas que atraviesan el filtro por
+        organización.
+\end{description}
+Ninguno de los dos aparece en la respuesta del inicio de sesión; el \dfn{frontend} los lee
+del \acs{jwt} al iniciar o renovar la sesión.
+
+\subsection{Nivel de la asignatura}
+
+Cada persona tiene, en cada asignatura en la que participa, uno de tres roles:
+\texttt{COORDINATOR}, \texttt{TEACHER} o \texttt{STUDENT}. La misma persona puede coordinar
+una asignatura y ser solo docente en otra, o ser estudiante en una tercera; por eso la
+interfaz no puede tener una única ``vista de profesor'' y otra ``de estudiante'', sino que
+debe decidir qué mostrar en cada asignatura y en cada examen según el rol que le devuelve
+\texttt{GET /my-subjects/}.
+
+Sobre el rol, el servicio define once permisos \texttt{can\_*} con un valor por defecto
+(\cref{TAB:AN-PERMISSIONS}). La coordinación puede sobrescribirlos para una membresía
+concreta (\texttt{PATCH /memberships/\{id\}/permissions/}), de modo que los permisos
+efectivos pueden diferir de los de la tabla. El estudiante no tiene permisos de asignatura:
+lo que puede ver de su propio examen lo deciden los seis permisos del examen
+(\texttt{student\_permissions}: ver páginas, verlas tras la revisión, descargarlas, ver
+anotaciones, \dfn{rubrica} y desglose) combinados con el estado del periodo de revisión.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{Permisos de asignatura por defecto según el rol (\texttt{DEFAULT\_PERMISSIONS}
+           del \dfn{backend}). El gestor (\texttt{is\_staff}) los tiene todos.}
+  \label{TAB:AN-PERMISSIONS}
+  \begin{tabular}{lcc}
+    \hline
+    \textbf{Permiso} & \textbf{COORDINATOR} & \textbf{TEACHER} \\
+    \hline
+    \texttt{can\_create\_exams}        & sí & no \\
+    \texttt{can\_assign\_correctors}   & sí & no \\
+    \texttt{can\_create\_rubric}       & sí & sí \\
+    \texttt{can\_resolve\_issues}      & sí & no \\
+    \texttt{can\_publish\_grades}      & sí & no \\
+    \texttt{can\_manage\_reviews}      & sí & no \\
+    \texttt{can\_view\_all\_instances} & sí & sí \\
+    \texttt{can\_export\_grades}       & sí & no \\
+    \texttt{can\_manage\_members}      & sí & no \\
+    \texttt{can\_delegate\_perms}      & sí & no \\
+    \texttt{can\_manage\_groups}       & sí & no \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\subsection{Actores de la interfaz}
+
+De la combinación de ambos niveles se derivan los cuatro actores para los que se diseñan
+las pantallas:
+\begin{description}
+  \item[Gestor de la organización.] Cuenta con \texttt{is\_staff}. Administra la
+        organización y puede intervenir en cualquier asignatura; también es quien realiza
+        la ingesta manual de escaneos y atiende las páginas que no se han podido asociar a
+        ningún examen.
+  \item[Coordinación.] Rol \texttt{COORDINATOR} en una asignatura. Crea y configura
+        exámenes, asigna correctores, resuelve incidencias de escaneo, publica notas,
+        gestiona la revisión y administra miembros, grupos y permisos.
+  \item[Docente.] Rol \texttt{TEACHER}. Corrige las \dfnpl{instancia} que tiene asignadas
+        (o todas, con \texttt{can\_view\_all\_instances}), puede crear \dfnpl{rubrica} y
+        resuelve las solicitudes de revisión sobre las \dfnpl{instancia} y problemas que
+        tiene asignados por las reglas de corrección.
+  \item[Estudiante.] Rol \texttt{STUDENT}. Consulta su nota cuando se publica y, durante
+        el periodo de revisión y según los permisos del examen, su examen corregido, el
+        desglose y la \dfn{rubrica}; puede solicitar la revisión de problemas concretos.
+\end{description}
+El superadministrador queda fuera del alcance de la interfaz: su única operación propia, la
+creación de organizaciones, no tiene pantalla (\cref{SEC:AN-RF}).
+
+\subsection{Consecuencias para el \textit{frontend}}
+
+El \dfn{frontend} replica la tabla de permisos por defecto en
+\texttt{src/lib/permissions.js} con un único fin: mostrar u ocultar acciones. La
+autorización real sigue en el servicio, que vuelve a comprobar cada operación; ocultar un
+botón no protege nada, solo evita ofrecer lo que va a fallar. Cuando los permisos efectivos
+de una membresía difieren de los de la tabla, el servicio responde con un error de permiso
+que la interfaz traduce y muestra. Que un usuario no pueda descubrir el identificador de su
+propia membresía, y por tanto consultar sus permisos efectivos, es uno de los huecos del
+contrato (\cref{SEC:AN-GAPS}).

@@ -1,5 +1,94 @@
-\pendiente{Redactar.}
+Una interfaz que consume un servicio existente necesita conocer tanto los datos
+intercambiados como las condiciones de cada operación. El contrato proporciona
+una referencia compartida para desarrollar ambos extremos y revisar sus
+discrepancias. En este trabajo se utiliza como punto de partida el documento
+OpenAPI del backend, cuya cabecera declara la versión 3.0.3. Se distingue así la
+versión del lenguaje de descripción de la versión funcional de la API.
 
-Ideas: OpenAPI como contrato; generación desde código (drf-spectacular); lo que un esquema
-NO expresa (quién puede ver qué y cuándo, máquinas de estado, concurrencia), que en este
-trabajo resultó ser la parte más relevante (\cref{SEC:AN-BACKEND}).
+\subsection{Descripción estructurada de la interfaz}
+
+OpenAPI ofrece una descripción de APIs HTTP independiente del lenguaje de
+implementación. Su estructura recoge rutas, operaciones, parámetros, cuerpos,
+respuestas y esquemas de seguridad. Los esquemas permiten expresar tipos,
+propiedades requeridas y restricciones, así como diferenciar propiedades de
+lectura y escritura mediante \texttt{readOnly} y \texttt{writeOnly}. Esta
+distinción es relevante para una interfaz de edición: recibir un atributo en
+una respuesta no implica que pueda enviarse para modificar el recurso.
+La especificación admite además ejemplos y descripciones textuales, que
+complementan la estructura formal~\cite{codex_openapi303}.
+
+En SCDE, esta separación se concreta en la gestión de cursos: el estado activo
+aparece en los datos consultados, pero el esquema de modificación examinado
+solo permite cambiar etiqueta y fechas. La interfaz muestra el estado sin
+ofrecer una acción de activación. Asimismo, los parámetros expresamente
+declarados para usuarios limitan las consultas remotas a la paginación; el
+filtro textual de la pantalla se aplica a la página recibida y se presenta
+como búsqueda local. Son decisiones derivadas del contrato inspeccionado, no
+restricciones generales de OpenAPI~\cite{scde_admin_implementation_2026}.
+
+\subsection{Generación del esquema y revisión de discrepancias}
+
+En el ecosistema de Django REST Framework, drf-spectacular proporciona generación
+de esquemas OpenAPI. Su documentación contempla personalización y anotaciones
+para describir información que la introspección no resuelve por sí sola, así
+como generación de documentación y apoyo a clientes generados. La existencia de
+estas extensiones muestra que extraer información del código y documentar
+completamente una operación son actividades relacionadas, pero requieren
+comprobaciones diferenciadas~\cite{codex_drfspectacular}.
+
+El procedimiento adoptado en SCDE utiliza el inventario de operaciones del
+frontend como índice de consulta y el YAML original para resolver información
+ausente en ese resumen. La revisión distingue el esquema, los ejemplos y la
+descripción de cada operación. Cuando no coinciden, se documenta la discrepancia
+y se limita la implementación a la interpretación respaldada por la evidencia.
+Por ejemplo, el buscador jerárquico presenta una respuesta dependiente del nivel
+consultado y ejemplos cuya envoltura no coincide plenamente con el esquema.
+La petición de corregir esa documentación se conserva en coordinación; no se
+presenta el comportamiento del simulador como resolución definitiva del
+contrato~\cite{scde_admin_implementation_2026}.
+
+\subsection{Semántica HTTP y transferencia de archivos}
+
+El contrato de datos se interpreta sobre la semántica HTTP. RFC~9110 distingue
+los métodos seguros, orientados a obtener información, de las operaciones que
+solicitan cambios. También define la idempotencia en términos del efecto
+previsto de repetir una petición: no exige que todas las respuestas sean
+idénticas. Esta propiedad influye en la recuperación ante fallos de comunicación;
+la norma desaconseja reintentar automáticamente operaciones no idempotentes sin
+conocer garantías adicionales de su comportamiento~\cite{codex_rfc9110}.
+
+Como criterio de diseño, estas distinciones aconsejan tratar por separado la
+recarga de una lista y la repetición de una importación. Deshabilitar un botón
+mientras existe una petición en curso ayuda a evitar envíos duplicados desde la
+pantalla, pero no demuestra que repetir la operación sea seguro ante un fallo
+de red. Esa garantía requiere información del servicio sobre sus efectos. Esta
+es una consecuencia de diseño, no una garantía de recuperación medida en SCDE.
+
+La representación de archivos requiere atender también al tipo de contenido.
+\texttt{FormData} permite enviar pares de nombre y valor, incluidos archivos,
+mediante un cuerpo multipart. La documentación de MDN indica que, al enviarlo
+con \texttt{fetch}, debe dejarse al navegador establecer el encabezado
+\texttt{Content-Type} con su delimitador, en lugar de fijarlo manualmente sin
+ese dato~\cite{codex_formdata_mdn}. En las importaciones de SCDE el formulario
+adjunta el archivo original bajo la clave \texttt{file}. Mantener esta clave y
+el archivo sin transformaciones evita que la presentación introduzca un
+formato de intercambio diferente del previsto por la operación.
+
+\subsection{Alcance de las pruebas basadas en contrato}
+
+La descripción estructurada permite preparar manejadores simulados y casos
+reproducibles antes de disponer de una integración completa. En este proyecto
+se comprueban operaciones con respuestas simuladas y se contrastan sus campos
+con el contrato. Sin embargo, un objeto con la estructura esperada no basta
+para acreditar autorización, aislamiento entre organizaciones, transiciones
+de estado o ausencia de efectos parciales. Estas propiedades dependen también
+del comportamiento del servicio y deben verificarse mediante casos de negocio.
+
+La experiencia de administración ilustra este límite: una cuenta docente puede
+recibir permiso para gestionar grupos sin obtener permiso para gestionar
+miembros. La batería simulada comprueba esa separación y la restauración de
+la herencia de permisos, pero no ejecuta las vistas del servidor. Por ello se
+distinguen la conformidad estructural de los mensajes, los flujos ensayados con
+simulación y la validación pendiente con el backend real. El contrato constituye
+una base verificable para el desarrollo; su grado de detalle determina qué
+decisiones pueden automatizarse y cuáles requieren resolver información ausente.

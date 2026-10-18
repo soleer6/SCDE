@@ -1,4 +1,102 @@
-\pendiente{Redactar con fuentes primarias (documentación oficial de las herramientas) y literatura sobre agentes de programación. No afirmar capacidades no verificadas.}
+\subsection{De la generación de texto a la intervención en un repositorio}
 
-Herramientas usadas: Claude Code (Anthropic) y Codex (OpenAI), con instrucciones
-de proyecto (\texttt{CLAUDE.md}, \texttt{AGENTS.md}) y \textit{skills}.
+Un agente de programación combina un modelo de lenguaje con herramientas para
+observar y modificar un entorno de desarrollo. En este trabajo se utiliza el
+término para describir un proceso que consulta archivos, propone modificaciones,
+ejecuta comandos y utiliza sus resultados para continuar una tarea. Esta
+definición operativa permite distinguir la propuesta de código de su comprobación:
+una explicación coherente de una solución no demuestra que el programa resultante
+satisfaga sus requisitos.
+
+La documentación de Codex CLI describe una herramienta que inspecciona el
+repositorio local, edita archivos y ejecuta las herramientas instaladas. También
+contempla su utilización interactiva y mediante flujos repetibles con
+\texttt{codex exec}, así como instrucciones reutilizables mediante
+\textit{skills}~\cite{codex_cli_agents_2026}. Estas capacidades describen el
+producto y no implican que todas ellas se hayan empleado en cada tarea de SCDE.
+Conviene separar, además, el modelo que genera decisiones de la aplicación que
+le proporciona acceso al sistema: el comportamiento observado depende de ambos
+y de la configuración de la sesión.
+
+Claude Code ofrece igualmente operaciones sobre varios archivos, ejecución de
+pruebas y uso de Git. Su documentación presenta \texttt{CLAUDE.md} como contexto
+persistente del proyecto y las \textit{skills} como una forma de agrupar
+procedimientos reutilizables~\cite{codex_claude_overview_2026}. La coincidencia en
+estas funciones permite analizar ambas herramientas como agentes que intervienen
+en un ciclo de desarrollo. No constituye una comparación experimental entre
+proveedores ni permite atribuirles una fiabilidad equivalente.
+
+\subsection{Contexto explícito y coordinación del trabajo}
+
+Las instrucciones de proyecto expresan restricciones que no se deducen de una
+tarea aislada: estructura de directorios, contratos externos, convenciones de
+interfaz y condiciones de entrega. La documentación oficial de Codex establece
+que \texttt{AGENTS.md} proporciona instrucciones que se incorporan al inicio de
+la ejecución y admite una organización por ámbitos del
+proyecto~\cite{codex_agents_instructions_2026}. De ello se deriva una distinción
+práctica: proporcionar una norma en el contexto orienta la generación, mientras
+que impedir una escritura o rechazar una comprobación depende de mecanismos
+externos al texto de esa norma.
+
+En SCDE, \texttt{AGENTS.md}, \texttt{CLAUDE.md} y los documentos de coordinación
+definen una distribución explícita de responsabilidades. Claude Code se asigna
+a los flujos docentes y a la auditoría final; Codex, a administración, cuenta y
+notificaciones. Cada línea utiliza una rama y un directorio de trabajo de Git
+propios. \texttt{OWNERSHIP.json} enumera las rutas modificables y mantiene una
+base compartida congelada; \texttt{REQUESTS.md} canaliza las solicitudes que
+afectan a esa base~\cite{codex_scde_agent_evidence}. La separación limita el
+solapamiento previsto, pero no demuestra que una integración posterior carezca
+de conflictos funcionales.
+
+El contrato de la API y la guía de interfaz cumplen funciones complementarias.
+El primero acota los mensajes que puede enviar el frontend; la segunda fija
+criterios de composición y presentación. Los registros de trabajo documentan
+decisiones y restricciones encontradas, de modo que una tarea puede retomarse
+sin tratar una suposición anterior como un hecho confirmado. En este proyecto,
+esta trazabilidad es especialmente relevante porque el mismo proceso produce
+código, pruebas, scripts de publicación y borradores de documentación.
+
+\subsection{Evaluación y alcance de la evidencia}
+
+SWE-bench plantea la resolución de incidencias reales de repositorios como tarea
+de evaluación: el sistema recibe un repositorio y una descripción del problema,
+y debe modificar el código para resolverlo. El artículo destaca que estas tareas
+pueden exigir cambios coordinados entre funciones y archivos, además de
+interacción con el entorno de ejecución~\cite{codex_swebench_2024}. Este marco
+resulta pertinente para distinguir completar una función aislada de mantener un
+sistema existente. Sus resultados no se trasladan automáticamente a un frontend
+React ni a las versiones de herramientas utilizadas en SCDE.
+
+La verificación local de SCDE combina análisis estático, pruebas automatizadas,
+construcción y auditorías de estilo y propiedad. La inspección del auditor de
+propiedad muestra un límite concreto: compara los commits de la rama con la
+base y no incorpora por sí mismo los cambios todavía sin confirmar. Por ello,
+su resultado debe interpretarse junto con la revisión de los archivos que se
+pretende confirmar~\cite{codex_scde_agent_evidence}. Del mismo modo, una prueba
+que utiliza respuestas simuladas aporta evidencia sobre ese escenario y no
+certifica el comportamiento del backend Django.
+
+Los fallos de permisos o de ejecución de procesos deben registrarse como
+restricciones de la sesión. No equivalen a un defecto funcional demostrado,
+pero tampoco permiten declarar superada la comprobación que quedó interrumpida.
+La bitácora distingue estas situaciones de los errores reproducidos por las
+pruebas. Sin un protocolo comparativo, una línea base y medidas homogéneas de
+tiempo y revisión, este trabajo no atribuye a los agentes un porcentaje de
+productividad ni una reducción cuantificada de defectos.
+
+\subsection{Responsabilidad y transparencia de la asistencia}
+
+Claude Code y Codex se han utilizado, bajo la dirección y las reglas establecidas
+por el autor, para elaborar código y borradores de la memoria. Parte del trabajo
+se ha ejecutado mediante sesiones autónomas: la delegación de tareas no debe
+presentarse como revisión humana continua de cada cambio. Las comprobaciones
+automáticas, las bitácoras y la revisión por otro agente aportan evidencia
+complementaria, pero la revisión y aceptación final del autor siguen siendo
+necesarias~\cite{codex_scde_agent_evidence}.
+
+Esta sección sitúa las herramientas y los límites de su evaluación. El detalle
+de las tareas automatizadas, los procedimientos de comprobación y la revisión
+del material generado debe quedar desarrollado también en la metodología y en
+la declaración de asistencia de la memoria. La revisión entre agentes no debe
+describirse como validación humana independiente ni sustituir la comprobación
+de las fuentes bibliográficas.

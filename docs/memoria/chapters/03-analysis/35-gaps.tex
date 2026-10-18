@@ -1,12 +1,68 @@
-\pendiente{Redactar a partir de docs/tfg/03-backend-gaps.md. Indicar si el equipo de backend los ha resuelto antes de la entrega.}
+Convertir el contrato en pantallas sacó a la luz casos en los que la interfaz necesita un
+dato o una operación que el \dfn{backend} no ofrece, o en los que el servicio no se comporta
+como declara su especificación. Ninguno se puede resolver solo desde el \dfn{frontend}. Se
+registraron en \texttt{docs/tfg/03-backend-gaps.md} con la evidencia en el código del
+servicio, el efecto en la interfaz, la mitigación adoptada y una propuesta concreta para el
+equipo de \dfn{backend}. \Cref{TAB:AN-GAPS} los resume; todos se refieren a la versión del
+servicio analizada (commit \texttt{a8eb9f43}).
 
-\begin{enumerate}
-  \item El profesorado no puede leer las notas por problema, pero recalificar exige
-        \texttt{old\_score} (409 \texttt{VERSION\_CONFLICT}).
-  \item El estudiante no recibe los identificadores de los problemas que necesita para
-        pedir revisión.
-  \item No existe listado de cursos ni operación para activarlos.
-  \item Un usuario no puede descubrir el identificador de su propia membresía.
-\end{enumerate}
-Una sospecha de fuga entre organizaciones se descartó al leer el gestor
-\textit{multi-tenant}: documentar como ejemplo de verificación.
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{Huecos del contrato detectados durante el desarrollo.}
+  \label{TAB:AN-GAPS}
+  \begin{tabular}{p{0.7cm}p{5.4cm}p{6.6cm}}
+    \hline
+    \textbf{Id.} & \textbf{Hueco} & \textbf{Efecto y mitigación} \\
+    \hline
+    gap-1 & El docente no puede leer las notas por problema, pero recalificar exige enviar
+            la nota anterior (\texttt{old\_score}). &
+            Recalificar desde otra sesión produce siempre un conflicto. Se guarda en local la
+            última nota conocida por problema y se avisa cuando se desconocen las parciales. \\
+    gap-2 & El estudiante no recibe el identificador de los problemas, que es obligatorio para
+            pedir revisión. &
+            Ningún estudiante puede solicitar revisión. La interfaz usa el identificador si
+            llega y, si no, explica por qué no se puede reclamar. \\
+    gap-3 & No hay listado de cursos ni forma de activarlos. &
+            La administración de cursos muestra el estado activo sin ofrecer la acción. \\
+    gap-4 & Un usuario no puede descubrir el identificador de su membresía ni sus permisos
+            efectivos. &
+            Quien puede delegar permisos sin gestionar miembros no puede ejercer esa
+            capacidad. \\
+    gap-5 & El adjunto de páginas huérfanas por su ruta propia falla siempre (error 500): la
+            vista lee un campo que su serializador no define. &
+            Se usa la operación equivalente sobre la \dfn{instancia}, que funciona. \\
+    gap-6 & La incidencia \texttt{MISSING\_PAGE} no se elimina nunca, aunque el examen se
+            complete. &
+            La interfaz muestra la incidencia tal como la informa el servicio; la simulación
+            reproduce el comportamiento y una prueba lo fija. \\
+    gap-7 & Las páginas escaneadas no tienen dirección de descarga; las \dfnpl{instancia}
+            creadas a mano esperan cero páginas; las páginas no tienen fecha. &
+            Quien resuelve incidencias no puede ver la hoja que mueve o descarta. Se permite
+            asignar el modelo después, lo que recalcula las páginas esperadas. \\
+    gap-8 & La creación de zonas de reconocimiento devuelve una lista aunque el contrato
+            declara un objeto; las coordenadas son puntos \acs{pdf} con origen abajo a la
+            izquierda. &
+            El cliente acepta ambas formas y el editor convierte entre porcentajes y puntos
+            con una función probada en ambos sentidos. \\
+    \hline
+  \end{tabular}
+\end{table}
+
+Los cuatro primeros se detectaron al diseñar los flujos principales (gap-3 y gap-4 desde la
+línea de administración); los cuatro últimos, al implementar la resolución de incidencias
+y la configuración de exámenes, cuando el contrato se contrastó con el código de las vistas.
+Esta segunda serie muestra un límite del contrato generado: drf-spectacular describe lo que
+las anotaciones de la vista declaran, y una discrepancia entre esa declaración y el código
+---como en gap-5 o gap-8--- solo aparece al leer el código o al ejecutarlo contra el servicio
+real.
+
+Se registraron además observaciones menores que no impiden ningún flujo: un valor por
+defecto de \texttt{notify\_students} que difiere entre el serializador y la vista (el
+\dfn{frontend} envía siempre el campo explícito), la necesidad de configurar \acs{cors} en el
+almacenamiento de objetos para que el navegador descargue las direcciones firmadas, y la
+ausencia de nota de aprobado en el modelo (se asume 5 sobre 10). La sospecha de fuga entre
+organizaciones descrita en \cref{SEC:AN-BACKEND} se descartó y no figura como hueco.
+
+\pendiente{Confirmar con el equipo de \textit{backend}, antes de la entrega, cuáles de estos
+huecos se han resuelto y actualizar la tabla.}

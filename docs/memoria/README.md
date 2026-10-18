@@ -1,8 +1,6 @@
 # Memoria del TFG (frontend) — esqueleto LaTeX
 
-**Estado:** borrador avanzado en redacción. Capítulos 1 (introducción) y 4 (diseño) redactados en prosa (2026-10-18); el resto, esqueleto con material factual y marcas `\pendiente{...}` (en rojo en el PDF) para lo que exige dato o decisión del autor.
-marcas `\pendiente{...}` (en rojo en el PDF) para lo que falta redactar o decidir.
-No contiene prosa final: la redacción es del autor.
+**Estado:** borrador avanzado en redacción. Redactados en prosa: capítulos 1 (introducción), 2 (estado del arte, borradores de Codex revisados e integrados), 3 (análisis) y 4 (diseño), a 2026-10-18. El resto, esqueleto con material factual y marcas `\pendiente{...}` (en rojo en el PDF) para lo que falta redactar o exige dato o decisión del autor. Todo el texto es un borrador que el autor debe revisar.
 
 **No compilado todavía**: la máquina de desarrollo no tiene distribución LaTeX.
 

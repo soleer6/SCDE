@@ -1,18 +1,100 @@
-\pendiente{Convertir en requisitos numerados (RF-F-x) con trazabilidad a las operaciones de la API (apéndice \ref{AP:API}).}
+Los requisitos funcionales del \dfn{frontend} se obtuvieron aplicando el procedimiento de
+\cref{SEC:AN-BACKEND} a las operaciones del contrato. No se parte de una lista de deseos:
+cada requisito corresponde a operaciones existentes del \dfn{backend}, y lo que la interfaz
+necesitaría pero el contrato no permite se trata aparte como hueco (\cref{SEC:AN-GAPS}). Los
+requisitos del servicio ya tienen su propia numeración (RF-1 a RF-16 en la memoria y en los
+resúmenes del OpenAPI); los del \dfn{frontend} se numeran como RF-F para no confundirlos, y
+cada uno indica las etiquetas del contrato que usa. El detalle operación por operación está en
+el \cref{AP:API}.
 
-Requisitos implementados (resumen):
+\Cref{TAB:AN-RF} resume los requisitos, agrupados por el actor principal y en el orden del
+ciclo de vida de un examen. La última columna indica en qué línea de trabajo se implementó:
+\emph{D} para los flujos docentes y del estudiante, \emph{A} para la línea paralela de
+administración, cuenta y notificaciones (\cref{SEC:IMP-PARALLEL}).
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{Requisitos funcionales del \textit{frontend} y su trazabilidad al contrato.}
+  \label{TAB:AN-RF}
+  \begin{tabular}{p{1.3cm}p{6.6cm}p{3.6cm}c}
+    \hline
+    \textbf{Id.} & \textbf{Requisito} & \textbf{Etiquetas del contrato} & \textbf{Línea} \\
+    \hline
+    \multicolumn{4}{l}{\textit{Todos los actores}} \\
+    RF-F1  & Iniciar y cerrar sesión; renovar el \acs{jwt} de forma transparente y volver
+             al inicio de sesión si la renovación falla. & Authentication & base \\
+    RF-F2  & Ver un inicio con las tareas propias (correcciones y revisiones pendientes) y
+             las asignaturas con el rol en cada una. & Grading, Subjects & D \\
+    RF-F3  & Consultar y editar el perfil propio y sus preferencias de notificación;
+             consultar y marcar notificaciones. & Users, Notifications & A \\
+    \multicolumn{4}{l}{\textit{Coordinación}} \\
+    RF-F4  & Crear y configurar exámenes: modelos con su \acs{pdf} en blanco, problemas,
+             permisos del estudiante y zonas de reconocimiento por página. & Exams & D \\
+    RF-F5  & Definir \dfnpl{rubrica} y reglas de asignación de correctores. & Grading,
+             Exams & D \\
+    RF-F6  & Resolver incidencias de escaneo: identificar estudiante o modelo, aceptar,
+             reordenar, mover o descartar páginas, adjuntar páginas huérfanas, crear o
+             borrar \dfnpl{instancia}. & Instances, Pages & D \\
+    RF-F7  & Seguir el estado de las \dfnpl{instancia} de un examen, publicar notas y
+             exportarlas. & Instances, Grading, Exams & D \\
+    RF-F8  & Abrir el periodo de revisión y gestionar sus solicitudes. & Reviews & D \\
+    RF-F9  & Administrar miembros, grupos y permisos efectivos de la asignatura.
+           & Subjects & A \\
+    \multicolumn{4}{l}{\textit{Docente}} \\
+    RF-F10 & Corregir una \dfn{instancia}: ver el examen escaneado, anotar a mano alzada,
+             calificar cada problema manualmente o por \dfn{rubrica}, comentar y cambiar
+             su estado. & Instances, Annotations, Grading & D \\
+    RF-F11 & Resolver las solicitudes de revisión asignadas. & Reviews & D \\
+    \multicolumn{4}{l}{\textit{Estudiante}} \\
+    RF-F12 & Consultar la nota publicada y, según los permisos del examen y el periodo de
+             revisión, el desglose, la \dfn{rubrica} y el examen anotado. & Instances,
+             Annotations & D \\
+    RF-F13 & Solicitar la revisión de problemas concretos y seguir su resolución.
+           & Reviews & D \\
+    \multicolumn{4}{l}{\textit{Gestor de la organización}} \\
+    RF-F14 & Administrar usuarios (alta, edición, importación y exportación, restablecer
+             contraseña), cursos académicos, asignaturas, configuración y auditoría.
+           & Users, Courses, Organizations, Subjects, Audit & A \\
+    RF-F15 & Ingesta manual de escaneos y atención de páginas sin examen asociado.
+           & Ingestion, Pages & D \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\subsection{Requisitos transversales de comportamiento}
+
+Además de las funciones, el análisis del servicio impone reglas de comportamiento que afectan
+a varias pantallas a la vez:
+\begin{description}
+  \item[RF-F16. Variantes por rol y permiso.] Cada vista se adapta al rol de la persona en la
+        asignatura y a sus permisos: un examen es una pantalla de seguimiento para la
+        coordinación, de trabajo para el docente y de resultado para el estudiante.
+  \item[RF-F17. Estados de carga.] Toda lista o detalle remoto distingue los estados de
+        carga, vacío, error y falta de permiso, y permite reintentar.
+  \item[RF-F18. Conflictos de edición.] Al recalificar, la interfaz envía la nota anterior
+        conocida y, ante un conflicto de versión, avisa en lugar de sobrescribir.
+  \item[RF-F19. Persistencia de anotaciones.] Los trazos se guardan en el \dfn{backend} sin
+        acción explícita y no se pierden al cambiar de examen o salir del corrector.
+  \item[RF-F20. Errores comprensibles.] Los códigos de error simbólicos del servicio se
+        traducen a mensajes en el idioma de la interfaz.
+\end{description}
+
+\subsection{Alcance respecto al contrato}
+
+Con las dos líneas de trabajo reunidas, el código de las funcionalidades invoca 85 de las 94
+operaciones funcionales del contrato, y el cliente común realiza otras dos (renovación y
+cierre de sesión), según el \textit{script} de cobertura ejecutado sobre ambas ramas el
+18/10/2026. Quedan sin interfaz siete operaciones, por motivos distintos:
 \begin{itemize}
-  \item Acceso: inicio/cierre de sesión, renovación transparente del \acs{jwt}.
-  \item Inicio por usuario: cola de corrección y revisiones pendientes (\texttt{/my-tasks/}),
-        asignaturas, exámenes del estudiante.
-  \item Docencia: panel de examen (instancias filtrables por estado, publicación de notas,
-        exportación, apertura del periodo de revisión).
-  \item Corrección: \acs{pdf} con anotación a mano alzada, nota por problema manual o por
-        \dfn{rubrica}, comentario, transición de estado.
-  \item Estudiante: nota, desglose, examen corregido y solicitud de revisión, según los
-        permisos del examen y la ventana de revisión.
-  \item Revisión: bandeja docente y resolución de solicitudes.
-  \item Gestión (implementado en la línea paralela): usuarios, cursos, configuración,
-        auditoría, miembros/grupos/permisos de asignatura, notificaciones, perfil.
+  \item La creación de organizaciones, reservada al superadministrador, que queda fuera de
+        los actores de la interfaz.
+  \item Crear, modificar y borrar asignaturas mediante sus operaciones genéricas, que la
+        administración de la organización no ha llegado a usar.
+  \item Las dos operaciones de reconocimiento de texto sobre anotaciones (\acs{ocr} de trazos
+        y de notas manuscritas), previstas como ayuda al corrector.
+  \item El adjunto de páginas huérfanas por su ruta propia, que falla siempre en la versión
+        analizada del servicio; la interfaz usa una operación equivalente que sí funciona
+        (\cref{SEC:AN-GAPS}).
 \end{itemize}
-Requisitos no cubiertos todavía: ver \cref{SEC:TEST-COVERAGE}.
+La medición, su método y su evolución se presentan en \cref{SEC:TEST-COVERAGE}.

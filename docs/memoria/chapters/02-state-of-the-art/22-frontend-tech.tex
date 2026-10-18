@@ -1,9 +1,99 @@
-\pendiente{Redactar.}
+La construcción de una interfaz para gestionar y corregir exámenes exige
+coordinar formularios, navegación, documentos y operaciones remotas. Conviene
+distinguir la biblioteca que representa las vistas, las herramientas que generan
+el artefacto distribuible y los mecanismos que permiten verificar su comportamiento.
+Esta sección presenta esos niveles y los relaciona con decisiones observables
+en SCDE. No constituye una comparación experimental de rendimiento entre
+tecnologías ni presupone que una biblioteca garantice la calidad de la aplicación.
 
-Tecnologías usadas y alternativas a justificar:
-\begin{itemize}
-  \item React 19 + Vite 7 (\acs{spa}); JavaScript (no TypeScript: decisión heredada, ver \cref{SEC:DES-ARCH}).
-  \item react-router 7, react-i18next (español/inglés), react-pdf (pdf.js) para el examen escaneado.
-  \item Vitest + Testing Library (jsdom) para pruebas; ESLint.
-  \item Sin \textit{framework} de \acs{css}: sistema propio de \textit{tokens} y primitivas.
-\end{itemize}
+\subsection{Componentes y representación del estado}
+
+React propone descomponer una interfaz en componentes, describir sus estados
+visuales y conectar el flujo de datos entre ellos. Su documentación recomienda
+conservar una representación mínima del estado: los valores calculables a partir
+de otros datos no necesitan almacenarse de nuevo. Cuando varios componentes
+comparten información mutable, su propiedad puede situarse en un antecesor común,
+que transmite datos y funciones de actualización mediante propiedades.
+Este enfoque permite razonar de forma explícita sobre qué información determina
+una vista y qué interacción puede modificarla~\cite{codex_react_thinking}.
+
+En una aplicación administrativa, esta distinción ayuda a separar los registros
+recibidos del servicio, los valores aún no enviados de un formulario y los
+criterios locales de presentación. Por ejemplo, una búsqueda limitada a la página
+actual no representa una consulta global al servidor. Esa diferencia pertenece al
+significado de los datos y debe conservarse tanto en el estado como en el texto
+de la interfaz. La composición de componentes facilita expresar estas fronteras,
+pero su definición sigue siendo una responsabilidad del diseño de la aplicación.
+
+La base inspeccionada de SCDE declara React~19 y utiliza módulos JavaScript con
+JSX. La organización por funcionalidades añade una convención propia: cada módulo
+expone rutas, navegación, traducciones y simulaciones mediante un registro común.
+Esta estructura es una decisión del repositorio, no una exigencia de React.
+Del mismo modo, el uso de JavaScript es un hecho verificable de la implementación;
+no permite afirmar una ventaja medida sobre TypeScript. La ausencia de tipos
+estáticos propios exige prestar especial atención a las formas de los datos en
+los límites de comunicación~\cite{codex_scde_frontend_architecture}.
+
+\subsection{Navegación y separación de responsabilidades}
+
+React Router diferencia varios modos de utilización. El modo declarativo ofrece
+la asociación entre direcciones y componentes, navegación y estados de enlaces.
+El modo de datos añade mecanismos para cargas y acciones, mientras que el modo
+de \textit{framework} incorpora convenciones adicionales de construcción y
+representación. Esta distinción evita atribuir a cualquier uso de la biblioteca
+las capacidades de todos sus modos~\cite{codex_router_modes}.
+
+En SCDE, las funcionalidades declaran sus rutas y el contenedor común aplica
+guardas de acceso. Las peticiones se encapsulan en funciones de API y los estados
+de carga y acción se gestionan mediante utilidades compartidas. Por tanto, la
+arquitectura observada separa navegación y acceso a datos, sin que la dependencia
+de React Router pruebe por sí sola el uso de sus cargadores o de representación
+en servidor~\cite{codex_scde_frontend_architecture}.
+Las guardas mejoran la coherencia de la navegación, pero la autorización de una
+operación debe comprobarse en el servicio que la ejecuta. Ocultar un enlace no
+constituye una garantía de autorización.
+
+\subsection{Construcción y distribución de la aplicación}
+
+La documentación de Vite~7 describe una construcción de producción a partir de
+una entrada HTML, destinada a generar recursos servibles desde alojamiento
+estático. También permite configurar la ruta base cuando la aplicación se sirve
+desde un subdirectorio. De esta manera, el proceso de construcción transforma
+fuentes y dependencias en un artefacto que puede distribuirse por separado del
+entorno de desarrollo~\cite{codex_vite7_build}.
+
+El repositorio declara Vite~7 y configura su integración con React. La aplicación
+puede compilarse para usar el cliente simulado o el servicio real mediante su
+configuración. La generación correcta de recursos acredita que el proceso de
+construcción termina; no acredita la disponibilidad del backend, la validez de una
+sesión ni el funcionamiento de todas las operaciones. En una aplicación con
+navegación de cliente también debe comprobarse el acceso directo a direcciones
+internas desde el alojamiento elegido. Esas comprobaciones de distribución son
+distintas de las pruebas de componentes~\cite{codex_scde_frontend_architecture}.
+
+\subsection{Verificación de interacciones y límites del entorno simulado}
+
+Testing Library orienta sus utilidades hacia el uso observable de los componentes:
+favorece trabajar con nodos del DOM y con interacciones cercanas a las que realiza
+una persona, en lugar de depender de instancias internas. Este criterio ayuda a
+formular comprobaciones sobre acciones y resultados visibles y a reducir el
+acoplamiento de una prueba con detalles internos que pueden cambiar sin alterar
+el comportamiento~\cite{codex_testing_principles}.
+
+SCDE combina Vitest, Testing Library y un entorno jsdom configurado en Vite. Las
+pruebas utilizan el modo simulado del cliente y se complementan con ESLint,
+compilación y una auditoría de estilos. Son comprobaciones con objetivos
+diferentes: detectar incumplimientos estáticos, comprobar interacciones y producir
+el artefacto. Su combinación aporta evidencia sobre los casos ejecutados, sin
+convertir la simulación del DOM en una ejecución completa de navegador ni los
+datos simulados en una validación del backend real.
+La corrección de contratos, la accesibilidad y la experiencia de uso necesitan
+evidencias adicionales adecuadas a cada propiedad~\cite{codex_scde_frontend_architecture}.
+
+La selección tecnológica permite así distribuir responsabilidades entre vistas,
+navegación, construcción y verificación. Las funciones de internacionalización,
+presentación de PDF y primitivas visuales completan la base del proyecto, pero
+su mera inclusión en las dependencias no demuestra traducción completa,
+accesibilidad documental ni consistencia de todas las pantallas. La valoración
+de la solución debe apoyarse en la implementación y en los resultados registrados,
+además de en las capacidades documentadas de las herramientas.

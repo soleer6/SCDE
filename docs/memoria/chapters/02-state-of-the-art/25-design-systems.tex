@@ -1,4 +1,92 @@
-\pendiente{Redactar.}
+\subsection{Tokens, componentes y reglas de composición}
 
-Ideas: \textit{design tokens}; componentes primitivos; \acs{wcag} 2.2 (contraste, foco visible,
-etiquetas, movimiento reducido); tipografía de alta legibilidad (Atkinson Hyperlegible).
+Una interfaz de corrección reúne formularios, documentos, calificaciones y acciones
+administrativas. Su coherencia requiere decisiones comunes sobre representación
+y comportamiento. Como referencia de esta organización, el sistema de diseño de
+la administración estadounidense, USWDS, describe los \textit{design tokens} como
+elementos discretos de estilo que forman paletas consistentes de tipografía,
+espaciado y color~\cite{codex_uswds_tokens}. Esta referencia se utiliza para
+explicar el enfoque, sin implicar que SCDE incorpore la biblioteca USWDS.
+
+En términos de arquitectura, conviene distinguir tres responsabilidades. Los
+tokens asignan nombres reutilizables a valores visuales; las primitivas encapsulan
+controles y estructuras comunes; las reglas de composición determinan cómo se
+organizan esas piezas para realizar una tarea. La distinción permite revisar un
+valor compartido sin buscarlo en cada pantalla, y estudiar el comportamiento de un
+diálogo sin confundirlo con el formulario concreto que contiene. Esta separación
+es una interpretación de diseño aplicada al proyecto, no un resultado experimental
+sobre productividad.
+
+En la base de SCDE inspeccionada, las variables CSS se concentran en
+\texttt{src/styles/tokens.css} y las primitivas se exportan desde
+\texttt{src/ui/index.jsx}. Las funcionalidades componen elementos como
+\texttt{PageHeader}, \texttt{DataTable}, \texttt{Field} y \texttt{Dialog}, mientras
+sus hojas locales resuelven la disposición del contenido. Por ejemplo, la hoja
+administrativa emplea variables de espaciado y permite reorganizar los filtros
+con una cuadrícula adaptable~\cite{codex_scde_design_evidence}. La utilidad de esta
+organización reside en disponer de puntos concretos de revisión y modificación;
+no demuestra por sí sola que todos los componentes satisfagan las necesidades
+del alumnado o del profesorado.
+
+\subsection{Accesibilidad como criterio verificable}
+
+WCAG 2.2 organiza la accesibilidad mediante criterios comprobables, independientes
+de una tecnología concreta. Para una herramienta de gestión docente resultan
+pertinentes el contraste, el uso del teclado, el foco visible, las etiquetas y la
+identificación de errores. La información de estado debe poder comprenderse sin
+depender únicamente del color. Los niveles de conformidad exigen satisfacer los
+criterios correspondientes en páginas y procesos completos; una comprobación
+aislada no acredita la aplicación~\cite{codex_wcag22_ui}.
+
+La densidad de una tabla también afecta a la precisión de las acciones. La
+explicación oficial del criterio 2.5.8 sitúa el tamaño mínimo de los objetivos de
+puntero en 24 por 24 píxeles CSS y contempla excepciones, entre ellas el
+espaciado suficiente y los enlaces dentro de texto. Por ello, reducir el tamaño
+de los botones para incluir más registros requiere examinar tanto su área
+interactiva como la proximidad a otras acciones~\cite{codex_wcag_target_size}.
+Esta observación orienta la revisión de tablas administrativas; aquí no se afirma
+haber medido sus objetivos en un navegador.
+
+Los diálogos muestran por qué la semántica y la interacción deben examinarse
+juntas. El patrón modal de WAI-ARIA APG describe la entrada del foco en el
+diálogo, su circulación interna con tabulación, el cierre mediante Escape y la
+devolución del foco al elemento que lo abrió, con excepciones ligadas al flujo.
+También especifica un nombre accesible y el estado modal. Para operaciones
+difíciles de revertir aconseja considerar el foco inicial en la alternativa menos
+destructiva~\cite{codex_apg_modal_dialog}. Estas indicaciones sirven como guía
+de implementación y revisión, sin sustituir una evaluación del producto.
+
+\subsection{Aplicación a SCDE y límites de la evidencia}
+
+La guía v2 del proyecto prescribe una presentación clara y educativa, texto de
+interfaz en Atkinson Hyperlegible~	te{atkinson_hyperlegible}, uso limitado de monoespaciada para códigos y
+estados acompañados de significado textual. La guía, los \textit{tokens} claros
+y las primitivas forman parte de la base compartida que ambas líneas de trabajo
+heredan; durante el desarrollo coexistieron, no obstante, ramas con la versión
+oscura anterior, de modo que las capturas y los resultados deben indicar siempre
+la versión del código de la que proceden~\cite{codex_scde_design_evidence}.
+
+La revisión de las primitivas desde la línea de administración permitió
+detectar dos carencias concretas en una versión anterior de la base: la primitiva
+\texttt{Dialog} enfocaba el diálogo, se cerraba con Escape y devolvía el foco al
+elemento previo, pero no confinaba la tabulación; y \texttt{Field} asociaba la
+etiqueta al control sin relacionar con él su ayuda o su mensaje de error. Ambas
+se registraron como solicitudes de coordinación y se corrigieron en la base
+compartida (commit \texttt{96fac49}): el diálogo mantiene ahora Tab y
+Mayús+Tab dentro de sus elementos enfocables, y el campo vincula ayuda y error
+mediante \texttt{aria-describedby} y marca \texttt{aria-invalid} cuando hay un
+error. El episodio ilustra el valor de concentrar el comportamiento en
+primitivas: una corrección en un único punto alcanza a todas las pantallas que
+las usan. No sustituye, sin embargo, una auditoría de accesibilidad de la
+aplicación completa.
+
+El control automatizado de estilo detecta determinados patrones en los archivos,
+como colores escritos directamente o modificaciones locales de clases comunes.
+Las pruebas administrativas consultan controles por sus etiquetas y roles y
+comprueban la confirmación de una desactivación. Ambas verificaciones aportan
+evidencia acotada: ni el análisis textual ni la ejecución en un DOM simulado
+reproducen toda la navegación con teclado, el contraste renderizado o el uso de
+tecnologías de apoyo~\cite{codex_scde_design_evidence}. Una evaluación posterior
+debe registrar versión, pantallas, tareas y dispositivos examinados. Así, el
+sistema de diseño proporciona una base revisable, mientras la accesibilidad se
+mantiene como una propiedad que requiere verificación explícita.

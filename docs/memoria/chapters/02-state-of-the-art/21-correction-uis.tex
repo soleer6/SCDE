@@ -1,4 +1,109 @@
-\pendiente{Redactar centrándose en la INTERFAZ (la memoria del backend ya compara funcionalidades de Crowdmark, Gradescope, Akindi y los LMS; citarla y no repetir).}
+La interfaz de una plataforma de corrección digital conecta la evidencia que
+presenta el estudiante, los criterios del corrector y la información que se
+publica finalmente. Su estudio exige atender a las tareas que organiza, además
+de enumerar funcionalidades. Esta sección compara patrones de interacción
+documentados por Gradescope, Crowdmark y Moodle. La selección permite examinar
+dos herramientas especializadas y una actividad integrada en un entorno de
+aprendizaje. Se trata de una revisión documental; no se han realizado pruebas
+comparativas con usuarios ni mediciones de eficiencia de estas plataformas.
+El análisis se centra en la presentación. La memoria del TFG de backend ya
+estudia el funcionamiento de estas plataformas (identificación del estudiante
+mediante \acs{ocr}, emparejamiento de cuadernillos, flujo de
+corrección)~\cite{scdee_backend_repo}, y el trabajo original de Gradescope
+lo presenta como un sistema para evaluar a escala trabajos
+manuscritos~\cite{singh2017gradescope}; aquí no se repite esa comparación
+funcional.
 
-Ejes de comparación sugeridos: corrección sobre la imagen escaneada, calificación por
-rúbrica, retroalimentación al estudiante, revisión/reclamación, accesibilidad.
+\subsection{La respuesta como espacio de trabajo}
+
+Gradescope documenta una navegación por respuestas de una misma pregunta, la
+creación de elementos de rúbrica y anotaciones sobre la entrega. Su visor permite
+centrarse en una pregunta, mostrar una página completa o consultar otras páginas.
+Estos mecanismos sitúan la respuesta y el criterio de evaluación dentro de una
+misma tarea de corrección~\cite{codex_gradescope_ui}.
+
+Crowdmark distingue las herramientas para respuestas de imagen o PDF de las
+empleadas con texto. En las primeras, los comentarios se vinculan a posiciones
+de la página mediante marcadores; también se ofrecen dibujo y resaltado.
+La documentación separa la navegación entre estudiantes de la navegación entre
+preguntas y describe una acción para avanzar a una respuesta sin corregir.
+El panel lateral conserva el contexto del cuadernillo y la pregunta
+seleccionados~\cite{codex_crowdmark_navigation}.
+
+Como interpretación de diseño, ambos ejemplos sugieren separar dos problemas:
+localizar la evidencia y decidir cómo valorarla. El cambio entre entregas no
+debería obligar a reconstruir qué pregunta se está corrigiendo. A su vez, la
+selección de una herramienta de anotación necesita distinguirse del movimiento
+por el documento. En SCDE, estos patrones constituyen criterios para revisar el
+visor, sin que su presencia en otro producto demuestre la usabilidad de la
+implementación propia. Una evaluación posterior debería observar si el usuario
+mantiene el contexto al cambiar de página, pregunta o estudiante.
+
+\subsection{Criterios de valoración y explicación de la nota}
+
+La rúbrica estructura la decisión del corrector y también explica el resultado.
+Gradescope describe elementos con puntuación y ajustes específicos para una
+entrega~\cite{codex_gradescope_ui}. Moodle presenta sus rúbricas como criterios
+con niveles de logro; el corrector selecciona niveles y el estudiante puede
+consultar la rúbrica cumplimentada según la configuración de la actividad.
+Su documentación distingue la definición de la rúbrica del formulario empleado
+para evaluar~\cite{codex_moodle_rubrics}.
+
+La consecuencia para una interfaz es que seleccionar un criterio y escribir una
+explicación cumplen funciones diferentes. Una selección registra una decisión
+estructurada; un comentario contextualiza esa decisión en la respuesta concreta.
+Mostrar ambos recursos de forma relacionada puede facilitar que el estudiante
+reconstruya el motivo de una puntuación. Esta es una hipótesis de diseño que
+requiere validación, no un resultado de aprendizaje demostrado por esta memoria.
+También conviene hacer explícito cuándo un cambio altera una definición compartida
+y cuándo afecta únicamente a una evaluación: la interfaz debe comunicar el
+alcance de la acción antes de ejecutarla.
+
+\subsection{Publicación, devolución y revisión}
+
+La corrección terminada y la información visible para el estudiante representan
+momentos distintos. Moodle documenta un flujo de calificación con fases previas
+a la publicación, incluida una revisión y un estado preparado para publicar.
+La disponibilidad de anotaciones de documentos depende además de la
+configuración técnica de la instalación~\cite{codex_moodle_assignment}.
+Gradescope permite consultar notas, rúbricas y comentarios publicados, así como
+solicitar revisión cuando esa opción está habilitada~\cite{codex_gradescope_ui}.
+Crowdmark describe una acción de devolución que envía al estudiante un enlace
+a su página de resultados, con su trabajo, puntuaciones y comentarios; el docente
+puede configurar información adicional de esa vista~\cite{codex_crowdmark_return}.
+
+La distinción tiene una implicación directa para el modelo de interacción:
+guardar una nota no debe comunicar por sí mismo que ya está publicada. El
+estado de la evaluación, la posibilidad de publicar y la apertura de una revisión
+son datos diferentes que la pantalla necesita expresar con claridad. Asimismo,
+una notificación funciona como acceso al resultado, pero no sustituye la vista
+persistente donde se consulta. Estos criterios ayudan a formular casos de prueba:
+comprobar la visibilidad antes y después de publicar, el destino de la notificación
+y la disponibilidad de las acciones dentro del periodo que autorice el servicio.
+No se presupone equivalencia entre los estados internos de los tres productos.
+
+\subsection{Accesibilidad y alcance de la comparación}
+
+La documentación de atajos de teclado en Gradescope y Crowdmark acredita que
+existen mecanismos alternativos para determinadas tareas; no permite concluir
+que todo el flujo sea accesible. Para valorar esa propiedad se requiere un marco
+explícito. WCAG~2.2 incluye criterios de operación mediante teclado (2.1.1), foco
+visible (2.4.7), información que no dependa exclusivamente del color (1.4.1) y
+etiquetas o instrucciones (3.3.2)~\cite{codex_wcag22_ui}. Son criterios de
+evaluación y no una declaración de conformidad de las plataformas estudiadas.
+
+En una herramienta que presenta exámenes escaneados debe distinguirse también
+la accesibilidad de los controles de la accesibilidad del contenido del documento.
+Permitir enfocar un botón no convierte una imagen manuscrita en texto interpretable
+por un lector de pantalla. Esta distinción aconseja revisar por separado el visor,
+las herramientas de calificación y la presentación textual del resultado. Del mismo
+modo, las acciones espaciales de anotación requieren estudiar alternativas de
+operación, además de comprobar etiquetas y contraste.
+
+El resultado de esta revisión es un conjunto de preguntas para el diseño de SCDE:
+si conserva el contexto de la corrección, si relaciona evidencia y criterio, si
+distingue guardar de publicar y si permite comprender y operar sus controles.
+No se establece una clasificación de productos ni se atribuyen carencias a partir
+de la ausencia de una función en una página de ayuda. Los patrones descritos
+orientan el diseño; la calidad de la solución propia debe acreditarse con pruebas
+del proyecto y, cuando se disponga de ellas, con evaluación de usuarios.
