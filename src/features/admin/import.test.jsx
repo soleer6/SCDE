@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { Blob as NodeBlob } from 'node:buffer';
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { api } from '../../lib/api/client.js';
+import { ApiError } from '../../lib/api/errors.js';
 import { db } from '../../lib/mock/db.js';
 import { loginAs, renderPage, resetDemo } from './test-utils.jsx';
 import UsersPage from './UsersPage.jsx';
@@ -25,6 +26,7 @@ it('imports users through the page and displays partial results', async () => {
   await screen.findByText('admin@uam.es');
   await user.click(screen.getByRole('button', { name: 'Importar usuarios' }));
   expect(screen.getByRole('button', { name: 'Importar archivo' })).toBeDisabled();
+  expect(screen.getByLabelText('Archivo CSV o JSON')).toHaveAccessibleDescription(/CSV con cabecera/);
   await user.upload(screen.getByLabelText('Archivo CSV o JSON'), new File([JSON.stringify(rows)], 'users.json', { type: 'application/json' }));
   expect(screen.getByLabelText('Archivo CSV o JSON').files).toHaveLength(1);
   expect(screen.getByRole('button', { name: 'Importar archivo' })).toBeEnabled();
@@ -44,6 +46,49 @@ it('imports users through the page and displays partial results', async () => {
   expect(await screen.findByText('ana@uam.es')).toBeInTheDocument();
 }, 15000);
 
+it('imports once during repeated submits, recovers after failure and requires a new file after success', async () => {
+  const user = userEvent.setup(); renderPage(<UsersPage />);
+  await screen.findByText('admin@uam.es');
+  await user.click(screen.getByRole('button', { name: 'Importar usuarios' }));
+  const fileInput = screen.getByLabelText('Archivo CSV o JSON');
+  const file = new File([JSON.stringify([{ first_name: 'Ana', last_name: 'García', email: 'unica@uam.es' }])], 'users.json', { type: 'application/json' });
+  await user.upload(fileInput, file);
+  let rejectImport;
+  const pendingImport = new Promise((_, reject) => { rejectImport = reject; });
+  const uploadSpy = vi.spyOn(api, 'upload').mockImplementationOnce(() => pendingImport);
+  try {
+    const submit = screen.getByRole('button', { name: 'Importar archivo' });
+    const form = submit.closest('form');
+    act(() => { fireEvent.submit(form); fireEvent.submit(form); });
+    expect(uploadSpy).toHaveBeenCalledOnce();
+    expect(uploadSpy.mock.calls[0][0]).toBe('/users/import/');
+    expect(uploadSpy.mock.calls[0][1].get('file')).toBe(file);
+    expect(form).toHaveAttribute('aria-busy', 'true');
+    expect(fileInput).toBeDisabled();
+    fireEvent.submit(form);
+    expect(uploadSpy).toHaveBeenCalledOnce();
+    await act(async () => { rejectImport(new ApiError('PERMISSION_DENIED', 403)); });
+    expect(await screen.findByRole('alert')).toHaveTextContent('No tienes permiso para esta acción.');
+    expect(form).not.toHaveAttribute('aria-busy');
+    expect(fileInput).toBeEnabled();
+    expect(fileInput.files[0]).toBe(file);
+    expect(db.users.some((row) => row.email === 'unica@uam.es')).toBe(false);
+    fireEvent.submit(form);
+    await screen.findByText('Importación completada');
+    expect(uploadSpy).toHaveBeenCalledTimes(2);
+    expect(db.users.filter((row) => row.email === 'unica@uam.es')).toHaveLength(1);
+    expect(submit).toBeDisabled();
+    fireEvent.submit(form);
+    expect(uploadSpy).toHaveBeenCalledTimes(2);
+    await user.upload(fileInput, new File([JSON.stringify([{ first_name: 'Eva', last_name: 'López', email: 'otra@uam.es' }])], 'next.json', { type: 'application/json' }));
+    expect(submit).toBeEnabled();
+    fireEvent.submit(form);
+    await screen.findByText('Importación completada');
+    expect(uploadSpy).toHaveBeenCalledTimes(3);
+    expect(db.users.filter((row) => row.email === 'otra@uam.es')).toHaveLength(1);
+  } finally { uploadSpy.mockRestore(); }
+}, 15000);
+
 it('reads CSV with BOM, CRLF, escaped quotes, commas and blank lines', async () => {
   const result = await api.upload('/users/import/', upload('\uFEFFfirst_name,last_name,email,dni,nia\r\nAna,"García, ""López""",ana@uam.es,,0007\r\n\r\nPedro,Pérez,pedro@uam.es,,0008\r\n', 'users.csv'));
   expect(result).toEqual({ created: 2, reactivated: 0, updated: 0, total_processed: 2, total_errors: 0, errors: [] });
@@ -55,12 +100,63 @@ it('shows invalid file errors and allows retrying with a corrected file', async 
   await screen.findByText('admin@uam.es');
   await user.click(screen.getByRole('button', { name: 'Importar usuarios' }));
   await user.upload(screen.getByLabelText('Archivo CSV o JSON'), new File(['{broken'], 'broken.json', { type: 'application/json' }));
+  await user.tab();
+  expect(screen.getByRole('button', { name: 'Importar archivo' })).toHaveFocus();
+  const usersBefore = JSON.stringify(db.users);
   fireEvent.submit(screen.getByRole('button', { name: 'Importar archivo' }).closest('form'));
   expect(await screen.findByText('Valor no válido.')).toBeInTheDocument();
+  const fileInput = screen.getByLabelText('Archivo CSV o JSON');
+  expect(fileInput).toHaveAttribute('aria-invalid', 'true');
+  expect(fileInput).toHaveAccessibleDescription('Valor no válido.');
+  await waitFor(() => expect(fileInput).toHaveFocus());
+  expect(fileInput).toBeEnabled();
+  expect(fileInput.files[0].name).toBe('broken.json');
+  expect(JSON.stringify(db.users)).toBe(usersBefore);
   await user.upload(screen.getByLabelText('Archivo CSV o JSON'), new File([JSON.stringify([{ first_name: 'Ana', last_name: 'García', email: 'ana@uam.es' }])], 'fixed.json', { type: 'application/json' }));
+  expect(fileInput).not.toHaveAttribute('aria-invalid');
+  expect(fileInput).toHaveAccessibleDescription(/CSV con cabecera/);
+  await user.tab();
+  expect(screen.getByRole('button', { name: 'Importar archivo' })).toHaveFocus();
   fireEvent.submit(screen.getByRole('button', { name: 'Importar archivo' }).closest('form'));
   await screen.findByText('Importación completada');
   expect(screen.queryByText('Valor no válido.')).not.toBeInTheDocument();
+}, 15000);
+
+it('focuses general import errors and retries the same file after access is restored', async () => {
+  const user = userEvent.setup(); renderPage(<UsersPage />);
+  await screen.findByText('admin@uam.es');
+  await user.click(screen.getByRole('button', { name: 'Importar usuarios' }));
+  const fileInput = screen.getByLabelText('Archivo CSV o JSON');
+  await user.upload(fileInput, new File([JSON.stringify([{ first_name: 'Ana', last_name: 'García', email: 'ana@uam.es' }])], 'users.json', { type: 'application/json' }));
+  const submit = screen.getByRole('button', { name: 'Importar archivo' });
+  const admin = db.users.find((row) => row.id === 'u-admin');
+  admin.is_active = false;
+  const usersBefore = JSON.stringify(db.users);
+  fireEvent.submit(submit.closest('form'));
+  const error = await screen.findByText('No tienes permiso para esta acción.');
+  await waitFor(() => expect(error.closest('[tabindex="-1"]')).toHaveFocus());
+  expect(fileInput).not.toHaveAttribute('aria-invalid');
+  expect(fileInput.files[0].name).toBe('users.json');
+  expect(JSON.stringify(db.users)).toBe(usersBefore);
+  await user.tab({ shift: true });
+  expect(submit).toHaveFocus();
+  // Submit via React: jsdom native file validation does not see userEvent's FileList.
+  fireEvent.submit(submit.closest('form'));
+  const repeatedError = await screen.findByText('No tienes permiso para esta acción.');
+  await waitFor(() => expect(repeatedError.closest('[tabindex="-1"]')).toHaveFocus());
+  expect(JSON.stringify(db.users)).toBe(usersBefore);
+  await user.tab({ shift: true });
+  expect(submit).toHaveFocus();
+  await user.tab({ shift: true });
+  expect(fileInput).toHaveFocus();
+  admin.is_active = true;
+  await user.tab();
+  expect(submit).toHaveFocus();
+  fireEvent.submit(submit.closest('form'));
+  await screen.findByText('Importación completada');
+  expect(screen.queryByText('No tienes permiso para esta acción.')).not.toBeInTheDocument();
+  expect(db.users.filter((row) => row.email === 'ana@uam.es')).toHaveLength(1);
+  expect(fileInput.files[0].name).toBe('users.json');
 }, 15000);
 
 it('rejects missing or malformed files and does not mutate data', async () => {

@@ -25,6 +25,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'El build de demostracion ha fallado.' }
     if (-not (Test-Path -LiteralPath (Join-Path $outputPath 'index.html'))) { throw 'Falta index.html.' }
     if (Test-Path -LiteralPath (Join-Path $outputPath '404.html')) { throw 'La demo SPA no debe incluir un 404.html estatico.' }
+    Copy-Item -LiteralPath (Join-Path $sourceRoot 'demo-source.json') -Destination (Join-Path $outputPath 'demo-source.json')
 
     # La plantilla compartida aun conserva theme-color de v1. Ajustar solo el artefacto.
     $tokens = Get-Content -Raw -LiteralPath (Join-Path $sourceRoot 'src/styles/tokens.css')

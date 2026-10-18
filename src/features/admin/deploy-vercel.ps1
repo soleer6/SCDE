@@ -10,7 +10,7 @@ $cli = (Get-Command vercel.cmd -ErrorAction Stop).Source
 Push-Location -LiteralPath $projectRoot
 try {
     & $cli whoami --non-interactive
-    if ($LASTEXITCODE -ne 0) { throw 'Vercel requiere autorizacion inicial: vercel login.' }
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo comprobar la sesion de Vercel. Revisar el diagnostico de la CLI antes de repetir; este fallo no demuestra que falte autorizacion.' }
 
     npm run check
     if ($LASTEXITCODE -ne 0) { throw 'No se publica: check ha fallado.' }
@@ -37,25 +37,13 @@ try {
     $deployment = if ($result.deployment) { $result.deployment } else { $result }
     $publicUrl = if ($deployment.productionUrl) { $deployment.productionUrl } else { $deployment.url }
     if (-not $publicUrl) { throw 'Vercel no ha devuelto una URL verificable.' }
-    $baseUrl = if ($publicUrl -match '^https://') { $publicUrl } else { 'https://' + $publicUrl }
+    # La URL unica del deployment puede exigir SSO aunque el alias de produccion
+    # sea publico. Verificar el dominio estable que recibe el autor.
+    $baseUrl = 'https://scde-tutor-admin-ops.vercel.app'
 
-    # Public checks deliberately do not reuse CLI credentials or bypass deployment protection.
-    foreach ($route in @('/', '/admin/users', '/notifications', '/profile')) {
-        $response = Invoke-WebRequest -Uri ($baseUrl.TrimEnd('/') + $route) -UseBasicParsing -TimeoutSec 30
-        if ($response.StatusCode -ne 200 -or $response.Content -notmatch '<div\s+id="root"') {
-            throw "La ruta publica $route no sirve la aplicacion. Comprueba la proteccion de despliegue."
-        }
-    }
-    # Verificar el CSS servido contra el artefacto validado, no solo el shell HTML.
-    $index = [System.IO.File]::ReadAllText((Join-Path $outputPath 'index.html'))
-    $cssPath = [regex]::Match($index, 'href="(?<path>/assets/[^\"]+\.css)"').Groups['path'].Value
-    if (-not $cssPath) { throw 'No se puede identificar la hoja de estilo publicada.' }
-    $remoteCss = Join-Path $PSScriptRoot 'vercel-css.local'
-    Invoke-WebRequest -Uri ($baseUrl.TrimEnd('/') + $cssPath) -UseBasicParsing -TimeoutSec 30 -OutFile $remoteCss
-    $localCss = Join-Path $outputPath $cssPath.TrimStart('/')
-    if ((Get-FileHash -LiteralPath $remoteCss).Hash -ne (Get-FileHash -LiteralPath $localCss).Hash) {
-        throw 'El CSS publico no coincide con la demo validada.'
-    }
+    # Node usa el transporte TLS disponible; no reutiliza credenciales de Vercel.
+    & node (Join-Path $PSScriptRoot 'verify-deployment.mjs') $baseUrl $outputPath
+    if ($LASTEXITCODE -ne 0) { throw 'La verificacion publica del despliegue ha fallado.' }
     Set-Content -LiteralPath $deploymentPath -Value ($json -join "`n") -Encoding UTF8
     Write-Output "Despliegue verificado: $baseUrl"
 } finally {
