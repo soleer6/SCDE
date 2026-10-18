@@ -1,11 +1,169 @@
-\pendiente{Redactar.}
+% Apéndice B. Integrado a partir del borrador de Codex
+% (agent-ops/mission/memoria-codex/appendices/B-install, versión del 18/10/2026),
+% revisado contra package.json, .env.development, src/lib/mock/db.js y los
+% scripts de src/features/admin en codex/admin-ops (93f4bb2).
 
+Este apéndice describe cómo ejecutar el \dfn{frontend} y cómo se prepara la
+demostración pública. Se distinguen tres operaciones: trabajar con datos
+simulados, conectar la interfaz con el \dfn{backend} y publicar un artefacto
+estático. La demostración permite revisar la interacción sin disponer del
+servidor de aplicación, pero su comprobación no acredita por sí misma la
+integración con Django (sección~\ref{SEC:TEST-REAL}). Los comandos y rutas
+proceden del código y de la configuración del proyecto~\cite{scde_frontend_install_2026}.
+
+\section*{Preparación del entorno}
+La ejecución requiere Node.js y npm. El flujo de publicación usa además Git,
+PowerShell y la \acs{cli} de Vercel accesible como \texttt{vercel.cmd}. La
+verificación del despliegue emplea \texttt{fetch} y
+\texttt{AbortSignal.timeout} de Node.js. Durante el desarrollo se utilizó
+Node.js 24.19.0; es la versión empleada, no una prueba de compatibilidad con
+versiones anteriores. El fichero \texttt{package-lock.json} fija las versiones
+resueltas de las dependencias.
+
+Desde la raíz de una copia del repositorio, la instalación reproducible y el
+arranque del servidor de desarrollo son:
+\begin{verbatim}
+npm ci
+npm run dev
+\end{verbatim}
+La dirección de acceso es la que imprime Vite en la terminal. El fichero
+\texttt{.env.development} activa el modo simulado
+(\texttt{VITE\_MOCK\_API=true}): las peticiones se dirigen al enrutador de
+simulación del propio \dfn{frontend} y modifican una base de datos de
+demostración persistida en el \texttt{localStorage} del navegador. Dos
+navegadores con almacenamiento independiente, por tanto, no comparten las
+modificaciones.
+
+\section*{Cuentas y recorrido de revisión}
+La semilla de la simulación (\texttt{src/lib/mock/db.js}) contiene cuentas
+ficticias que no corresponden a usuarios reales:
 \begin{itemize}
-  \item Requisitos: Node.js y npm.
-  \item \texttt{npm install}; \texttt{npm run dev} (modo simulación por defecto,
-        \texttt{.env.development}: \texttt{VITE\_MOCK\_API=true}).
-  \item Contra el \dfn{backend} real: \texttt{VITE\_MOCK\_API=false},
-        \texttt{VITE\_API\_URL=http://localhost:8000}.
-  \item Verificación: \texttt{npm run check}.
-  \item Cuentas de demostración del modo simulación.
+  \item \texttt{admin@uam.es} / \texttt{admin123}: gestora de la organización
+        (\texttt{is\_staff}). Da acceso a usuarios, cursos, configuración,
+        auditoría y directorio de asignaturas (\texttt{/admin/users},
+        \texttt{/admin/courses}, \texttt{/admin/config}, \texttt{/admin/audit},
+        \texttt{/admin/subjects}) y a la gestión de escaneos (\texttt{/scans}).
+  \item \texttt{maria.perez@uam.es} / \texttt{prof123}: coordinadora de
+        MAT101. Permite recorrer el flujo docente completo (configuración de
+        exámenes, resolución de incidencias, corrección y publicación) y la
+        administración de la asignatura en \texttt{/subjects/s-mat101/manage}.
+  \item \texttt{javier.ruiz@uam.es} / \texttt{prof123}: profesor
+        (\texttt{TEACHER}) de MAT101 y coordinador de FIS101; sirve para
+        observar que las facultades dependen de la membresía en cada
+        asignatura y no del tipo de cuenta.
+  \item \texttt{elena.rodriguez@estudiante.uam.es} / \texttt{est123}:
+        estudiante; permite revisar sus calificaciones, el examen corregido,
+        las solicitudes de revisión, el perfil y las notificaciones.
 \end{itemize}
+
+Para restablecer los datos basta con abrir la aplicación con el parámetro
+\texttt{?resetMock} (por ejemplo, \texttt{/?resetMock}): se descarta la copia
+persistida y se reconstruye la semilla. Afecta solo a los datos de
+demostración de ese navegador.
+
+\section*{Conexión con el servidor de aplicación}
+El cliente construye las direcciones a partir de \texttt{VITE\_API\_URL} y
+añade el prefijo \texttt{/api/v1}, de modo que la variable debe contener solo
+el origen del \dfn{backend}. En PowerShell, una sesión de desarrollo contra un
+servidor local se inicia con:
+\begin{verbatim}
+$env:VITE_MOCK_API = 'false'
+$env:VITE_API_URL = 'http://localhost:8000'
+npm run dev
+\end{verbatim}
+Las variables se aplican al proceso de esa terminal y deben retirarse para
+volver a la simulación. El \dfn{backend} debe estar en marcha, aceptar
+peticiones desde el origen de la interfaz y tener cuentas propias: las de la
+semilla no se transfieren. La puesta en marcha del servidor (Docker Compose
+en su repositorio~\cite{scdee_backend_repo}) y el estado de esta validación se
+describen en la sección~\ref{SEC:TEST-REAL}.
+
+\section*{Comprobaciones previas y compilación}
+\texttt{npm run check} encadena ESLint, las pruebas con Vitest, la compilación
+con Vite y la auditoría de estilo. La auditoría de propiedad se ejecuta aparte,
+indicando la línea de trabajo:
+\begin{verbatim}
+npm run check
+node scripts/audit/ownership-check.mjs claude
+\end{verbatim}
+Esta última contrasta con \texttt{OWNERSHIP.json} tanto las rutas modificadas
+en los \	extit{commits} de la rama como, desde \texttt{08b881b}, los cambios
+preparados, sin preparar y no rastreados del directorio de trabajo
+(sección~\ref{SEC:TEST-AUDITS}). La compilación ordinaria se obtiene con
+\texttt{npm run build} y \texttt{npm run preview} la sirve localmente. Las
+variables de entorno vigentes al compilar determinan el modo de transporte del
+artefacto generado.
+
+\section*{Composición de la demostración conjunta}
+Las dos líneas de trabajo se desarrollan en ramas separadas
+(sección~\ref{SEC:IMP-PARALLEL}); la demostración las une sin fusionarlas. El
+procedimiento reside en la rama de administración y se invoca desde la raíz de
+su \dfn{worktree}:
+\begin{verbatim}
+.\src\features\admin\prepare-demo.ps1
+\end{verbatim}
+El auxiliar \texttt{prepare-integrated-source.ps1} exporta con
+\texttt{git archive} el último \	extit{commit} de \texttt{claude/core-flows} y, sobre
+esa copia, los módulos de administración, gestión por asignatura, perfil y
+notificaciones del \	extit{commit} actual de \texttt{codex/admin-ops}. Al exportar
+por identificador de \	extit{commit}, la composición no depende de que el otro
+\dfn{worktree} esté limpio, no lo modifica y excluye los cambios sin confirmar y
+los ficheros privados no rastreados. Antes de compilar exige que los ficheros
+de bloqueo de dependencias de ambas fuentes coincidan; después ejecuta las
+comprobaciones sobre la copia conjunta y compila con la simulación activada.
+
+La salida se escribe en \texttt{dist/tutor-demo}, junto con el paquete
+\texttt{dist/scde-tutor-demo.zip}, un \texttt{review.txt} con las cuentas y rutas de
+revisión y un manifiesto \texttt{demo-source.json} con los identificadores de
+las dos fuentes.
+
+\section*{Publicación y comprobación remota}
+\texttt{deploy-vercel.ps1} comprueba la sesión persistente de la \acs{cli}
+(\texttt{vercel whoami}), repite las comprobaciones locales, genera la
+demostración y la publica en el proyecto \texttt{scde-tutor-admin-ops} con
+\texttt{--prod}, \texttt{--yes} y \texttt{--non-interactive}. Si no hay sesión,
+debe establecerse antes con \texttt{vercel login}. La configuración copiada al
+artefacto (\texttt{vercel-demo.json}) reescribe toda ruta hacia
+\texttt{/index.html} para que la navegación de la aplicación funcione al
+recargar. La vinculación con el proyecto se guarda en ficheros locales
+excluidos del seguimiento; las credenciales pertenecen a la sesión de la
+\acs{cli}.
+
+Tras publicar, \texttt{verify-deployment.mjs} hace peticiones anónimas por
+\acs{https} con un límite de treinta segundos cada una. Exige respuesta 200 en
+\texttt{/}, \texttt{/admin/users}, \texttt{/notifications} y \texttt{/profile},
+compara su \acs{html} con el artefacto local y compara byte a byte las hojas de
+estilo y los \	extit{scripts} enlazados y el manifiesto de fuentes. Cualquier
+diferencia es un fallo. Se puede repetir sin publicar:
+\begin{verbatim}
+node src/features/admin/verify-deployment.mjs URL dist/tutor-demo
+\end{verbatim}
+donde \texttt{URL} es la dirección que se desea verificar y el directorio local
+debe corresponder a esa misma entrega.
+
+La primera publicación verificada (17 de octubre de 2026) combinó las fuentes
+\texttt{c0ab07f} (núcleo docente) y \texttt{2206d80} (administración); la última
+registrada antes de redactar este apéndice (18 de octubre de 2026), las fuentes
+\texttt{bf6e673} y \texttt{93f4bb2}, en \url{https://scde-tutor-admin-ops.vercel.app}.
+En una de esas ejecuciones el verificador falló inmediatamente después de
+actualizar el alias de producción y la comprobación repetida, sin volver a
+publicar, fue correcta; es compatible con una propagación temporal del alias,
+aunque la causa no se demostró. Estas verificaciones acreditan que el sitio
+sirve exactamente el artefacto compilado; no ejecutan interacciones, no miden
+la usabilidad y no validan el \dfn{backend} real.
+
+\section*{Interpretación de una publicación interrumpida}
+Una ejecución tiene cuatro fases que deben comprobarse por separado: selección
+de fuentes, compilación, envío al alojamiento y verificación pública. Que una
+fase anterior termine bien no acredita las siguientes, y solo una verificación
+remota correcta permite atribuir al sitio una pareja de fuentes concreta.
+Durante el desarrollo se observaron dos impedimentos del entorno, anteriores al
+envío: Git rechazó crear \texttt{index.lock} en los metadatos del
+\dfn{worktree} por permisos, y la \acs{cli} de Vercel terminó con
+\texttt{spawn EPERM} al crear un proceso auxiliar durante la consulta de
+sesión. El segundo es un fallo de ejecución y no indica que las credenciales
+hayan caducado, por lo que el script se ajustó para no atribuir cualquier fallo
+de la \acs{cli} a la falta de autorización. Ambos son incidencias del entorno
+de desarrollo (permisos del \	extit{sandbox} del agente), no requisitos de Vercel
+ni de la aplicación; la recuperación consiste en repetir la composición y la
+publicación cuando el entorno lo permita.
