@@ -1,1 +1,97 @@
-\pendiente{Convertir la tabla de docs/tfg/agentic-generalization-notes.md en tabla LaTeX.}
+Para saber qué etapas podría asumir un sistema automático hay que distinguir tres tipos de
+trabajo. Es \emph{determinista} (D) el que un programa ordinario hace siempre igual a partir
+de la misma entrada, sin modelo de lenguaje. Requiere \emph{razonamiento} (L) el que exige
+interpretar código o texto sin una estructura fija, que es donde un \acs{llm} aporta. Y
+requiere a una \emph{persona} (H) el que depende de preferencias, prioridades o
+responsabilidades que no están en ningún artefacto. Se añade una segunda dimensión: si la
+etapa es generalizable a otros proyectos (G) o propia de este (P). La
+\cref{TAB:GEN-CLASSIFICATION} aplica ambas a las etapas de \cref{SEC:GEN-PIPELINE}.
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \begin{tabular}{@{}p{0.27\textwidth}p{0.08\textwidth}p{0.55\textwidth}@{}}
+    \toprule
+    \textbf{Etapa} & \textbf{Tipo} & \textbf{Qué haría falta para automatizarla} \\
+    \midrule
+    1. Obtener el \dfn{backend} & D, G & Clon parcial por defecto; excluir binarios grandes;
+      alternativa ante fallos de red. \\
+    2. Localizar el contrato & D/L, G & Buscar documentos OpenAPI; si no existen, generarlos
+      con la herramienta del \textit{framework}. \\
+    3. Inventario & D, G & Ya automatizado (\texttt{endpoints.py}, \texttt{schemas.py}). \\
+    4. Semántica no expresada & L, G & Leer vistas y servicios: quién ve qué, cuándo y con
+      qué permiso. Es la etapa de más valor del modelo. \\
+    5. Actores y permisos & L + D, G & Extracción con \acs{llm}; salida estructurada
+      (actor $\times$ recurso $\times$ acción $\times$ permiso) tratada después de forma
+      determinista. \\
+    6. Máquina de estados & D o L, G & Determinista si es una tabla en el código; razonamiento
+      si está dispersa. \\
+    7. Huecos del contrato & L, G & Recorrer cada acción de cada actor y comprobar qué
+      operación visible le da cada dato. \\
+    8. Preguntas a la persona & H, G & Generar solo las preguntas que cambian el producto. \\
+    9. Especificación & L, G & Plantilla recurso $\rightarrow$ lista, detalle, acciones y
+      estados. \\
+    10. Plan y reparto & L, G & Grafo operaciones--módulos; cortar por componentes con
+      pocas aristas. \\
+    11. Base común & D + L, G & Casi todo es plantilla; se parametrizan autenticación,
+      paginación y formato de errores. \\
+    12. \dfnpl{mock} & D + L, G & Formas generables del esquema; reglas de negocio desde la
+      etapa 4. \\
+    13. Implementación & L, G/P & El módulo como unidad de trabajo de un agente. \\
+    14. Verificación & D, G & Íntegramente determinista: es el oráculo del bucle de
+      reparación. \\
+    15. Integración & D + L, G & Ejecutar las pruebas sobre la unión de ramas; diagnosticar
+      los fallos. \\
+    16. Revisión estética & H, P & No automatizable sin criterio humano o, al menos,
+      capturas revisadas. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Clasificación de las etapas del proceso. D: determinista; L: razonamiento con
+    \acs{llm}; H: persona; G: generalizable; P: propia del proyecto.\label{TAB:GEN-CLASSIFICATION}}
+\end{table}
+
+\subsection{Lectura de la clasificación}
+
+La tabla muestra un reparto que no coincide con la intuición de que un \acs{llm} ``escribe
+el \dfn{frontend}''. Las etapas deterministas están en los extremos: al principio, porque
+convierten un contrato demasiado grande para leerlo en un índice consultable; al final,
+porque deciden si un cambio es aceptable. Entre ambas, el razonamiento se concentra en la
+etapa 4 y en sus derivadas (5, 7 y 12): averiguar lo que el esquema no dice.
+
+Los desajustes del prototipo previo ilustran por qué esa etapa importa
+(\cref{SEC:AN-BACKEND}). De los seis, tres se habrían detectado comparando de forma
+determinista el código con el esquema: los nombres de los campos de los \textit{tokens}, el
+campo \texttt{payload} inexistente y los estados de la \dfn{instancia} que no figuran en la
+enumeración. Los otros tres exigían saber cómo se comporta el servicio: que el rol depende
+de la asignatura, que \texttt{is\_staff} solo viaja en el \acs{jwt} y que el estado de la
+corrección vive en el servidor y no en el navegador. Son también los que obligaron a
+reescribir la base de la aplicación. Las notas tomadas durante el desarrollo atribuían cinco
+de los seis a la semántica; al recontarlos para esta sección con el criterio anterior
+quedan tres y tres, y así se corrigen.
+
+La etapa 7 es un caso intermedio. El criterio es mecánico (¿hay una operación visible para
+este actor que devuelva este dato?), pero aplicarlo requiere saber qué datos necesita cada
+acción y qué ve cada actor, lo que depende de la etapa 4. Así se encontraron la mayoría de
+los nueve huecos documentados; el esquema, por sí solo, no los revela, porque no dice para
+quién es visible cada campo ni si la vista se comporta como declara (gap-5 y gap-8 son
+discrepancias entre el contrato y el código).
+
+\subsection{Lo que requiere a una persona}
+
+La intervención humana se concentró en pocas decisiones, pero de alto efecto:
+\begin{itemize}
+  \item \emph{Prioridades}: qué actor y qué flujo se construyen primero.
+  \item \emph{Dirección estética}: la primera versión copió de una referencia visual la paleta
+        y la tipografía cuando lo que se pretendía tomar era su sobriedad. Preguntar
+        \emph{qué eje} de cada referencia interesa (estructura, color, tipografía o tono)
+        habría evitado una iteración completa de estilo.
+  \item \emph{Reglas de negocio ausentes} del servicio, como la nota de aprobado.
+  \item \emph{Destino de cada hueco}: esperar al \dfn{backend}, mitigarlo en el cliente o
+        descartar la función.
+  \item \emph{Validación con el servicio real}: si se puede ejecutar y con qué datos.
+\end{itemize}
+Las cinco son preguntas que un sistema genérico puede \emph{formular} automáticamente a partir
+de las etapas 4 a 7, aunque no pueda responderlas. Hay además una responsabilidad que no se
+delega: aceptar el resultado. En este trabajo la integración de ramas y la versión final de
+la memoria quedaron en manos del autor, y la publicación de la demostración se hizo con su
+autorización expresa (\cref{SEC:IMP-AI}).

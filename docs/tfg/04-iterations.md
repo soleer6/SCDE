@@ -111,6 +111,17 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
   /subjects/ y attach de huérfanas (gap-5, a propósito).
 - Pendiente: 6.3-6.5.
 
+## Iteración 2026-10-19 · memoria: capítulo 7 (generalización)
+- 7.1 pipeline: 16 etapas en 4 fases (entender el servicio, decidir, construir, verificar e
+  integrar) y 3 bucles de realimentación, con evidencia de este registro y de los huecos.
+- 7.2 tabla de clasificación D/L/H × G/P y su lectura. Recuento corregido: de los 6
+  desajustes del prototipo previo, 3 son de forma y 3 de semántica (las notas decían 5/6).
+- 7.3 propuesta de arquitectura (no implementada): plantilla, extractor determinista,
+  analista con salida estructurada, generador de preguntas, planificador, agentes por área,
+  oráculo e integrador; límites, incluido el de orquestación (varias sesiones del mismo
+  agente lanzadas a la vez sobre un worktree el 2026-10-19).
+- `check_tex.py` OK. Sin cambios de código.
+
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.
 - 2 tests con timeout bajo carga → ampliados localmente; entrada de texto con `change`.

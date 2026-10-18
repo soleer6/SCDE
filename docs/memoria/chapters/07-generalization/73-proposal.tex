@@ -1,5 +1,92 @@
-\pendiente{Redactar como propuesta (no implementada), con sus límites.}
+Esta sección propone una arquitectura para un sistema que, a partir de un repositorio de
+\dfn{backend}, produzca un \dfn{frontend} como el de este trabajo. Es una propuesta: \emph{no se
+ha implementado ni evaluado} como sistema, y sus componentes se justifican por lo observado
+en el proceso de \cref{SEC:GEN-PIPELINE}, no por resultados medidos sobre otros proyectos.
 
-Idea: plantilla reutilizable (cliente, simulación, registro de módulos, primitivas,
-auditores) + extracción determinista del contrato + agentes para la semántica, los huecos y
-la implementación por módulo + persona para prioridades, estética y huecos.
+\subsection{Principio de diseño}
+
+La clasificación de \cref{SEC:GEN-CLASSIFICATION} sugiere un principio: \emph{todo lo que
+pueda ser determinista debe serlo}, y el razonamiento del modelo se reserva para lo que el
+contrato no expresa. Esto no es solo una cuestión de coste. Las etapas deterministas son las
+que permiten confiar en el resultado de las demás: el inventario impide que un agente use una
+operación que no existe, y la verificación decide sin opinión si un cambio se acepta. En este
+trabajo, la regla de no inventar operaciones junto con el inventario generado hizo que el
+segundo agente documentara los huecos que encontró en lugar de suplirlos con suposiciones
+(\cref{SEC:AN-GAPS}).
+
+\subsection{Componentes}
+
+\paragraph{1. Plantilla de aplicación.} Una base común parametrizable, extraída de la de este
+trabajo: cliente de la \acs{api} con renovación de sesión y errores simbólicos
+(\texttt{src/lib/api}), enrutador de \dfnpl{mock} (\texttt{src/lib/mock/router.js}),
+registro de módulos autodescubiertos (\texttt{src/app/registry.js}), primitivas de interfaz
+(\texttt{src/ui}) y auditores (\texttt{scripts/audit}). Los parámetros son pocos y se pueden
+leer del contrato y de un número reducido de ficheros del servicio: nombres de los campos de
+los \textit{tokens}, \textit{claims} del \acs{jwt}, formato de paginación y formato de errores.
+
+\paragraph{2. Extractor determinista del contrato.} Los \textit{scripts} de
+\texttt{scripts/analyze}, generalizados: inventario de operaciones y esquemas, cobertura del
+contrato por los módulos y, como extensión natural, generación de las formas de los
+\dfnpl{mock} y de tipos a partir de los esquemas.
+
+\paragraph{3. Agente analista del servicio.} Lee el código del \dfn{backend} con una tarea
+acotada por el inventario: para cada operación, quién puede invocarla, qué devuelve a cada
+actor y qué transiciones provoca. Su salida no es prosa sino datos estructurados (la tabla
+actor $\times$ recurso $\times$ acción $\times$ permiso, la máquina de estados y la lista de
+huecos), de modo que el resto del sistema la consume sin interpretarla. Cada afirmación
+lleva la referencia al fichero del que se dedujo, para que pueda verificarse: en este
+trabajo, una supuesta fuga de datos entre organizaciones se descartó precisamente al
+releer el código antes de comunicarla (\cref{SEC:AN-BACKEND}).
+
+\paragraph{4. Generador de preguntas.} Convierte los huecos, las reglas ausentes y las
+referencias visuales en preguntas cerradas para la persona responsable (\cref{SEC:GEN-CLASSIFICATION}).
+Su objetivo es minimizar el número de preguntas, no maximizar la información recogida:
+solo pregunta lo que cambia el producto.
+
+\paragraph{5. Planificador.} Construye el grafo entre operaciones y módulos, lo corta en áreas
+con pocas dependencias y asigna cada área a un agente, con su lista de rutas propias
+(el equivalente a \texttt{OWNERSHIP.json}). La base común se construye antes de repartir.
+
+\paragraph{6. Agentes de implementación.} Uno por área, cada uno en su \dfn{worktree}, con la
+guía de estilo como instrucción y el módulo como unidad de trabajo. El repositorio ya contiene
+un esbozo de esta idea: las definiciones de subagentes de \texttt{.claude/agents} (analista
+del \dfn{backend}, revisor de código, auditor del trabajo paralelo, redactor de
+documentación, entre otras) reparten papeles dentro de una misma herramienta, aunque sin el
+orquestador que aquí se propone.
+
+\paragraph{7. Oráculo de verificación.} El equivalente a \texttt{npm run check} más la
+auditoría de propiedad, como condición necesaria para aceptar cualquier cambio. El registro
+de errores muestra que esta condición debe imponerla el entorno y no la disciplina del agente:
+en una ocasión se confirmó un cambio con pruebas fallidas porque la orden encadenada no
+comprobaba el resultado (entrada 13).
+
+\paragraph{8. Integrador.} Une periódicamente las ramas en una rama temporal y ejecuta el
+oráculo sobre la unión, que es donde aparecen los fallos que ninguna rama ve por separado.
+
+\subsection{Límites}
+
+La propuesta hereda los límites del proceso del que se extrae:
+\begin{itemize}
+  \item \emph{Un solo caso.} Se ha observado un único \dfn{backend} (Django REST con
+        drf-spectacular). Servicios sin contrato publicado, con contratos incompletos o con
+        la lógica repartida en varios servicios exigirían más razonamiento en las etapas 2 y 4.
+  \item \emph{Lo específico no se generaliza.} La anotación sobre el \acs{pdf}, la
+        corrección por \dfnpl{rubrica} o la ventana de revisión no salen del contrato: son
+        diseño de producto, y aquí ocuparon buena parte del trabajo.
+  \item \emph{La estética sigue necesitando a una persona.} El auditor de estilo comprueba
+        reglas, no la coherencia visual. Sin capturas de pantalla revisadas, el sistema no
+        puede saber si el resultado ``parece'' lo que se pidió.
+  \item \emph{Validación real.} Los \dfnpl{mock} se derivan del mismo análisis que el
+        código, de modo que un error de interpretación se reproduce en ambos. Sin ejecutar
+        contra el servicio real (\cref{SEC:TEST-REAL}), el oráculo solo garantiza coherencia
+        interna.
+  \item \emph{Orquestación.} El trabajo autónomo de este proyecto se lanzó por iteraciones
+        desde un relanzador externo, y en una ocasión llegaron a ejecutarse varias sesiones
+        del mismo agente a la vez sobre el mismo \dfn{worktree}, con cambios de una
+        arrastrados al commit de otra. Un orquestador real necesita exclusión mutua por
+        agente y por directorio de trabajo, algo que el aislamiento por \dfn{worktree} no
+        resuelve por sí solo.
+\end{itemize}
+
+\pendiente{Valoración del autor: ¿merece la pena prototipar algún componente (por ejemplo, el
+analista con salida estructurada) dentro del alcance del TFG o se deja como trabajo futuro?}

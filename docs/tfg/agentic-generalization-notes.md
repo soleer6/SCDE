@@ -44,8 +44,10 @@ Leyenda: **D** determinista (sin LLM) · **L** razonamiento de LLM/agente ·
 5. ¿Se puede ejecutar el backend real (Docker, datos semilla) para validar?
 
 ## Lecciones (con evidencia)
-- El schema no basta: 5 de los 6 desajustes del frontend previo eran sobre semántica
-  (rol por asignatura, claims, visibilidad), no sobre forma.
+- El schema no basta: 3 de los 6 desajustes del frontend previo eran sobre semántica
+  (rol por asignatura, `is_staff` solo en el JWT, estado en servidor y no en localStorage);
+  los otros 3 (nombres de tokens, `payload`, estados) eran de forma y los detectaría una
+  comparación determinista con el schema. (Antes decía 5/6; recontado al redactar el cap. 7.)
 - "No inventar endpoints" + inventario generado = el segundo agente documentó 4 huecos
   en vez de improvisar.
 - Las referencias visuales son ambiguas: preguntar por el eje habría evitado una

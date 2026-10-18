@@ -1,8 +1,98 @@
-\pendiente{Redactar a partir de docs/tfg/agentic-generalization-notes.md.}
+Los capítulos anteriores describen un producto concreto. Este capítulo mira el proceso que lo
+produjo y se pregunta qué parte de él podría repetirse con otro \dfn{backend}: dado un
+repositorio de servicio con su contrato, ¿qué pasos llevan hasta un \dfn{frontend} usable y
+cuáles de ellos podría ejecutar un sistema de \dfnpl{agente} sin intervención? La respuesta
+se construye a partir de lo que realmente se hizo, registrado durante el desarrollo en
+\texttt{docs/tfg/agentic-generalization-notes.md} y en el registro de iteraciones
+(\cref{AP:ITERATIONS}); no a partir de lo que un sistema así debería hacer en abstracto.
 
-Etapas observadas: obtener el \dfn{backend} $\rightarrow$ localizar el contrato $\rightarrow$
-inventario $\rightarrow$ verificar semántica en el código $\rightarrow$ actores y permisos
-$\rightarrow$ máquina de estados $\rightarrow$ huecos $\rightarrow$ preguntas a la persona
-$\rightarrow$ especificación $\rightarrow$ reparto $\rightarrow$ base común $\rightarrow$
-\dfnpl{mock} $\rightarrow$ implementación $\rightarrow$ verificación $\rightarrow$ integración
-$\rightarrow$ revisión estética.
+\subsection{Etapas observadas}
+
+El trabajo siguió dieciséis etapas, que se agrupan en cuatro fases. El orden es el que se
+siguió en la práctica, aunque varias etapas se repitieron en cada iteración.
+
+\paragraph{Fase 1: obtener y entender el servicio.}
+\begin{enumerate}
+  \item \emph{Obtener el \dfn{backend}.} El clonado completo falló por los binarios de la
+        documentación; se consultó el árbol mediante la \acs{api} de GitHub y se clonó de
+        forma parcial con \textit{sparse checkout} (\cref{SEC:AN-BACKEND}). Las tres primeras
+        entradas del registro de errores corresponden a esta etapa.
+  \item \emph{Localizar el contrato.} El esquema OpenAPI generado por drf-spectacular estaba
+        en la documentación del repositorio.
+  \item \emph{Inventariar operaciones y esquemas.} Dos \textit{scripts} deterministas
+        convierten el YAML en \texttt{API\_INVENTORY.md}, el índice que se consulta en lugar
+        del contrato completo.
+  \item \emph{Verificar en el código lo que el esquema no expresa.} Permisos, transiciones
+        de estado, visibilidad para cada actor y control de concurrencia
+        (\texttt{old\_score}) se leyeron en las vistas y servicios de Django.
+  \item \emph{Construir el modelo de actores y permisos.} Roles por asignatura, permisos
+        \texttt{can\_*} con sus valores por defecto y la excepción del gestor
+        (\cref{SEC:AN-ACTORS}).
+  \item \emph{Extraer la máquina de estados del recurso central.} Las transiciones válidas de
+        la \dfn{instancia} de examen estaban en una tabla del código y determinaron los
+        botones de acción y los indicadores de estado.
+  \item \emph{Detectar huecos del contrato.} Para cada acción de cada actor se comprobó si
+        alguna operación \emph{visible para ese actor} proporciona los datos que necesita;
+        cada respuesta negativa se registró (\cref{SEC:AN-GAPS}).
+\end{enumerate}
+
+\paragraph{Fase 2: decidir qué construir.}
+\begin{enumerate}
+  \setcounter{enumi}{7}
+  \item \emph{Preguntar a la persona.} Prioridades, dirección estética, reglas de negocio
+        ausentes del servicio (la nota de aprobado) y qué hacer con cada hueco.
+  \item \emph{Especificar el \dfn{frontend}.} Rutas por actor, una vista por cada variante
+        de visibilidad y los estados vacío, de carga, de error y sin permiso
+        (\cref{SEC:AN-RF}).
+  \item \emph{Planificar y repartir.} Las áreas se cortaron por grupos de operaciones con
+        dependencias mínimas entre sí, lo que permitió dos líneas paralelas
+        (\cref{SEC:IMP-PARALLEL}).
+\end{enumerate}
+
+\paragraph{Fase 3: construir.}
+\begin{enumerate}
+  \setcounter{enumi}{10}
+  \item \emph{Preparar la base común antes de paralelizar.} Sistema de diseño, primitivas,
+        cliente de la \acs{api}, enrutador de \dfnpl{mock}, registro de módulos y documentos de
+        coordinación. Sin esta base, el segundo agente no podía empezar sin modificar
+        ficheros del primero.
+  \item \emph{Escribir \dfnpl{mock} fieles al contrato.} Respuestas con la forma del esquema
+        y las reglas de negocio verificadas en la etapa 4.
+  \item \emph{Implementar módulo a módulo.} Cada módulo (páginas, servicios, textos y
+        \dfnpl{mock}) es una unidad de trabajo que un agente puede completar sin tocar el
+        resto (\cref{SEC:DES-ARCH}).
+\end{enumerate}
+
+\paragraph{Fase 4: verificar e integrar.}
+\begin{enumerate}
+  \setcounter{enumi}{13}
+  \item \emph{Verificar.} Análisis estático, pruebas, compilación, auditoría de estilo y
+        auditoría de propiedad, todo encadenado en \texttt{npm run check}
+        (\cref{SEC:TEST-AUDITS}).
+  \item \emph{Integrar y revisar.} Una rama de unión permitió ejecutar las pruebas de ambas
+        líneas juntas; allí apareció el único fallo de integración del proyecto, invisible en
+        cada rama por separado (entrada 14 del registro).
+  \item \emph{Revisar la estética.} La primera dirección visual fue rechazada por el autor y
+        se sustituyó por la actual (\cref{SEC:DES-VISUAL}).
+\end{enumerate}
+
+\subsection{Bucles de realimentación}
+
+La lista anterior es lineal, pero el proceso no lo fue. Se observaron tres bucles:
+\begin{itemize}
+  \item \emph{Implementación $\rightarrow$ análisis.} Implementar una pantalla obligaba a
+        precisar datos que el análisis inicial no había necesitado y destapaba huecos nuevos:
+        los huecos gap-5 a gap-9 se descubrieron así, al construir las incidencias de
+        escaneo, las zonas de reconocimiento y el \acs{ocr} de anotaciones.
+  \item \emph{Verificación $\rightarrow$ implementación.} Es el bucle más corto y el único
+        que funcionó sin intervención: un fallo de \texttt{npm run check} se corregía antes
+        de confirmar el cambio. Las pruebas también revelaron errores de diseño, como el
+        mapa de identificadores compartido entre instancias del autoguardado de
+        anotaciones (\cref{SEC:IMP-CRITICAL}).
+  \item \emph{Persona $\rightarrow$ base común.} El rechazo de la estética no se resolvió
+        en las pantallas sino en los \textit{tokens} y en la guía de estilo, y desde allí se
+        propagó a ambas líneas sin interrumpir a la otra.
+\end{itemize}
+La documentación del propio proceso (inventario, huecos, registro de iteraciones, memoria)
+recorre todas las fases y es, en sí misma, uno de los productos: es lo que permite retomar
+el trabajo en otra sesión o por otro agente.
