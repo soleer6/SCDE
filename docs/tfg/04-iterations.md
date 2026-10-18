@@ -89,7 +89,7 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
   creación `GRADE_ANNOTATION_REQUIRES_PROBLEM` / `PROBLEM_NOT_IN_MODEL`.
 - Cobertura: 56/94 en la rama (Annotations 6/6). Tests nuevos: `grading/ocr.test.jsx` (8).
 
-## Iteración 2026-10-19 · memoria: capítulo 5 (implementación) y 6.1
+## Iteración 2026-10-19 · memoria: capítulo 5 (implementación), 6.1 y 6.2
 - Redactados 5.1 metodología (fases, condición de cierre, reparto autor/agentes), 5.2
   herramientas (tabla con versiones de `package.json` y del entorno), 5.3 partes críticas con
   cuatro fragmentos de código (`old_score`, autoguardado, conversión de zonas, OCR) más la
@@ -100,8 +100,16 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
 - Comprobado contra el repo antes de consolidar: commit de base `1ebeac9`, rama
   `frontend/base-v2`, tiempos 8 s/30 s, entradas 12-13, auditoría 25 ficheros/28 operaciones,
   modelo de Codex en su configuración.
-- Pendiente: integrar `06-testing/admin.tex` de Codex (91 casos propios, 94 totales en su
-  rama) y redactar 6.2-6.5.
+- 6.2 pruebas: tabla de los 41 casos del núcleo por área y tipo (interfaz/contrato/unitaria),
+  tabla resumida de los 91 de gestión (integrado y condensado `06-testing/admin.tex` de Codex),
+  batería conjunta de 132 y límites.
+- Hallazgo al redactar 5.4: `96fac49` y `REQUESTS.md` decían que `ownership-check.mjs` revisaba
+  los cambios sin commitear, pero el script nunca se modificó. Implementado ahora (preparados,
+  sin preparar y no rastreados cuando ref = HEAD); probado con un fichero no rastreado ajeno.
+- Cobertura conjunta medida (claude bf6e673 + codex 93f4bb2): 87/94 desde features; con
+  refresh/logout en el cliente, 89/94. Sin interfaz: POST /organizations/, POST/PATCH/DELETE
+  /subjects/ y attach de huérfanas (gap-5, a propósito).
+- Pendiente: 6.3-6.5.
 
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.

@@ -3,7 +3,8 @@
  * Usage: node scripts/audit/ownership-check.mjs [agent] [ref]
  *   agent: claude | codex   (default: inferred from current branch)
  *   ref:   branch/commit to inspect (default: HEAD)
- * Compares `git diff --name-only <base>...<ref>` against docs/coordination/OWNERSHIP.json.
+ * Compares `git diff --name-only <base>...<ref>` (plus staged, unstaged and untracked
+ * files when ref is HEAD) against docs/coordination/OWNERSHIP.json.
  * Exit 1 if the agent touched files outside its paths (shared files included).
  */
 import { execSync } from 'node:child_process';
@@ -26,7 +27,19 @@ const ownList = cfg.agents[agent].paths.flatMap((p) => (p === '<shared>' ? cfg.s
 const own = ownList.map(toRegex);
 const shared = cfg.shared.map(toRegex);
 
-const changed = sh(`git diff --name-only ${cfg.base}...${ref}`).split('\n').filter(Boolean);
+const lines = (out) => out.split('\n').map((s) => s.trim()).filter(Boolean);
+const committed = lines(sh(`git diff --name-only ${cfg.base}...${ref}`));
+// On HEAD also inspect the working tree: staged, unstaged and untracked files,
+// so a change is caught before it is committed.
+const local =
+  ref === 'HEAD'
+    ? [
+        ...lines(sh('git diff --name-only --cached')),
+        ...lines(sh('git diff --name-only')),
+        ...lines(sh('git ls-files --others --exclude-standard')),
+      ]
+    : [];
+const changed = [...new Set([...committed, ...local])];
 const violations = [];
 const sharedTouched = [];
 for (const f of changed) {
@@ -35,7 +48,7 @@ for (const f of changed) {
 }
 
 console.log(`Ownership check — agent=${agent} ref=${ref} base=${cfg.base}`);
-console.log(`  changed files: ${changed.length}`);
+console.log(`  changed files: ${changed.length} (${committed.length} committed, ${local.length} local entries)`);
 if (sharedTouched.length) {
   console.log(`\n  ✗ SHARED (frozen) files modified — must go through REQUESTS.md:`);
   sharedTouched.forEach((f) => console.log(`    ${f}`));
