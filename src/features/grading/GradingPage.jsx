@@ -12,6 +12,7 @@ import { useAnnotations } from './useAnnotations.js';
 import { useKnownGrades } from './useKnownGrades.js';
 import PdfStage from './PdfStage.jsx';
 import ProblemGrader from './ProblemGrader.jsx';
+import { CommentOcr } from './HandwritingOcr.jsx';
 
 const EDITABLE = ['PENDING_GRADING', 'GRADED', 'PENDING_REVIEW'];
 
@@ -131,6 +132,12 @@ export default function GradingPage() {
                 />
               )}
             </Field>
+            {editable && !annotations.loading && (
+              <CommentOcr
+                instanceId={i.id}
+                onText={(text) => annotations.setComment(annotations.comment ? `${annotations.comment}\n${text}` : text)}
+              />
+            )}
           </Panel>
 
           {!editable && <Badge plain>{t('side.locked', { status: tc(`status.${i.status}`) })}</Badge>}

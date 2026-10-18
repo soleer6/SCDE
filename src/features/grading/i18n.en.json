@@ -24,5 +24,22 @@
   "problem": {
     "scoreFor": "Grade for {{name}}",
     "state": { "idle": "Not graded", "saving": "Saving", "saved": "Saved", "error": "Error" }
+  },
+  "ocr": {
+    "padHint": "Write here with a pen or the mouse", "clear": "Clear", "close": "Close",
+    "gradeOpen": "Handwritten grade", "gradePad": "Handwritten grade for {{name}}", "gradeSubmit": "Recognise grade",
+    "gradeRead": "Read: {{score}} ({{pct}} % confidence)", "gradeApplied": "Grade applied", "gradeUse": "Use this grade",
+    "gradeUnreadable": "No number was recognised. Try writing it larger.",
+    "gradeUnreadableRaw": "No valid grade was recognised (read “{{raw}}”).",
+    "commentOpen": "Write by hand", "commentPad": "Handwritten text for the comment", "commentSubmit": "Transcribe",
+    "commentAdded": "Text added to the comment ({{pct}} % confidence). Check it before publishing.",
+    "commentUnreadable": "No text was recognised.",
+    "errors": {
+      "NOT_AUTHOR": "Only the annotation author (or a manager) can run recognition on it.",
+      "NO_PROBLEM_ASSOCIATED": "A handwritten grade must be linked to a problem.",
+      "NO_CONTENT": "The annotation has no strokes to recognise.",
+      "NOT_STYLUS": "Only freehand annotations can be recognised.",
+      "UNSUPPORTED_TYPE": "This annotation type does not support recognition."
+    }
   }
 }

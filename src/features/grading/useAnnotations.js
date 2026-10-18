@@ -1,22 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createAnnotation, listAnnotations, readAnnotationPayload, updateAnnotation } from './api.js';
+import { isPadAnnotation, parseInk } from './ocr.js';
 
 /* Persistence model (decision documented in docs/tfg/02-architecture-decisions.md):
  *  - one STYLUS annotation per page; payload = JSON { v: 1, strokes: [...] }
  *    stroke = { points: [{x,y}] (relative 0-1), color, width (relative to page width), tool }
  *  - one TEXT annotation (page 1, problem_id null) = general comment
+ *  - handwriting pads (grade / transcription, see ocr.js) are separate annotations and ignored here
  * The backend stores the payload as an object and returns a presigned download_url.
  */
 const SAVE_DELAY = 1200;
-
-function parseStrokes(text) {
-  try {
-    const data = JSON.parse(text);
-    return Array.isArray(data) ? data : data.strokes ?? [];
-  } catch {
-    return [];
-  }
-}
 
 export function useAnnotations(instanceId, { readOnly = false } = {}) {
   const [strokesByPage, setStrokesByPage] = useState({});
@@ -40,10 +33,13 @@ export function useAnnotations(instanceId, { readOnly = false } = {}) {
         let text = '';
         await Promise.all(
           list.map(async (a) => {
+            if (isPadAnnotation(a)) return;
             const payload = await readAnnotationPayload(a);
             if (a.annotation_type === 'STYLUS') {
+              const strokes = parseInk(payload);
+              if (!strokes) return;
               own.stylus[a.page_number] = a.id;
-              byPage[a.page_number] = parseStrokes(payload);
+              byPage[a.page_number] = strokes;
             } else if (a.annotation_type === 'TEXT' && !a.problem_id) {
               own.text = a.id;
               text = payload;

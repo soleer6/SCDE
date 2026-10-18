@@ -24,5 +24,22 @@
   "problem": {
     "scoreFor": "Nota de {{name}}",
     "state": { "idle": "Sin nota", "saving": "Guardando", "saved": "Guardado", "error": "Error" }
+  },
+  "ocr": {
+    "padHint": "Escribe aquí con el lápiz o el ratón", "clear": "Borrar", "close": "Cerrar",
+    "gradeOpen": "Nota a mano", "gradePad": "Nota manuscrita de {{name}}", "gradeSubmit": "Reconocer nota",
+    "gradeRead": "Leído: {{score}} (confianza {{pct}} %)", "gradeApplied": "Nota aplicada", "gradeUse": "Usar esta nota",
+    "gradeUnreadable": "No se ha reconocido ninguna cifra. Prueba a escribirla más grande.",
+    "gradeUnreadableRaw": "No se ha reconocido una nota válida (leído «{{raw}}»).",
+    "commentOpen": "Escribir a mano", "commentPad": "Texto manuscrito para el comentario", "commentSubmit": "Transcribir",
+    "commentAdded": "Texto añadido al comentario (confianza {{pct}} %). Revísalo antes de publicar.",
+    "commentUnreadable": "No se ha reconocido texto.",
+    "errors": {
+      "NOT_AUTHOR": "Solo quien creó la anotación (o un gestor) puede reconocerla.",
+      "NO_PROBLEM_ASSOCIATED": "La nota manuscrita tiene que ir asociada a un problema.",
+      "NO_CONTENT": "La anotación no tiene trazos que reconocer.",
+      "NOT_STYLUS": "Solo se pueden reconocer anotaciones a mano alzada.",
+      "UNSUPPORTED_TYPE": "Este tipo de anotación no admite reconocimiento."
+    }
   }
 }
