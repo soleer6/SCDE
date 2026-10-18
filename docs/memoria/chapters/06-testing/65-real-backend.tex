@@ -1,4 +1,64 @@
-\pendiente{PENDIENTE DE REALIZAR: levantar el backend con Docker Compose y repetir los flujos con VITE\_MOCK\_API=false. Registrar diferencias entre la simulación y el comportamiento real.}
+Todo lo anterior se ha verificado contra la simulación del \dfn{backend}. Esta sección
+explica por qué esa evidencia no basta, qué se ha preparado para la validación con el
+servicio real y qué queda por hacer. A la fecha de redacción, \textbf{no se ha completado
+ninguna ejecución de la interfaz contra el \dfn{backend} real}, y ningún resultado de esta
+memoria debe leerse como si se hubiera hecho.
 
-Riesgos ya identificados: acceso desde el navegador a las URL prefirmadas de MinIO (CORS);
-datos semilla del \dfn{backend} para los cuatro actores.
+\subsection{Qué demuestra la simulación y qué no}
+
+La simulación se escribió a partir del documento OpenAPI y de la lectura de los servicios
+de Django, por lo que reproduce la forma de las respuestas y las reglas de negocio que se
+identificaron. Pero es una interpretación: si el análisis de un servicio fue incorrecto, la
+simulación y la interfaz comparten el error y las pruebas pasan. El proyecto ofrece pruebas
+de que el riesgo es real. La lectura del código del \dfn{backend} ya reveló cuatro
+diferencias que el documento OpenAPI no anuncia: una operación que siempre falla (gap-5), una
+respuesta con forma distinta de la declarada (gap-8), un renderizador que solo entiende un
+formato de trazos (gap-9) y errores 400 no declarados en las operaciones de \acs{ocr}
+(\cref{SEC:AN-GAPS}). Es razonable esperar que la ejecución real descubra otras que la
+lectura no ha encontrado.
+
+\subsection{Preparación}
+
+La interfaz está preparada para cambiar de transporte sin modificar el código: con
+\texttt{VITE\_MOCK\_API=false}, el cliente \acs{http} envía las peticiones a
+\texttt{VITE\_API\_URL} (por defecto \texttt{http://localhost:8000}) con el prefijo
+\texttt{/api/v1}. El repositorio del \dfn{backend} incluye un \texttt{docker-compose.yml} con
+la \acs{api} de Django, PostgreSQL, Redis, MinIO como almacenamiento de objetos, los
+trabajadores de Celery y un servidor de correo de pruebas, y su configuración de desarrollo
+admite peticiones de cualquier origen (\acs{cors}), de modo que un navegador servido por Vite
+puede llamarlo directamente.
+
+\subsection{Riesgos identificados}
+
+\begin{itemize}
+  \item \textbf{Ficheros en el almacenamiento de objetos.} Los \acs{pdf} de las instancias y
+        de los modelos se entregan mediante URL prefirmadas de MinIO. El navegador las pide
+        a otro origen distinto del de la \acs{api}, y la configuración \acs{cors} de Django no
+        se aplica a MinIO; si su \textit{bucket} no admite el origen de la interfaz, el visor
+        no podrá cargar las páginas aunque la \acs{api} responda correctamente.
+  \item \textbf{Datos de partida.} Los flujos necesitan, al menos, una organización con un
+        curso activo, una asignatura con coordinador, profesor y estudiante, un examen con
+        modelo, problemas y alguna instancia escaneada. La simulación los crea con su
+        semilla; en el servicio real habrá que crearlos con las importaciones y la
+        ingesta, lo que convierte la preparación en una prueba en sí misma.
+  \item \textbf{Huecos conocidos.} Las limitaciones de \cref{SEC:AN-GAPS} (sin lectura de
+        notas por problema para el profesorado, sin imagen de página) se manifestarán
+        igual con el servicio real; la validación debe distinguirlas de los defectos
+        nuevos.
+\end{itemize}
+
+\subsection{Procedimiento previsto}
+
+La validación consistirá en levantar el \dfn{backend} con Docker Compose, crear los datos de
+partida mediante las propias operaciones del contrato y repetir manualmente, con
+\texttt{VITE\_MOCK\_API=false}, los recorridos de las pruebas de flujo de
+\cref{TAB:TEST-CORE}, registrando para cada uno si el comportamiento coincide con la
+simulación y, si no, si la diferencia está en la interfaz, en la simulación o en el
+\dfn{backend}. Las diferencias de la simulación se corregirán en ella, con la prueba
+afectada; las del \dfn{backend} se añadirán a la lista de huecos para el equipo
+correspondiente.
+
+\pendiente{Realizar la validación con el backend real (Docker Compose, VITE\_MOCK\_API=false)
+y sustituir esta sección por sus resultados: recorridos ejecutados, diferencias encontradas y
+su clasificación. Si no llega a hacerse antes de la entrega, el autor debe decidir si se
+mantiene como limitación declarada.}

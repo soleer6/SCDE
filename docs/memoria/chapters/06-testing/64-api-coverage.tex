@@ -1,7 +1,67 @@
-\pendiente{Actualizar las cifras antes de entregar con: python scripts/analyze/coverage.py docs/frontend/API_INVENTORY.md src/features --missing}
+La cobertura del contrato responde a una pregunta distinta de la de las pruebas: no si lo
+que existe funciona, sino cuánto del \dfn{backend} es alcanzable desde la interfaz. Se mide
+con \texttt{scripts/analyze/coverage.py}, que lee el inventario de la \acs{api} y busca en el
+código de los módulos, excluyendo simulaciones y pruebas, una llamada del cliente con el
+mismo método \acs{http} y la misma ruta, admitiendo cualquier expresión en los parámetros. Es
+una heurística determinista y conservadora: cuenta una operación cuando hay código que la
+invoca, no cuando una prueba la ejercita, y no detecta llamadas construidas de formas que el
+patrón no reconoce. Durante el proyecto se amplió dos veces, para contar las subidas de
+ficheros con \texttt{PUT} y las peticiones genéricas con método explícito, tras comprobar que
+dejaba fuera operaciones que sí tenían interfaz.
 
-Medición a 17/10/2026: 55 de 94 operaciones con interfaz ($\approx$58\,\%). Sin interfaz:
-creación y configuración de exámenes (modelos, zonas, problemas, \dfnpl{rubrica}, \acs{pdf}
-con QR, convocatoria), incidencias de escaneo (páginas huérfanas y su reordenación),
-reglas de asignación de correctores, \acs{ia}/OCR sobre anotaciones, alta y baja de
-asignaturas e instancias.
+El denominador son las 94 operaciones del documento OpenAPI, excluida la comprobación de
+salud del servicio (\cref{SEC:AN-BACKEND}). La \cref{TAB:TEST-COVERAGE} recoge la medición por
+etiqueta del contrato sobre los \textit{commits} \texttt{bf6e673} (núcleo) y
+\texttt{93f4bb2} (gestión), y su unión.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{lrrrr}
+    \toprule
+    \textbf{Etiqueta} & \textbf{Operaciones} & \textbf{Núcleo} & \textbf{Gestión} &
+      \textbf{Unión} \\
+    \midrule
+    Annotations    &  6 &  6 & 0 &  6 \\
+    Audit          &  1 &  0 & 1 &  1 \\
+    Authentication &  3 &  0 & 1 &  1 \\
+    Courses        &  4 &  0 & 4 &  4 \\
+    Exams          & 18 & 18 & 0 & 18 \\
+    Grading        &  7 &  7 & 0 &  7 \\
+    Ingestion      &  2 &  2 & 0 &  2 \\
+    Instances      &  8 &  8 & 0 &  8 \\
+    Notifications  &  3 &  0 & 3 &  3 \\
+    Organizations  &  4 &  0 & 3 &  3 \\
+    Pages          &  8 &  7 & 0 &  7 \\
+    Reviews        &  5 &  5 & 0 &  5 \\
+    Subjects       & 16 &  3 & 10 & 13 \\
+    Users          &  9 &  0 & 9 &  9 \\
+    \midrule
+    \textbf{Total} & \textbf{94} & \textbf{56} & \textbf{33} & \textbf{87} \\
+    \bottomrule
+  \end{tabular}
+  \caption{Operaciones del contrato invocadas desde los módulos, por etiqueta.\label{TAB:TEST-COVERAGE}}
+\end{table}
+
+Las dos líneas apenas se solapan: solo dos operaciones aparecen en ambas, el detalle de una
+asignatura (\texttt{GET /subjects/\{id\}/}) y su lista de miembros
+(\texttt{GET /subjects/\{id\}/members/}), que el núcleo usa para elegir correctores y la
+gestión para administrar la asignatura; por eso la unión es 87 y no $56 + 33$.
+Si se mide sobre todo el código fuente, y no solo sobre los módulos, se añaden la
+renovación de la sesión y el cierre de sesión, que viven en la capa común
+(\texttt{src/lib}): 89 de 94 operaciones ($\approx$95\,\%) tienen un camino desde la
+aplicación. Las cinco restantes quedan fuera por decisión, no por omisión:
+\begin{itemize}
+  \item \texttt{POST /organizations/} y el alta, modificación y baja de asignaturas
+        (\texttt{POST}, \texttt{PATCH} y \texttt{DELETE /subjects/}): son operaciones de
+        aprovisionamiento de la organización, que el alcance de este trabajo dejó a la
+        importación masiva de asignaturas y a la administración del \dfn{backend}
+        (\cref{SEC:AN-RF}).
+  \item \texttt{POST /orphan-pages/\{id\}/attach/}: la vista de Django falla siempre por un
+        desajuste con su serializador (gap-5); la interfaz usa en su lugar la operación
+        equivalente sobre la instancia, que sí funciona.
+\end{itemize}
+
+La cifra mide alcance, no calidad. Una operación cubierta puede tener una interfaz pobre,
+y la medición no dice nada de cómo se comporta frente al \dfn{backend} real, que es el
+objeto de la sección siguiente.

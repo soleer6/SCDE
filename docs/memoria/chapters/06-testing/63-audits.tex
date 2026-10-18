@@ -1,5 +1,67 @@
-\pendiente{Redactar.}
+Junto a las pruebas, cada iteración supera cuatro comprobaciones que no ejecutan la
+aplicación. Ninguna usa un modelo de lenguaje: su valor está precisamente en ser
+deterministas, de modo que el mismo \textit{commit} produce siempre el mismo veredicto y
+el resultado no depende de quién, persona o agente, las ejecute.
 
-Auditor de estilo (colores, tipografías, radios y sombras solo vía \textit{tokens}, sin
-mayúsculas forzadas, textos traducidos) y auditor de propiedad (cada línea solo modifica
-sus rutas). Ambos sin \acs{llm}: su valor es ser deterministas.
+\paragraph{Análisis estático.} ESLint, con las reglas recomendadas de JavaScript y las de
+\textit{hooks} y refresco de módulos de React. Estas últimas detectaron problemas reales de
+diseño, no solo de formato: un \texttt{setState} síncrono dentro de un efecto al cambiar de
+instancia, que obligó a extraer un \textit{hook} con estado indexado por identificador, y
+constantes exportadas junto a componentes, que impedían el refresco en caliente
+(\cref{AP:ITERATIONS}, entradas 7 y 8).
+
+\paragraph{Compilación de producción.} \texttt{vite build} garantiza que el código que pasa
+las pruebas también se empaqueta, incluido el descubrimiento de módulos con
+\texttt{import.meta.glob}, que no se ejercita en las pruebas de flujo de la misma forma.
+
+\paragraph{Auditoría de estilo.} El \textit{script} \texttt{scripts/audit/style-audit.mjs}
+traduce a expresiones regulares las reglas de la guía de estilo que pueden comprobarse
+mecánicamente sobre los ficheros de los módulos (\cref{TAB:TEST-STYLE}). Las reglas de
+\emph{error} hacen fallar la verificación; los \emph{avisos} son informativos y se revisan
+caso a caso. Una línea puede excluirse con un comentario \texttt{audit-ignore} explícito,
+que queda visible en la revisión. Las primeras versiones de las reglas produjeron falsos
+positivos (un color negro en una máscara, una variable de tipografía legítima) y una regla
+de radios que, por un retroceso de la expresión regular, no detectaba nada o lo detectaba
+todo; se corrigieron antes de exigir la auditoría en cada iteración (\cref{AP:ITERATIONS},
+entradas 5 y 6). Sobre el \textit{commit} \texttt{bf6e673}, la auditoría examina 59 ficheros
+del núcleo con cero errores y siete avisos: seis estilos en línea que posicionan
+elementos sobre la página escaneada o dimensionan barras de progreso, y un tamaño de letra en
+píxeles para la nota destacada del estudiante.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{p{0.20\textwidth}p{0.10\textwidth}p{0.58\textwidth}}
+    \toprule
+    \textbf{Regla} & \textbf{Nivel} & \textbf{Qué exige} \\
+    \midrule
+    Color & error & Ningún color literal: solo \textit{tokens} de
+      \texttt{src/styles/tokens.css}. \\
+    Tipografía & error & Familias solo mediante las variables del sistema. \\
+    Radio y sombra & error & Solo los radios y sombras del sistema, o anillos de foco. \\
+    Clases compartidas & error & Un módulo no redefine las clases \texttt{.ui-*} de los
+      componentes comunes. \\
+    Capas legadas & error & Ninguna importación de las capas eliminadas del prototipo. \\
+    Mayúsculas & aviso & Sin mayúsculas forzadas (dirección visual v2). \\
+    Degradados & aviso & Solo con función (fondos o máscaras). \\
+    Estilo en línea & aviso & Solo para geometría dinámica. \\
+    Tamaño en píxeles & aviso & Tamaños de letra mediante \textit{tokens}. \\
+    Texto sin traducir & aviso & El texto visible pasa por \texttt{t()}. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Reglas de la auditoría de estilo.\label{TAB:TEST-STYLE}}
+\end{table}
+
+\paragraph{Auditoría de propiedad.} El \textit{script}
+\texttt{scripts/audit/ownership-check.mjs} compara los ficheros modificados por una rama
+desde la base común con las rutas que \texttt{OWNERSHIP.json} asigna a su agente y falla si
+alguno queda fuera; cuando se ejecuta sobre la rama actual revisa además los cambios
+preparados, los no preparados y los ficheros no rastreados (\cref{SEC:IMP-PARALLEL}). No
+forma parte de \texttt{npm run check} porque depende de la rama, pero la condición de cierre
+de cada iteración la exige por separado.
+
+\paragraph{Qué no cubren.} Las cuatro comprobaciones verifican forma y disciplina, no
+comportamiento: una pantalla puede pasar la auditoría de estilo y ser confusa, y una rama
+puede respetar sus rutas y romper el contrato. Por eso complementan a las pruebas, no las
+sustituyen; y la revisión visual de las pantallas, que ninguna de ellas hace, quedó en manos
+del autor (\cref{SEC:DES-VISUAL}).

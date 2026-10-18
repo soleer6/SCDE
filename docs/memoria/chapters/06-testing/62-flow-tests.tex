@@ -1,136 +1,127 @@
-La batería tiene dos partes, una por línea de trabajo, que se ejecutan juntas en la rama de
-integración. Las cifras de esta sección corresponden a la última ejecución de
-\texttt{npm run check} en cada rama: \textit{commit} \texttt{bf6e673} para el núcleo docente
-y \texttt{93f4bb2} para la gestión, ambos del 18 de octubre de 2026. Son recuentos de casos
-ejecutados con éxito, no una medida de cobertura de líneas ni de requisitos.
+Esta sección describe las baterías de las dos líneas de trabajo. Las cifras corresponden a
+ejecuciones de \texttt{npm run check} sobre \textit{commits} concretos: la línea del núcleo
+sobre \texttt{bf6e673} y la de gestión sobre \texttt{93f4bb2}. Son recuentos de casos que
+terminan correctamente, no medidas de cobertura de líneas, de ramas ni de requisitos.
 
 \subsection{Núcleo docente}
 
-La rama del núcleo contiene 41 casos en siete ficheros. Se distinguen tres tipos: pruebas de
-\emph{interfaz}, que montan la pantalla y actúan sobre ella; pruebas de \emph{contrato}, que
-llaman a la \acs{api} a través del cliente real y comprueban que la simulación aplica las
-mismas reglas que los servicios del \dfn{backend}; y pruebas \emph{unitarias} de funciones o
-\textit{hooks} aislados. La \cref{TAB:TEST-CORE} los agrupa por área.
+La rama del núcleo contiene 41 casos en siete ficheros (\cref{TAB:TEST-CORE}). Los casos de
+flujo montan la aplicación con su enrutador y su proveedor de sesión, inician sesión con uno
+de los usuarios de la simulación y recorren el caso de uso hasta comprobar tanto la pantalla
+como el estado de los datos simulados.
 
 \begin{table}[htbp]
   \centering
   \small
-  \begin{tabular}{p{0.25\textwidth}cp{0.58\textwidth}}
+  \begin{tabular}{p{0.30\textwidth}rp{0.54\textwidth}}
     \toprule
-    \textbf{Área} & \textbf{Casos} & \textbf{Comportamientos comprobados} \\
+    \textbf{Fichero} & \textbf{Casos} & \textbf{Qué comprueba} \\
     \midrule
-    Sesión y cliente & 7 & Inicio de sesión correcto con llegada a la cola de corrección;
-      error traducido con credenciales erróneas; nombres de campo del contrato; traducción de
-      códigos de error; renovación transparente de un \textit{token} caducado; ruta más
-      específica en la simulación; respuestas binarias. \\
-    Panel del examen & 1 & Listado de instancias y publicación de las calificadas, con su
-      efecto en los datos. \\
-    Corrección & 5 & Concurrencia optimista (\texttt{VERSION\_CONFLICT}), nota máxima y
-      transiciones inválidas; permisos por regla de asignación; persistencia de la tinta y
-      lectura por \texttt{download\_url}; autoguardado al cambiar de examen y al salir. \\
-    Reconocimiento de escritura & 8 & Formato de puntos que dibuja el renderizador; distinción
-      entre tinta de página y paneles; nota aplicada, propuesta o descartada según la
-      confianza; transcripción con borrado de la anotación temporal; apertura del panel. \\
-    Resultados y revisiones & 4 & Nota y desglose del estudiante con solicitud de revisión;
-      ocultación de resultados no publicados; bandeja de revisiones oculta a quien solo es
-      estudiante; resolución que finaliza la instancia. \\
-    Creación de exámenes y zonas & 8 & Alta de examen, modelo, problemas y \dfn{rubrica};
-      rechazo del borrado con instancias; validación del \acs{pdf} en blanco y de la
-      convocatoria; reglas de correctores y su cobertura; conversión de coordenadas; perfiles
-      y zonas por página; editor de zonas. \\
-    Incidencias de escaneo & 8 & Movimiento de páginas solo dentro del mismo examen;
-      reordenar, aceptar y descartar; estudiante ya asignado; identificación desde la
-      pantalla; permisos; páginas huérfanas; ingesta manual. \\
+    \texttt{test/flows.test.jsx} & 14 & Inicio de sesión correcto y con error traducido;
+      publicación de notas desde el panel del examen; contrato de calificación
+      (\texttt{old\_score}, nota máxima, transiciones), permisos por regla de asignación y
+      persistencia de anotaciones; resultado, solicitud de revisión y resultados no
+      publicados del estudiante; bandeja de revisiones; creación de exámenes, modelos,
+      problemas y \dfnpl{rubrica}, validación del \acs{pdf} en blanco y de la
+      convocatoria, reglas de correctores y su cobertura. \\
+    \texttt{ingestion/ingestion.test.jsx} & 8 & Reglas de las operaciones de páginas
+      (mover solo dentro del mismo examen, reordenar, aceptar, descartar, huérfanas solo
+      para gestores, estudiante duplicado) y pantallas de incidencias y de escaneos. \\
+    \texttt{grading/ocr.test.jsx} & 8 & Formato de los paneles de escritura; nota
+      reconocida aplicada o propuesta según la confianza; texto reconocido añadido al
+      comentario y borrado de la anotación temporal; la tinta de página ignora los
+      paneles. \\
+    \texttt{exams/zones.test.jsx} & 4 & Conversión de coordenadas en ambos sentidos y
+      editor de zonas por página. \\
+    \texttt{grading/useAnnotations.test.jsx} & 2 & Guardado de los trazos pendientes al
+      cambiar de examen, sin mezclar identificadores entre instancias, y del comentario
+      general al salir. \\
+    \texttt{lib/api/client.test.js} & 3 & Nombres de campo del contrato, traducción de
+      errores y renovación transparente de un \textit{token} caducado. \\
+    \texttt{lib/mock/router.test.js} & 2 & Selección de la ruta más específica y
+      respuestas binarias. \\
     \midrule
     \textbf{Total} & \textbf{41} & \\
     \bottomrule
   \end{tabular}
-  \caption{Casos de prueba de la línea del núcleo docente (\textit{commit}
-           \texttt{bf6e673}).\label{TAB:TEST-CORE}}
+  \caption{Pruebas de la línea del núcleo docente (\textit{commit}
+    \texttt{bf6e673}).\label{TAB:TEST-CORE}}
 \end{table}
 
-Las pruebas de interfaz siguen el recorrido de una persona. La de la revisión del estudiante,
-por ejemplo, inicia sesión con una cuenta de estudiante, abre el examen, comprueba que se
-muestran la nota y el desglose, marca un problema, escribe el motivo, envía la solicitud y
-verifica tanto el aviso en pantalla como la existencia de la solicitud en los datos
-simulados con el mensaje escrito. Las de contrato, en cambio, ejercen reglas que la interfaz
-no puede mostrar por sí sola: que un corrector sin regla de asignación sobre un problema
-recibe \texttt{PERMISSION\_DENIED}, que un examen con instancias no puede borrarse o que una
-página no puede moverse a una instancia de otro examen.
-
-Dos casos merecen mención por los defectos a los que responden. La prueba del
-autoguardado cambia de instancia antes de que venza el temporizador y comprueba que los
-trazos acaban guardados en el examen correcto; su primera ejecución reveló que el
-identificador de una anotación en curso se escribía en el examen siguiente
-(\cref{SEC:IMP-CRITICAL}). La prueba de la tinta de página frente a los paneles de
-reconocimiento fija la corrección de un defecto detectado al revisar el código: una anotación
-de nota habría sustituido a la tinta de la página 1.
+Dos ejemplos muestran el tipo de aserción. La prueba del contrato de calificación guarda
+una nota sin nota previa, comprueba que un segundo guardado con \texttt{old\_score} nulo
+recibe \texttt{409 VERSION\_CONFLICT} y que el que envía la nota confirmada se acepta;
+después verifica el rechazo de una puntuación superior al máximo
+(\texttt{SCORE\_EXCEEDS\_MAX}), el total recalculado de la instancia y que una transición
+no permitida devuelve \texttt{INVALID\_TRANSITION}. En el autoguardado, la prueba dibuja un trazo, cambia de examen antes de que venza el
+temporizador y comprueba en los datos simulados que el trazo se guardó en la instancia
+original y que el examen siguiente no hereda su identificador; es la prueba que destapó el
+segundo defecto descrito en \cref{SEC:IMP-CRITICAL}.
 
 \subsection{Gestión}
 
-La rama de gestión contiene 94 casos en ocho ficheros: 91 de sus módulos y los tres del
-cliente compartido (\cref{TAB:TEST-ADMIN}). El resumen procede del borrador de la línea de
-gestión, revisado para esta memoria.
+La batería de la línea de gestión, redactada en detalle en un borrador de Codex y resumida
+aquí, contenía en el \textit{commit} \texttt{93f4bb2} 94 casos en ocho ficheros: 91 de sus
+módulos y los tres del cliente compartido (\cref{TAB:TEST-ADMIN}). Los recuentos son los
+registrados por esa línea en su bitácora; son coherentes con la ejecución conjunta de la
+composición publicada, que sumó 132 casos en catorce ficheros ($41 + 91$, con el fichero
+del cliente común contado una vez).
 
 \begin{table}[htbp]
   \centering
   \small
-  \begin{tabular}{p{0.25\textwidth}cp{0.58\textwidth}}
+  \begin{tabular}{p{0.30\textwidth}rp{0.54\textwidth}}
     \toprule
-    \textbf{Área} & \textbf{Casos} & \textbf{Comportamientos comprobados} \\
+    \textbf{Área} & \textbf{Casos} & \textbf{Qué comprueba} \\
     \midrule
-    Administración general & 22 & Usuarios, cursos, configuración y auditoría; confirmaciones;
-      errores de guardado; denegación de acceso. \\
-    Catálogos y filtros & 9 & Paginación y búsqueda de cursos; parámetros de usuarios;
-      filtros remotos de auditoría; recuperación de consultas fallidas. \\
-    Importación y exportación de usuarios & 11 & Resultados parciales; CSV con marca de orden
-      de bytes, finales de línea de Windows y comillas; reintento con el mismo fichero;
-      exportación sin contraseñas. \\
-    Gestión de asignaturas & 22 & Grupos, miembros y permisos efectivos; independencia entre
-      permisos; vuelta a la herencia; recuperación de errores. \\
-    Importación de asignaturas & 5 & Relaciones en \acs{json}; errores por fila; CSV de campos
-      escalares; acceso restringido. \\
-    Notificaciones & 19 & Lectura individual y por página; aislamiento entre cuentas; ciclo de
-      vida del contador; respuestas tardías y cambio de sesión. \\
+    Administración general & 22 & Usuarios, cursos, configuración y auditoría;
+      confirmaciones; errores de guardado; denegación de acceso. \\
+    Catálogos y filtros & 9 & Paginación, búsqueda de cursos, parámetros enviados y
+      filtros remotos de auditoría. \\
+    Importación y exportación de usuarios & 11 & Resultados parciales, \acs{csv} con
+      marca de orden de bytes y finales de línea de Windows, errores, reintento con un
+      fichero corregido, exportación sin secretos. \\
+    Gestión de asignaturas & 22 & Miembros, grupos, permisos efectivos y excepciones,
+      separación de permisos entre pestañas. \\
+    Importación de asignaturas & 5 & Relaciones en \acs{json}, errores por fila, acceso
+      restringido. \\
+    Notificaciones & 19 & Lectura individual y por página, aislamiento entre cuentas,
+      orden de respuestas, cambio de sesión, visibilidad de la pestaña y desmontaje. \\
     Perfil & 3 & Campos editables, corrección del correo y recuperación de la carga. \\
     \midrule
-    \textbf{Total propio} & \textbf{91} & Más 3 casos del cliente compartido: 94. \\
+    \textbf{Total propio} & \textbf{91} & Más 3 del cliente compartido: 94. \\
     \bottomrule
   \end{tabular}
-  \caption{Casos de prueba de la línea de gestión (\textit{commit}
-           \texttt{93f4bb2}).\label{TAB:TEST-ADMIN}}
+  \caption{Pruebas de la línea de gestión (\textit{commit} \texttt{93f4bb2}), según su
+    registro.\label{TAB:TEST-ADMIN}}
 \end{table}
 
-Esta parte de la batería pone el acento en dos aspectos que la del núcleo trata menos. El
-primero son las \emph{operaciones simultáneas}: varias pruebas disparan dos envíos y una
-pulsación de Escape en el mismo ciclo, más otro intento durante la espera, y comprueban que
-solo sale una petición, que el diálogo no se cierra y que, tras un primer fallo controlado,
-el reintento produce exactamente un efecto. Para fijar el orden de llegada, la primera
-respuesta se sustituye por una promesa que la propia prueba rechaza; los reintentos usan los
-manejadores de la simulación. El segundo es la \emph{recuperación del foco}: tras un error,
-el foco debe ir al campo inválido o al mensaje, el reintento debe alcanzarse con el teclado y,
-cuando la consulta se recupera, el foco debe quedar en un destino concreto sin perder filtros
-ni página. La prueba del contador de notificaciones sustituye además el reloj por
-temporizadores controlados para comprobar que ocultar la pestaña detiene las consultas y que
-desmontar el componente retira el temporizador.
+Tres técnicas caracterizan esta batería. La primera es el \textbf{reloj controlado}: la
+prueba del contador de notificaciones sustituye los temporizadores y comprueba que, con la
+pestaña oculta, dos minutos simulados no generan consultas, que al volver a ella se consulta
+de inmediato y que tras desmontar el componente no hay más peticiones. La segunda son las
+\textbf{promesas controladas}: para fijar un orden de llegada reproducible, algunas pruebas
+sustituyen una única llamada del cliente por una promesa que la propia prueba resuelve o
+rechaza. Así se comprueba que una respuesta tardía no pisa a otra más reciente, que dos
+envíos en el mismo ciclo producen una sola petición y que el diálogo no se cierra con
+Escape mientras la operación sigue pendiente. La tercera es la \textbf{recuperación por
+teclado}: tras uno o dos fallos consecutivos, la prueba alcanza el reintento con Tab y Enter
+y verifica a qué elemento vuelve el foco y que se conservan filtros, página y datos.
 
-Varios de estos casos reprodujeron fallos antes de su corrección: en particular, el cierre de
-las confirmaciones con Escape en el mismo ciclo que el envío, que se resolvió consultando una
-referencia síncrona en lugar del estado de React (\cref{SEC:IMP-CRITICAL}).
+El borrador de la línea de gestión delimita con cuidado lo que estas pruebas no acreditan, y
+esos límites se mantienen aquí: una sola petición desde la interfaz no demuestra que el
+servidor sea idempotente; los eventos de formulario de Testing Library no reproducen la
+validación nativa de ficheros de un navegador; los recorridos de foco son comprobaciones
+concretas en un \acs{dom} simulado, no una auditoría de accesibilidad; y ninguna prueba
+ejecuta las vistas de Django.
 
-\subsection{Batería conjunta}
+\subsection{Fallos intermitentes}
 
-En la composición de ambas ramas que se publica como demostración se ejecutaron 132 casos en
-catorce ficheros: los 41 del núcleo y los 91 propios de la gestión, con el fichero del cliente
-compartido contado una sola vez. Todos terminaron con éxito, según el registro de la
-publicación de la línea de gestión.
-
-\subsection{Lo que estas pruebas no demuestran}
-
-Las pruebas ejercen la interfaz contra la simulación: no ejecutan las vistas de Django, su
-almacenamiento ni sus validaciones, y su acuerdo con el \dfn{backend} real depende de que la
-simulación lo reproduzca fielmente (\cref{SEC:TEST-REAL}). Se ejecutan sobre un \acs{dom}
-simulado, sin dibujo real del lienzo ni del \acs{pdf}, por lo que no sustituyen una revisión
-visual en navegador ni una evaluación de accesibilidad con tecnologías de apoyo. No se han
-medido tiempos de respuesta ni comportamiento con varios usuarios simultáneos, ni se han hecho
-pruebas con usuarios.
+Una prueba que falla sin un defecto detrás erosiona la confianza en las que fallan con él,
+por lo que los fallos intermitentes se registraron en lugar de ignorarse. Además del ajuste
+de tiempos de espera ya descrito (\cref{SEC:TEST-STRATEGY}), en la redacción de este
+capítulo la prueba de identificación de estudiante en la pantalla de incidencias superó una
+vez el límite de 8 segundos dentro de la batería completa (9,4 segundos) y terminó en
+alrededor de un segundo en tres ejecuciones aisladas consecutivas. El comportamiento apunta
+a la carga de la máquina, compartida con la otra línea, y no a un defecto funcional, pero la
+prueba es la más lenta de la rama y se ha anotado como trabajo pendiente reducir su coste.
