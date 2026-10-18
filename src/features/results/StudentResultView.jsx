@@ -5,6 +5,7 @@ import { formatDate, formatDateTime, formatScore } from '../../lib/format.js';
 import { Badge, DataTable, EmptyState, ErrorState, Loader, PageHeader, Panel } from '../../ui';
 import { getExamInstances, getReview, asList } from '../exams/api.js';
 import { listAnnotations, readAnnotationPayload } from '../grading/api.js';
+import { isPadAnnotation, parseInk } from '../grading/ocr.js';
 import { usePdfUrl } from '../grading/usePdfUrl.js';
 import PdfStage from '../grading/PdfStage.jsx';
 import { LifecycleRail, Score, StatusBadge } from '../workspace/domain.jsx';
@@ -135,14 +136,10 @@ function StudentPdf({ instanceId }) {
       const byPage = {};
       await Promise.all(
         list
-          .filter((a) => a.annotation_type === 'STYLUS')
+          .filter((a) => a.annotation_type === 'STYLUS' && !isPadAnnotation(a))
           .map(async (a) => {
-            try {
-              const d = JSON.parse(await readAnnotationPayload(a));
-              byPage[a.page_number] = Array.isArray(d) ? d : d.strokes ?? [];
-            } catch {
-              /* unreadable payload: skip */
-            }
+            const strokes = parseInk(await readAnnotationPayload(a)); // null: pad payload
+            if (strokes) byPage[a.page_number] = strokes;
           }),
       );
       return byPage;

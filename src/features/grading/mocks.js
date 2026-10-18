@@ -55,6 +55,43 @@ function applyGrade({ inst, problem, score, oldScore, user, rubric }) {
   return g;
 }
 
+/* Handwriting recognition (apps.annotations.services: ocr_grade_annotation, ocr_stylus_annotation).
+ * There is no OCR engine in the browser, so the mock simulates a deterministic
+ * reading from the pad strokes ([[{x,y}]] in 0-100, see ocr.js): the grade is
+ * the number of strokes, confident (0.92) up to 3 strokes and doubtful (0.55)
+ * beyond. Auto-apply above 0.8 mirrors GRADE_OCR_CONFIDENCE_THRESHOLD. */
+const OCR_THRESHOLD = 0.8;
+const padStrokes = (a) => {
+  try {
+    const d = JSON.parse(a.content ?? '');
+    return Array.isArray(d) ? d.filter((s) => Array.isArray(s) && s.length > 1) : [];
+  } catch {
+    return [];
+  }
+};
+function ocrGrade(a) {
+  if (!a.problem_id) throw mockError(400, 'NO_PROBLEM_ASSOCIATED');
+  if (!a.content) throw mockError(400, 'NO_CONTENT');
+  if (a.annotation_type !== 'STYLUS') throw mockError(400, 'UNSUPPORTED_TYPE');
+  const n = padStrokes(a).length;
+  const out = { recognized_value: n ? String(n) : null, confidence: n ? (n <= 3 ? 0.92 : 0.55) : 0, auto_applied: false, raw_value: n ? String(n) : '' };
+  if (n && out.confidence >= OCR_THRESHOLD) {
+    const inst = q.instance(a.instance_id);
+    const problem = db.problems.find((p) => p.id === a.problem_id);
+    const current = db.grades.find((g) => g.instance_id === inst.id && g.problem_id === problem.id);
+    try {
+      applyGrade({ inst, problem, score: n, oldScore: current?.score ?? null, user: q.user(a.author_id) });
+      out.auto_applied = true;
+    } catch {
+      /* e.g. SCORE_EXCEEDS_MAX: the backend logs and leaves the grade untouched */
+    }
+  }
+  return out;
+}
+const ocrAuthorOr400 = (a, user) => {
+  if (!user.is_staff && a.author_id !== user.id) throw mockError(400, 'NOT_AUTHOR');
+};
+
 export const mocks = [
   {
     method: 'GET',
@@ -135,6 +172,8 @@ export const mocks = [
       if (!canGrade(user, inst)) throw mockError(403, 'PERMISSION_DENIED');
       if (!['TEXT', 'STYLUS', 'AUDIO'].includes(body?.annotation_type)) throw mockError(400, 'VALIDATION_ERROR', { annotation_type: ['INVALID'] });
       if (!body.payload) throw mockError(400, 'VALIDATION_ERROR', { payload: ['FIELD_REQUIRED'] });
+      if (body.problem_id && !db.problems.some((p) => p.id === body.problem_id && p.exam_model_id === inst.model_id)) throw mockError(400, 'PROBLEM_NOT_IN_MODEL');
+      if (body.is_grade_annotation && !body.problem_id) throw mockError(400, 'GRADE_ANNOTATION_REQUIRES_PROBLEM');
       const now = new Date().toISOString();
       const a = {
         id: db.uid('an'), instance_id: inst.id, annotation_type: body.annotation_type, content: body.payload,
@@ -142,6 +181,7 @@ export const mocks = [
         author_id: user.id, is_grade_annotation: Boolean(body.is_grade_annotation), created_at: now, updated_at: now,
       };
       db.annotations.push(a);
+      if (a.is_grade_annotation) ocrGrade(a); // RF-10.5: grade annotations trigger OCR on creation
       return reply(201, annotationOut(a));
     },
   },
@@ -169,6 +209,29 @@ export const mocks = [
       if (db.annotations[idx].author_id !== user.id && !user.is_staff) throw mockError(403, 'PERMISSION_DENIED');
       db.annotations.splice(idx, 1);
       return reply(204);
+    },
+  },
+  {
+    method: 'POST',
+    path: '/annotations/:id/ocr-grade/',
+    handler: ({ params, user }) => {
+      const a = db.annotations.find((x) => x.id === params.id);
+      if (!a) throw mockError(404, 'NOT_FOUND');
+      ocrAuthorOr400(a, user);
+      return ocrGrade(a);
+    },
+  },
+  {
+    method: 'POST',
+    path: '/annotations/:id/ocr/',
+    handler: ({ params, user }) => {
+      const a = db.annotations.find((x) => x.id === params.id);
+      if (!a) throw mockError(404, 'NOT_FOUND');
+      ocrAuthorOr400(a, user);
+      if (a.annotation_type !== 'STYLUS') throw mockError(400, 'NOT_STYLUS');
+      if (!a.content) throw mockError(400, 'NO_CONTENT');
+      const n = padStrokes(a).length;
+      return { recognized_text: n ? `Texto manuscrito simulado (${n} trazos)` : null, confidence: n ? 0.7 : 0 };
     },
   },
 ];

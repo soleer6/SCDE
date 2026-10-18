@@ -26,6 +26,12 @@ export const createAnnotation = (id, body) => api.post(`/instances/${id}/annotat
 export const updateAnnotation = (annotationId, body) => api.put(`/annotations/${annotationId}/`, body);
 export const deleteAnnotation = (annotationId) => api.del(`/annotations/${annotationId}/`);
 
+/* POST /annotations/{id}/ocr/ -> OCRStylusResponse { recognized_text, confidence } (RF-9.13) */
+export const ocrAnnotation = (annotationId) => api.post(`/annotations/${annotationId}/ocr/`);
+/* POST /annotations/{id}/ocr-grade/ -> OCRGradeResponse { recognized_value, confidence, auto_applied, raw_value } (RF-9.12).
+ * Needs problem_id; above the server threshold the grade is applied (auto_applied). */
+export const ocrGradeAnnotation = (annotationId) => api.post(`/annotations/${annotationId}/ocr-grade/`);
+
 /** Reads an annotation payload (text) from its presigned download_url. */
 export async function readAnnotationPayload(annotation) {
   if (!annotation.download_url) return '';

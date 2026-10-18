@@ -3,12 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { formatScore } from '../../lib/format.js';
 import { Checkbox, Input } from '../../ui';
 import { gradeManual, gradeRubric } from './api.js';
+import { GradeOcr } from './HandwritingOcr.jsx';
 
 /**
  * One problem row. Rubric problems grade by criteria (PUT .../rubric/),
  * the rest by a manual score (PUT .../grade/). Both send old_score for
  * optimistic concurrency; known.grades holds what we last saved.
  * known.grades[pid] = { score: "2.50", criteria?: [ids] }
+ * Manual-score problems can also be graded from a handwritten number (GradeOcr).
  */
 export default function ProblemGrader({ instanceId, problem, known, disabled, onSaved }) {
   const { t } = useTranslation('grading');
@@ -35,9 +37,9 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
     }
   };
 
-  const commitManual = () => {
-    if (draft === '' || disabled) return;
-    const n = Number(draft.replace(',', '.'));
+  const commitManual = (value = draft) => {
+    if (value === '' || disabled) return;
+    const n = Number(String(value).replace(',', '.'));
     if (Number.isNaN(n) || n < 0 || n > max) {
       setState('error');
       setErrCode(n > max ? 'SCORE_EXCEEDS_MAX' : 'INVALID');
@@ -68,7 +70,7 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
               value={draft}
               disabled={disabled}
               onChange={(e) => setDraft(e.target.value)}
-              onBlur={commitManual}
+              onBlur={() => commitManual()}
               onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
               placeholder="—"
             />
@@ -91,6 +93,25 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
             </li>
           ))}
         </ul>
+      )}
+
+      {!rubric.length && !disabled && (
+        <GradeOcr
+          instanceId={instanceId}
+          problem={problem}
+          onApplied={(score) => {
+            // The backend already saved it: only refresh what this browser knows (old_score).
+            known.remember(problem.id, { score: score.toFixed(2) });
+            setDraft(String(score));
+            setState('saved');
+            setErrCode(null);
+            onSaved?.();
+          }}
+          onUse={(score) => {
+            setDraft(String(score));
+            commitManual(String(score));
+          }}
+        />
       )}
 
       <span className={`gr-problem__state is-${state}`} role={state === 'error' ? 'alert' : undefined}>

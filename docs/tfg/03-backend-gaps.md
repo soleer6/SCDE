@@ -78,6 +78,26 @@ desde el frontend; son preguntas para el equipo backend.
 - **Propuesta**: `responses={201: ZoneResponseSerializer(many=True)}` y marcar
   `zone_type` como requerido en el esquema.
 
+## gap-9 · OCR de anotaciones: formato de trazos y códigos de error
+- `_render_stylus_to_image` (apps.annotations.services) solo dibuja una lista JSON de
+  trazos, cada uno una lista de `{x, y}` en **0-100**, sobre un lienzo fijo de 400×200.
+  El contrato no describe el formato de `payload` y la tinta que guarda el frontend
+  (`{ v: 1, strokes: [{ points, color, width, tool }] }`, coordenadas 0-1, como pide la
+  convención de anotaciones relativas) se renderiza como una imagen **en blanco**: el OCR
+  sobre la tinta de una página nunca reconoce nada.
+- Ambas vistas devuelven 400 con códigos que el OpenAPI no declara (`NOT_AUTHOR`,
+  `NO_PROBLEM_ASSOCIATED`, `NO_CONTENT`, `NOT_STYLUS`, `UNSUPPORTED_TYPE`); el esquema solo
+  lista `VALIDATION_ERROR`. `NOT_AUTHOR` debería ser 403.
+- Crear una anotación con `is_grade_annotation` ya lanza el OCR y puede aplicar la nota
+  (RF-10.5), pero la respuesta de creación no informa del resultado: hay que volver a
+  llamar a `ocr-grade/`, que repite el reconocimiento.
+- **Mitigación**: el frontend reconoce desde un panel propio y envía ese panel en el
+  formato del renderizador como anotación aparte (`src/features/grading/ocr.js`); la
+  tinta de página y la vista del estudiante ignoran esas anotaciones.
+- **Propuesta**: documentar el `payload` STYLUS en el esquema y aceptar en el renderizador
+  el formato `{ strokes: [{ points }] }` con coordenadas 0-1 (y el tamaño real de la
+  página); declarar los códigos de error y devolver el resultado del OCR al crear.
+
 ## Otras observaciones
 - `CreateReviewSerializer.notify_students` tiene `default=False`, pero la vista usa
   `get(..., True)`: el valor efectivo depende de si el cliente envía el campo. El frontend

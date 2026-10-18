@@ -71,6 +71,24 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
   las features + refresh/logout en el cliente común; quedan 7 operaciones sin interfaz.
 - `check_tex.py` comprueba ahora que toda cita tiene entrada en `references.bib`.
 
+## Iteración 2026-10-18 · reconocimiento de escritura (OCR) en el corrector
+- «Nota a mano» en cada problema de puntuación manual (RF-9.12): el corrector escribe la
+  cifra en un panel 2:1; se crea una anotación `STYLUS` con `problem_id` e
+  `is_grade_annotation: true` y se llama a `POST /annotations/{id}/ocr-grade/`. Si el
+  backend la aplicó (`auto_applied`), la interfaz actualiza la nota conocida (`old_score`);
+  si no, ofrece «Usar esta nota», que pasa por el guardado manual. Un intento ilegible se borra.
+- «Escribir a mano» en el comentario general (RF-9.13): anotación temporal →
+  `POST /annotations/{id}/ocr/` → el texto se añade al comentario y la anotación se borra.
+- Decisión: el reconocimiento usa un panel propio y no la tinta de la página, porque el
+  renderizador del backend solo entiende listas de puntos en 0-100 y dibujaría en blanco
+  el formato de la tinta (gap-9). La tinta de página y la vista del estudiante ignoran
+  ahora las anotaciones de los paneles (`isPadAnnotation`, `parseInk`), que antes habrían
+  sustituido a la tinta de la página 1.
+- Mock: lectura simulada y determinista (nº de trazos; confianza 0,92 hasta 3 trazos y
+  0,55 a partir de 4; umbral 0,8 como `GRADE_OCR_CONFIDENCE_THRESHOLD`), y validaciones de
+  creación `GRADE_ANNOTATION_REQUIRES_PROBLEM` / `PROBLEM_NOT_IN_MODEL`.
+- Cobertura: 56/94 en la rama (Annotations 6/6). Tests nuevos: `grading/ocr.test.jsx` (8).
+
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.
 - 2 tests con timeout bajo carga → ampliados localmente; entrada de texto con `change`.
