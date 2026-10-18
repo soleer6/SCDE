@@ -44,6 +44,21 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
   los temporizadores al salir (pérdida de hasta 1,2 s de trazos); se documenta como trabajo futuro.
 - `check_tex.py` busca ahora etiquetas en todos los .tex (antes solo en main.tex).
 
+## Iteración 2026-10-18 · zonas de reconocimiento y autoguardado de anotaciones
+- Editor de zonas (RF-6.8) en «Modelos y problemas»: perfil por página del PDF en blanco,
+  zonas QR/texto/número/casilla con vista previa a escala, réplica en varias páginas
+  (`page_numbers`) y borrado. Cubre `GET/POST /models/{id}/page-profiles/`,
+  `POST /page-profiles/{id}/zones/` y `DELETE /zones/{id}/` (gap-8 documenta el desajuste
+  de la respuesta y el sistema de coordenadas).
+- Autoguardado de anotaciones: al cambiar de examen o salir se **ejecutan** los guardados
+  pendientes en vez de cancelarlos. El test reveló un segundo fallo: los ids de anotación
+  no se reiniciaban al cambiar de instancia y una creación en curso escribía su id en el
+  mapa de la instancia nueva (los trazos acababan en el examen anterior). Ahora cada
+  guardado usa el mapa de ids de su instancia.
+- `coverage.py` reconocía mal `api.upload(..., 'PUT')` y `request(path, { method })`:
+  la cobertura real pasa de 48 a 54/94 (Exams 18/18).
+- Tests nuevos: `exams/zones.test.jsx` (4) y `grading/useAnnotations.test.jsx` (2).
+
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.
 - 2 tests con timeout bajo carga → ampliados localmente; entrada de texto con `change`.

@@ -64,6 +64,20 @@ desde el frontend; son preguntas para el equipo backend.
 - `PageResponse` no incluye `created_at`: la lista de huérfanas no puede mostrar cuándo
   llegó cada hoja (el backend sí la ordena por esa fecha).
 
+## gap-8 · Zonas de reconocimiento: contrato y geometría
+- `POST /page-profiles/{id}/zones/` declara en el OpenAPI una respuesta `ZoneResponse`,
+  pero la vista serializa con `many=True` y devuelve **una lista** (una zona por página
+  cuando se envía `page_numbers`). `CreateZoneSerializer.zone_type` es obligatorio aunque
+  el esquema no lo marca como `required`.
+- Las coordenadas son **puntos PDF con origen abajo a la izquierda** (`RecognitionZone`),
+  no fracciones 0-1 como las anotaciones. Solo se valida `x + width <= page_width + 1`.
+- `ModelDetail.page_dimensions` no está tipado en el OpenAPI (se infiere
+  `[{ page, width, height }]` de `exam_service.upload_blank_pdf`).
+- **Mitigación**: `createZone` acepta objeto o lista; el editor trabaja en porcentajes
+  desde arriba a la izquierda y convierte con `zoneGeometry.js` (test de ida y vuelta).
+- **Propuesta**: `responses={201: ZoneResponseSerializer(many=True)}` y marcar
+  `zone_type` como requerido en el esquema.
+
 ## Otras observaciones
 - `CreateReviewSerializer.notify_students` tiene `default=False`, pero la vista usa
   `get(..., True)`: el valor efectivo depende de si el cliente envía el campo. El frontend
