@@ -1,7 +1,136 @@
-\pendiente{Redactar e incluir tabla de casos.}
+La batería tiene dos partes, una por línea de trabajo, que se ejecutan juntas en la rama de
+integración. Las cifras de esta sección corresponden a la última ejecución de
+\texttt{npm run check} en cada rama: \textit{commit} \texttt{bf6e673} para el núcleo docente
+y \texttt{93f4bb2} para la gestión, ambos del 18 de octubre de 2026. Son recuentos de casos
+ejecutados con éxito, no una medida de cobertura de líneas ni de requisitos.
 
-Casos de la línea principal (14): inicio de sesión correcto y erróneo; publicación de
-notas; ciclo de calificación con concurrencia optimista y transiciones inválidas;
-permisos por regla de asignación; persistencia de anotaciones; resultado y solicitud de
-revisión del estudiante; ocultación de resultados no publicados; bandeja de revisiones.
-Unión con la línea paralela: 31 pruebas en 7 ficheros.
+\subsection{Núcleo docente}
+
+La rama del núcleo contiene 41 casos en siete ficheros. Se distinguen tres tipos: pruebas de
+\emph{interfaz}, que montan la pantalla y actúan sobre ella; pruebas de \emph{contrato}, que
+llaman a la \acs{api} a través del cliente real y comprueban que la simulación aplica las
+mismas reglas que los servicios del \dfn{backend}; y pruebas \emph{unitarias} de funciones o
+\textit{hooks} aislados. La \cref{TAB:TEST-CORE} los agrupa por área.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{p{0.25\textwidth}cp{0.58\textwidth}}
+    \toprule
+    \textbf{Área} & \textbf{Casos} & \textbf{Comportamientos comprobados} \\
+    \midrule
+    Sesión y cliente & 7 & Inicio de sesión correcto con llegada a la cola de corrección;
+      error traducido con credenciales erróneas; nombres de campo del contrato; traducción de
+      códigos de error; renovación transparente de un \textit{token} caducado; ruta más
+      específica en la simulación; respuestas binarias. \\
+    Panel del examen & 1 & Listado de instancias y publicación de las calificadas, con su
+      efecto en los datos. \\
+    Corrección & 5 & Concurrencia optimista (\texttt{VERSION\_CONFLICT}), nota máxima y
+      transiciones inválidas; permisos por regla de asignación; persistencia de la tinta y
+      lectura por \texttt{download\_url}; autoguardado al cambiar de examen y al salir. \\
+    Reconocimiento de escritura & 8 & Formato de puntos que dibuja el renderizador; distinción
+      entre tinta de página y paneles; nota aplicada, propuesta o descartada según la
+      confianza; transcripción con borrado de la anotación temporal; apertura del panel. \\
+    Resultados y revisiones & 4 & Nota y desglose del estudiante con solicitud de revisión;
+      ocultación de resultados no publicados; bandeja de revisiones oculta a quien solo es
+      estudiante; resolución que finaliza la instancia. \\
+    Creación de exámenes y zonas & 8 & Alta de examen, modelo, problemas y \dfn{rubrica};
+      rechazo del borrado con instancias; validación del \acs{pdf} en blanco y de la
+      convocatoria; reglas de correctores y su cobertura; conversión de coordenadas; perfiles
+      y zonas por página; editor de zonas. \\
+    Incidencias de escaneo & 8 & Movimiento de páginas solo dentro del mismo examen;
+      reordenar, aceptar y descartar; estudiante ya asignado; identificación desde la
+      pantalla; permisos; páginas huérfanas; ingesta manual. \\
+    \midrule
+    \textbf{Total} & \textbf{41} & \\
+    \bottomrule
+  \end{tabular}
+  \caption{Casos de prueba de la línea del núcleo docente (\textit{commit}
+           \texttt{bf6e673}).\label{TAB:TEST-CORE}}
+\end{table}
+
+Las pruebas de interfaz siguen el recorrido de una persona. La de la revisión del estudiante,
+por ejemplo, inicia sesión con una cuenta de estudiante, abre el examen, comprueba que se
+muestran la nota y el desglose, marca un problema, escribe el motivo, envía la solicitud y
+verifica tanto el aviso en pantalla como la existencia de la solicitud en los datos
+simulados con el mensaje escrito. Las de contrato, en cambio, ejercen reglas que la interfaz
+no puede mostrar por sí sola: que un corrector sin regla de asignación sobre un problema
+recibe \texttt{PERMISSION\_DENIED}, que un examen con instancias no puede borrarse o que una
+página no puede moverse a una instancia de otro examen.
+
+Dos casos merecen mención por los defectos a los que responden. La prueba del
+autoguardado cambia de instancia antes de que venza el temporizador y comprueba que los
+trazos acaban guardados en el examen correcto; su primera ejecución reveló que el
+identificador de una anotación en curso se escribía en el examen siguiente
+(\cref{SEC:IMP-CRITICAL}). La prueba de la tinta de página frente a los paneles de
+reconocimiento fija la corrección de un defecto detectado al revisar el código: una anotación
+de nota habría sustituido a la tinta de la página 1.
+
+\subsection{Gestión}
+
+La rama de gestión contiene 94 casos en ocho ficheros: 91 de sus módulos y los tres del
+cliente compartido (\cref{TAB:TEST-ADMIN}). El resumen procede del borrador de la línea de
+gestión, revisado para esta memoria.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{p{0.25\textwidth}cp{0.58\textwidth}}
+    \toprule
+    \textbf{Área} & \textbf{Casos} & \textbf{Comportamientos comprobados} \\
+    \midrule
+    Administración general & 22 & Usuarios, cursos, configuración y auditoría; confirmaciones;
+      errores de guardado; denegación de acceso. \\
+    Catálogos y filtros & 9 & Paginación y búsqueda de cursos; parámetros de usuarios;
+      filtros remotos de auditoría; recuperación de consultas fallidas. \\
+    Importación y exportación de usuarios & 11 & Resultados parciales; CSV con marca de orden
+      de bytes, finales de línea de Windows y comillas; reintento con el mismo fichero;
+      exportación sin contraseñas. \\
+    Gestión de asignaturas & 22 & Grupos, miembros y permisos efectivos; independencia entre
+      permisos; vuelta a la herencia; recuperación de errores. \\
+    Importación de asignaturas & 5 & Relaciones en \acs{json}; errores por fila; CSV de campos
+      escalares; acceso restringido. \\
+    Notificaciones & 19 & Lectura individual y por página; aislamiento entre cuentas; ciclo de
+      vida del contador; respuestas tardías y cambio de sesión. \\
+    Perfil & 3 & Campos editables, corrección del correo y recuperación de la carga. \\
+    \midrule
+    \textbf{Total propio} & \textbf{91} & Más 3 casos del cliente compartido: 94. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Casos de prueba de la línea de gestión (\textit{commit}
+           \texttt{93f4bb2}).\label{TAB:TEST-ADMIN}}
+\end{table}
+
+Esta parte de la batería pone el acento en dos aspectos que la del núcleo trata menos. El
+primero son las \emph{operaciones simultáneas}: varias pruebas disparan dos envíos y una
+pulsación de Escape en el mismo ciclo, más otro intento durante la espera, y comprueban que
+solo sale una petición, que el diálogo no se cierra y que, tras un primer fallo controlado,
+el reintento produce exactamente un efecto. Para fijar el orden de llegada, la primera
+respuesta se sustituye por una promesa que la propia prueba rechaza; los reintentos usan los
+manejadores de la simulación. El segundo es la \emph{recuperación del foco}: tras un error,
+el foco debe ir al campo inválido o al mensaje, el reintento debe alcanzarse con el teclado y,
+cuando la consulta se recupera, el foco debe quedar en un destino concreto sin perder filtros
+ni página. La prueba del contador de notificaciones sustituye además el reloj por
+temporizadores controlados para comprobar que ocultar la pestaña detiene las consultas y que
+desmontar el componente retira el temporizador.
+
+Varios de estos casos reprodujeron fallos antes de su corrección: en particular, el cierre de
+las confirmaciones con Escape en el mismo ciclo que el envío, que se resolvió consultando una
+referencia síncrona en lugar del estado de React (\cref{SEC:IMP-CRITICAL}).
+
+\subsection{Batería conjunta}
+
+En la composición de ambas ramas que se publica como demostración se ejecutaron 132 casos en
+catorce ficheros: los 41 del núcleo y los 91 propios de la gestión, con el fichero del cliente
+compartido contado una sola vez. Todos terminaron con éxito, según el registro de la
+publicación de la línea de gestión.
+
+\subsection{Lo que estas pruebas no demuestran}
+
+Las pruebas ejercen la interfaz contra la simulación: no ejecutan las vistas de Django, su
+almacenamiento ni sus validaciones, y su acuerdo con el \dfn{backend} real depende de que la
+simulación lo reproduzca fielmente (\cref{SEC:TEST-REAL}). Se ejecutan sobre un \acs{dom}
+simulado, sin dibujo real del lienzo ni del \acs{pdf}, por lo que no sustituyen una revisión
+visual en navegador ni una evaluación de accesibilidad con tecnologías de apoyo. No se han
+medido tiempos de respuesta ni comportamiento con varios usuarios simultáneos, ni se han hecho
+pruebas con usuarios.

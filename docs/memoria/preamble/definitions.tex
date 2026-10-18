@@ -25,3 +25,22 @@
 \newdefinition{worktree}{worktree}{worktrees}%
   {Directorio de trabajo adicional de Git asociado a otra rama del mismo
    repositorio, que permite trabajar en paralelo sin compartir ficheros}
+
+% Fragmentos de código (JavaScript/JSX) en el capítulo de implementación
+\usepackage{listings}
+\lstdefinelanguage{JavaScript}{%
+  keywords={const,let,var,function,return,if,else,for,of,new,async,await,try,catch,
+            finally,throw,export,import,from,default,null,true,false,typeof},
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]",
+  morestring=[b]`}
+\lstset{language=JavaScript, basicstyle=\ttfamily\footnotesize,
+        keywordstyle=\bfseries, commentstyle=\itshape\color{gray},
+        columns=fullflexible, keepspaces=true, breaklines=true,
+        frame=single, framerule=0.3pt, rulecolor=\color{gray},
+        captionpos=b, abovecaptionskip=4pt, xleftmargin=2pt, xrightmargin=2pt}
+\renewcommand{\lstlistingname}{Código}
+\renewcommand{\lstlistlistingname}{Índice de códigos}

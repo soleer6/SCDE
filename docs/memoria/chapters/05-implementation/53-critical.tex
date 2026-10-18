@@ -1,6 +1,205 @@
-\pendiente{Redactar con fragmentos de código (codes/).}
+El diseño de \cref{CAP:DESIGN} fija la estructura; esta sección recoge las partes de la
+implementación en las que el detalle importa, porque un error en ellas pierde trabajo del
+profesorado o produce resultados incorrectos sin que la interfaz lo muestre. Los
+fragmentos de código están abreviados: se han eliminado partes no relevantes para el
+argumento, pero no se ha cambiado su lógica. La renovación de la sesión de vuelo único y la
+selección de la ruta más específica en la simulación ya se describieron en
+\cref{SEC:DES-DATA} y no se repiten.
 
-Candidatos: renovación de \textit{token} de vuelo único (\texttt{lib/api/client.js});
-selección de ruta más específica en el \dfn{mock} (\texttt{lib/mock/router.js});
-calificación con concurrencia optimista (\texttt{features/grading/ProblemGrader.jsx});
-capa de tinta (\texttt{features/grading/InkCanvas.jsx}).
+\subsection{Calificación con concurrencia optimista}
+
+Las operaciones de calificación del \dfn{backend} (\texttt{PUT
+/instances/\{id\}/problems/\{pid\}/grade/} y su variante por \dfn{rubrica}) aplican un
+control de concurrencia optimista: además de la nueva puntuación, el cliente envía en
+\texttt{old\_score} la que cree vigente, y el servidor responde \texttt{409} con el código
+\texttt{VERSION\_CONFLICT} si no coincide con la almacenada. El mecanismo evita que dos
+correctores se sobrescriban sin saberlo, pero exige que el cliente conozca la nota anterior,
+y el contrato no ofrece al profesorado ninguna operación que devuelva las notas por problema
+(hueco gap-1, \cref{SEC:AN-GAPS}).
+
+La implementación resuelve la parte que depende del \dfn{frontend}: cada navegador recuerda
+las notas que él mismo ha guardado (\texttt{useKnownGrades}) y las usa como
+\texttt{old\_score}. El \cref{COD:IMP-GRADE} muestra el núcleo del componente que califica un
+problema. La nota recordada solo se actualiza con la respuesta del servidor, no con el
+valor tecleado, de modo que el siguiente guardado parte siempre de lo que el
+\dfn{backend} ha confirmado.
+
+\begin{lstlisting}[caption={Guardado de una nota con \texttt{old\_score}
+  (\texttt{features/grading/ProblemGrader.jsx}).},label={COD:IMP-GRADE}]
+const current = known.grades[problem.id]; // last grade this browser saved
+const save = async (fn) => {
+  setState('saving');
+  try {
+    const res = await fn(current?.score ?? null);   // old_score
+    known.remember(problem.id, { score: res.score });
+    setState('saved');
+  } catch (e) {
+    setState('error');
+    setErrCode(e.code);                  // e.g. VERSION_CONFLICT
+  }
+};
+save((old) => gradeManual(instanceId, problem.id, n, old));
+\end{lstlisting}
+
+La solución tiene un límite conocido: si un problema se calificó desde otro navegador, la
+interfaz no puede conocer su nota y el primer guardado recibe el conflicto. En ese caso se
+muestra el mensaje traducido del código de error y se avisa de que la nota total procede de
+otra sesión; la resolución completa requiere una operación de lectura en el
+\dfn{backend}, que se ha documentado como petición al equipo del \dfn{backend}.
+
+\subsection{Autoguardado de las anotaciones}
+
+La capa de tinta guarda los trazos sin que el corrector tenga que pulsar ningún botón: cada
+cambio programa el guardado de la página tras 1,2 segundos sin actividad, y un cambio
+posterior reinicia el temporizador. La primera versión cancelaba los temporizadores
+pendientes al salir del examen, de modo que se perdían los últimos trazos si el corrector
+pasaba al examen siguiente antes de ese intervalo. El fallo se detectó al contrastar la
+redacción del \cref{CAP:DESIGN} con el código y se corrigió en una iteración posterior.
+
+Al escribir la prueba de regresión apareció un segundo defecto, más grave: los
+identificadores de las anotaciones ya creadas se guardaban en un objeto mutable compartido
+por todas las instancias. Si la creación de una anotación seguía en curso cuando el
+corrector cambiaba de examen, la respuesta escribía su identificador en el objeto ya
+reiniciado para el examen siguiente, y los trazos posteriores de ese examen se acababan
+guardando sobre la anotación del anterior. La corrección (\cref{COD:IMP-AUTOSAVE}) tiene dos
+partes: al abandonar la instancia se \emph{ejecutan} los guardados pendientes en lugar de
+cancelarlos, y cada guardado captura de forma síncrona el mapa de identificadores de su
+propia instancia antes de esperar a la red.
+
+\begin{lstlisting}[caption={Guardados pendientes al salir de un examen
+  (\texttt{features/grading/useAnnotations.js}).},label={COD:IMP-AUTOSAVE}]
+useEffect(() => {
+  ids.current = { stylus: {}, text: null };   // fresh map per instance
+  /* ... load the instance's annotations ... */
+  return () => {
+    const pending = Object.values(timers.current);
+    timers.current = {};
+    pending.forEach(({ id, fn }) => { clearTimeout(id); fn(); });  // flush, not cancel
+  };
+}, [instanceId]);
+
+const persistPage = async (page) => {
+  const own = ids.current;      // captured before awaiting the network
+  const id = own.stylus[page];
+  if (id) await updateAnnotation(id, { payload });
+  else own.stylus[page] = (await createAnnotation(instanceId, body)).id;
+};
+\end{lstlisting}
+
+Ninguno de los dos defectos producía un error visible: la interfaz mostraba el estado
+\emph{guardado} y el problema solo se habría descubierto al reabrir el examen. Es un ejemplo
+del tipo de fallo que las pruebas de flujo detectan y la revisión superficial no
+(\cref{SEC:TEST-FLOWS}).
+
+\subsection{Zonas de reconocimiento y sistemas de coordenadas}
+
+El editor de zonas permite marcar sobre cada página del modelo de examen las regiones que el
+\dfn{backend} leerá en los escaneos: el código QR, campos de texto o numéricos y casillas.
+Las anotaciones del \dfn{frontend} usan fracciones del tamaño de la página con el origen en
+la esquina superior izquierda, como el resto de la interfaz. El \dfn{backend}, en cambio,
+almacena las zonas en puntos \acs{pdf} con el origen en la esquina inferior izquierda,
+relativas a las dimensiones del perfil de página. Además, la respuesta real de la operación
+de zonas es una lista donde el documento OpenAPI declara un objeto (gap-8).
+
+La conversión se aisló en un módulo puro con sus dos sentidos (\cref{COD:IMP-ZONES}), lo que
+permite probarla sin interfaz. Los valores se redondean a centésimas de punto para que una
+zona guardada y vuelta a leer conserve exactamente su geometría.
+
+\begin{lstlisting}[caption={Conversión de la caja del editor a la geometría de la
+  \acs{api} (\texttt{features/exams/setup/zoneGeometry.js}).},label={COD:IMP-ZONES}]
+export function toPdfBox({ x, y, width, height }, { page_width: W, page_height: H }) {
+  return {
+    x: r2(x * W),
+    y: r2((1 - y - height) * H),   // top-left origin -> bottom-left origin
+    width: r2(width * W),
+    height: r2(height * H),
+  };
+}
+\end{lstlisting}
+
+\subsection{Reconocimiento de escritura sobre anotaciones}
+
+El \dfn{backend} ofrece dos operaciones de \acs{ocr} sobre anotaciones de tipo trazo:
+\texttt{ocr/}, que devuelve el texto reconocido, y \texttt{ocr-grade/}, que interpreta una
+cifra como nota de un problema y la aplica automáticamente si la confianza supera un umbral
+configurado. En la interfaz se materializan como \emph{Nota a mano}, en cada problema de
+puntuación manual, y \emph{Escribir a mano}, en el comentario general.
+
+La decisión relevante fue no reutilizar la tinta de la página. Al leer el renderizador del
+\dfn{backend} se comprobó que solo dibuja listas de puntos con coordenadas de 0 a 100,
+mientras que la tinta del corrector se guarda en un formato propio versionado con
+coordenadas de 0 a 1 (\cref{SEC:DES-ANNOTATION}). Enviar esa tinta al reconocimiento habría
+producido una imagen en blanco y, por tanto, un resultado vacío sin ningún error (gap-9).
+Por eso cada reconocimiento usa un panel de escritura propio que genera la anotación en el
+formato que el renderizador entiende: una anotación con \texttt{problem\_id} e
+\texttt{is\_grade\_annotation} para las notas, y una anotación temporal, que se borra tras
+leerla, para el texto. Cuando el servidor no aplica la nota por falta de confianza, la
+interfaz ofrece usar el valor leído, que pasa entonces por el guardado manual con su
+\texttt{old\_score}.
+
+El cambio tuvo un efecto lateral que la revisión detectó antes de que llegara a producirse:
+la carga de la tinta tomaba la primera anotación de trazo de cada página, de modo que una
+anotación de nota, que se crea asociada a la página 1, habría sustituido a la tinta
+de esa página tanto en el corrector como en la vista del estudiante. La carga ignora ahora
+las anotaciones de los paneles.
+
+\subsection{Administración, cuenta y notificaciones}
+
+Esta subsección resume la implementación de la línea de gestión, desarrollada por Codex en
+su propio \dfn{worktree} a partir de un borrador suyo revisado e integrado en esta memoria.
+Comprende cuatro módulos: gestión de la organización (usuarios, cursos, configuración y
+registro de auditoría), gestión de cada asignatura (miembros, grupos y permisos), perfil
+personal y notificaciones.
+
+\paragraph{Fidelidad al contrato.} Varias decisiones se tomaron porque el contrato no
+autoriza más. El listado de usuarios solo declara parámetros de paginación, así que el
+filtro de texto se aplica a la página recibida y la interfaz lo presenta como tal; el
+registro de auditoría, en cambio, admite filtros remotos por actor, evento, entidad,
+dirección IP e intervalo, que se envían al servidor. Aunque los cursos devuelven el campo
+\texttt{is\_active}, el esquema de actualización solo admite etiqueta y fechas, por lo que no
+se ofrece una acción de activación: la presencia de un campo en la respuesta no autoriza a
+escribirlo. El perfil limita la edición al correo y a la preferencia de notificaciones,
+únicos campos que admite su operación. Como no existe un listado de cursos, el catálogo se
+obtiene del buscador jerárquico (\texttt{/search/}); esa carencia y la imposibilidad de
+descubrir la membresía propia se registraron como huecos (gap-3 y gap-4).
+
+\paragraph{Importaciones y exportaciones.} Las importaciones de usuarios y asignaturas
+envían el fichero original en un \texttt{FormData} bajo el campo \texttt{file}, sin
+convertirlo a un formato propio, y presentan los contadores de la respuesta, que puede
+combinar filas correctas y errores. Los diagnósticos de error se tratan como objetos opacos,
+porque el contrato no fija su estructura, y pueden descargarse en \acs{json}. Las
+exportaciones distinguen la descarga binaria de usuarios de la respuesta estructurada de
+asignaturas.
+
+\paragraph{Permisos por asignatura.} La gestión de una asignatura se divide en pestañas
+independientes para que cada una exija solo el permiso de su operación: quien puede
+gestionar grupos puede usar esa pestaña aunque no pueda listar miembros. El editor de
+permisos muestra, para cada permiso, el valor por defecto del rol y el efectivo, y ofrece
+tres opciones (heredar, permitir, denegar); al guardar envía solo las excepciones. Durante el
+desarrollo se detectó que, tras guardar una excepción y volver a \emph{heredar}, el
+formulario recuperaba el valor anterior; se corrigió separando el estado de las excepciones
+del de los permisos efectivos y se añadió una prueba de regresión.
+
+\paragraph{Notificaciones.} El contador de la barra superior consulta los avisos sin leer
+cada sesenta segundos mientras la pestaña está visible, se actualiza al volver a ella y
+retira temporizador y escuchadores al desmontarse. Cada respuesta se vincula a la sesión que
+la pidió y a un número de secuencia, de modo que una respuesta tardía no sustituye a una más
+reciente ni muestra el contador de otra cuenta. Un fallo de consulta se muestra como contador
+no disponible, no como cero.
+
+\paragraph{Operaciones simultáneas y recuperación de errores.} El estado de React no basta
+para impedir un doble envío: dos eventos atendidos antes del siguiente renderizado verían
+ambos el formulario como libre. Por eso los formularios, las importaciones y las
+confirmaciones usan, además del estado que deshabilita los botones, una referencia mutable
+que se activa de forma síncrona antes de la petición y se libera en \texttt{finally}. La
+misma referencia impide cerrar el diálogo, también con Escape, mientras la operación sigue
+pendiente. Tras un fallo se conservan los valores introducidos y el fichero seleccionado, el
+error se asocia al campo con \texttt{aria-describedby} y \texttt{aria-invalid} y el foco pasa
+al primer campo inválido o al mensaje general; cuando una consulta fallida se recupera, el
+foco vuelve a un destino concreto de la página (el buscador, el filtro de evento o la lista
+de resultados), sin perder filtros ni página. Estas comprobaciones se hicieron sobre un
+\acs{dom} simulado y no sustituyen una evaluación con tecnologías de apoyo
+(\cref{SEC:AN-RNF}).
+
+\pendiente{El autor debe revisar esta subsección, redactada a partir del borrador de la
+línea de gestión, y valorar si se mantiene a este nivel de detalle o se resume más.}

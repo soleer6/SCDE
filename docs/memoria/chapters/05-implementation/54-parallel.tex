@@ -1,5 +1,112 @@
-\pendiente{Redactar a partir de docs/tfg/05-parallel-workflow.md.}
+Trabajar con dos \dfnpl{agente} a la vez sobre el mismo repositorio plantea los mismos
+problemas que un equipo humano (conflictos al unir ramas, cambios inadvertidos en código
+ajeno, decisiones incompatibles) con una diferencia: los agentes no se comunican entre sí
+salvo a través de lo que queda escrito en el repositorio. Los mecanismos de esta sección se
+diseñaron con esa premisa: toda coordinación es un fichero versionado y, cuando es posible,
+una comprobación automática.
 
-Mecanismos: mapa de propiedad de ficheros y su comprobación automática; registro de
-peticiones a la base común; registro del segundo agente; rama de previsualización
-desechable; único fallo de integración detectado y corregido (\cref{AP:ITERATIONS}).
+\subsection{Aislamiento: ramas, \textit{worktrees} y áreas}
+
+Cada agente trabaja en su propio \dfn{worktree} de Git \cite{git_worktree}:
+\texttt{SCDE-claude} sobre la rama \texttt{claude/core-flows} y \texttt{SCDE-codex} sobre
+\texttt{codex/admin-ops}, ambas creadas desde la rama de la base común,
+\texttt{frontend/base-v2}. Al no compartir directorio de trabajo, ninguno ve los ficheros a
+medio editar del otro, y las dependencias, las compilaciones y las pruebas de cada uno son
+independientes. Las reglas comunes prohíben a ambos agentes subir cambios al remoto, unir o
+reorganizar ramas y reescribir el historial; la integración es una decisión del autor.
+
+El reparto siguió las dependencias del contrato (\cref{TAB:IMP-SPLIT}). Las áreas de la
+línea de gestión usan operaciones que el núcleo docente no necesita, de modo que ambas
+líneas pudieron avanzar sin esperarse. El único punto de contacto funcional es el enlace de
+la página de una asignatura a su pantalla de gestión, que pertenece a la otra línea.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{p{0.44\textwidth}p{0.44\textwidth}}
+    \toprule
+    \textbf{Núcleo docente (Claude Code)} & \textbf{Gestión (Codex)} \\
+    \midrule
+    Inicio de sesión, inicio y asignaturas; creación y configuración de exámenes;
+    incidencias de escaneo; corrección (\acs{pdf}, anotaciones, notas, \acs{ocr});
+    resultados del estudiante; revisiones. Base común y memoria. &
+    Usuarios, cursos, configuración y auditoría de la organización; miembros, grupos y
+    permisos de cada asignatura; perfil; notificaciones. Publicación de la demostración. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Reparto de áreas entre las dos líneas de trabajo.\label{TAB:IMP-SPLIT}}
+\end{table}
+
+\subsection{Propiedad de ficheros y su comprobación}
+
+El fichero \texttt{docs/coordination/OWNERSHIP.json} asigna a cada agente las rutas que
+puede modificar (sus directorios de \texttt{src/features/} y sus documentos) y declara como
+\emph{compartidas} y congeladas el resto: el sistema de diseño, la infraestructura, el
+armazón de la aplicación, la configuración del proyecto, las instrucciones de los agentes y
+los documentos de coordinación. La línea del núcleo actúa además como responsable de la base
+común, con permiso para modificar las rutas compartidas a condición de anunciar cada cambio.
+
+El \textit{script} \texttt{ownership-check.mjs} compara la rama con la base común y falla si
+algún fichero modificado queda fuera de las rutas del agente. En su primera versión solo
+examinaba los \textit{commits}; la línea de gestión advirtió que un fichero preparado pero
+no consolidado escapaba a la comprobación, y se amplió para revisar también el índice y el
+directorio de trabajo. La comprobación forma parte de la condición de cierre de cada
+iteración (\cref{SEC:IMP-METHOD}).
+
+\subsection{Peticiones a la base común}
+
+Cuando una línea necesita un cambio en una ruta compartida no lo hace: lo solicita en
+\texttt{docs/coordination/REQUESTS.md}, un fichero en el que solo se añaden líneas. La línea
+de gestión registró por esta vía tanto huecos del contrato (la falta de un listado de cursos
+o de una forma de descubrir la membresía propia) como necesidades de la base: accesibilidad
+de los diálogos, los avisos y los campos de formulario, la actualización de la sesión tras
+cambiar el correo en el perfil, la ampliación de la auditoría de propiedad y el enlace a la
+gestión de asignaturas. Todas las relativas a la base se atendieron desde la línea del
+núcleo, que anotó en el mismo fichero cada cambio hecho en la base y su motivo. Al ser de solo
+añadidos, los conflictos que produce al unir ramas se resuelven conservando las líneas de
+ambas partes.
+
+Cada línea mantiene además su propio registro: el de la línea de gestión
+(\texttt{docs/coordination/codex-log.md}) recoge decisiones, errores y órdenes ejecutadas, y
+el de la línea del núcleo se integra en el registro técnico del proyecto
+(\texttt{docs/tfg/}). Estos registros son la fuente del \cref{AP:ITERATIONS}.
+
+\subsection{Auditoría e integración}
+
+La línea del núcleo audita periódicamente la rama paralela sin modificarla: propiedad de
+ficheros, auditoría de estilo y uso exclusivo de operaciones presentes en el inventario de
+la \acs{api}. Para ello se definió un subagente de solo lectura
+(\texttt{.claude/agents/parallel-auditor.md}). En la primera auditoría, los 25 ficheros
+modificados por la línea de gestión estaban dentro de sus rutas, no había errores de estilo
+y las 28 operaciones que usaba figuraban en el inventario.
+
+La integración se comprobó en una rama desechable, \texttt{preview/integration}, que une
+ambas líneas para ejecutar sobre el conjunto la misma verificación que cada una pasa por
+separado. Allí apareció el único fallo de integración del proyecto: una prueba de la línea
+de gestión fallaba solo al unir las ramas porque el manejador simulado de
+\texttt{GET /subjects/:id/}, registrado antes, capturaba también \texttt{GET
+/subjects/export/}. La causa estaba en la base común (el enrutador de la simulación elegía
+la primera ruta registrada) y se corrigió allí, eligiendo la ruta más específica como hace
+Django, con una prueba de regresión (\cref{SEC:DES-DATA}). En las uniones posteriores no
+hubo conflictos en el código; solo en los ficheros de solo añadidos, resueltos por unión.
+
+En la última fase, la publicación de la demostración se asignó a la línea de gestión. Para
+no depender del estado del directorio de trabajo de la otra línea, que podía estar a mitad
+de una tarea, la composición se construye a partir del último \textit{commit} de cada rama
+(\texttt{git archive}), y se comprueba que el contenido publicado coincide con el compilado.
+
+\subsection{Incidencias del trabajo en paralelo}
+
+El aislamiento no fue completo. Al instalar las dependencias en la máquina compartida,
+\texttt{npm} modificó el fichero de bloqueo del \dfn{worktree} de la línea de gestión; se
+detectó con \texttt{git status} y se revirtió antes de que esa línea empezase a trabajar.
+Con los dos agentes, sus servidores de desarrollo y sus pruebas ejecutándose a la vez, varias
+pruebas superaron los tiempos de espera por defecto de Testing Library, lo que obligó a
+ampliarlos (\cref{AP:ITERATIONS}, entrada 12). Por último, el entorno aislado en que se
+ejecutaba Codex impidió en ocasiones lanzar procesos o escribir en el índice de Git, de modo
+que algunas de sus iteraciones terminaron con el trabajo verificado pero sin
+\textit{commit}; esas iteraciones lo registraron así en su bitácora en lugar de atribuirse
+un resultado no consolidado.
+
+\pendiente{Valoración del autor: qué funcionó y qué cambiaría de esta forma de coordinar
+dos agentes, y cuánto tiempo de supervisión le exigió.}

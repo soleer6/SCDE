@@ -1,4 +1,82 @@
-\pendiente{Redactar.}
+La \cref{TAB:IMP-TOOLS} resume las herramientas empleadas. Las versiones de las
+dependencias son los rangos declarados en \texttt{package.json}; las del entorno son las
+de la máquina de desarrollo en el momento de redactar esta sección.
 
-Node/npm, Vite, Vitest, ESLint, Git (\dfnpl{worktree}), Python (análisis del OpenAPI),
-Claude Code, Codex.
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{p{0.24\textwidth}p{0.18\textwidth}p{0.48\textwidth}}
+    \toprule
+    \textbf{Herramienta} & \textbf{Versión} & \textbf{Uso} \\
+    \midrule
+    Node.js y npm & 24.19 / 11.17 & Entorno de ejecución, gestión de dependencias y
+      órdenes del proyecto. \\
+    React y React Router & \textasciicircum19.2 / \textasciicircum7.13 & Componentes de la
+      interfaz y enrutado en el cliente \cite{react_docs}. \\
+    Vite & \textasciicircum7.3 & Servidor de desarrollo y compilación de producción, con
+      descubrimiento de módulos mediante \texttt{import.meta.glob} \cite{vite_docs}. \\
+    react-pdf (PDF.js) & \textasciicircum10.4 & Representación de las páginas escaneadas
+      bajo la capa de anotación \cite{pdfjs}. \\
+    i18next y react-i18next & \textasciicircum25.8 / \textasciicircum16.5 & Textos en
+      español e inglés por módulo. \\
+    Vitest, Testing Library y jsdom & \textasciicircum3.2 / \textasciicircum16.3 /
+      \textasciicircum26.1 & Pruebas de flujo y unitarias en un \acs{dom} simulado
+      \cite{vitest_docs,testing_library}. \\
+    ESLint & \textasciicircum9.39 & Análisis estático, incluidas las reglas de
+      \textit{hooks} de React. \\
+    Python & 3.12 & \textit{Scripts} de análisis del documento OpenAPI y de medición de
+      la cobertura del contrato. \\
+    Git & --- & Control de versiones; un \dfn{worktree} por agente \cite{git_worktree}. \\
+    Claude Code & --- & \dfn{agente} de la línea del núcleo docente, auditor de la base
+      común y editor de la memoria \cite{claude_code_docs}. \\
+    Codex & --- & \dfn{agente} de la línea de gestión, redactor de borradores y responsable
+      de la publicación de la demostración \cite{openai_codex}. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Herramientas del desarrollo.\label{TAB:IMP-TOOLS}}
+\end{table}
+
+\subsection{Órdenes del proyecto}
+
+El \texttt{package.json} define las órdenes que usan tanto las personas como los agentes:
+\texttt{dev} (servidor de desarrollo), \texttt{test} (pruebas), \texttt{lint},
+\texttt{build}, \texttt{audit:style} y \texttt{audit:ownership}, y la orden agregada
+\texttt{check}, que ejecuta en cadena \texttt{lint}, \texttt{test}, \texttt{build} y
+\texttt{audit:style} y se detiene en el primer fallo. Que los agentes usen exactamente las
+mismas órdenes que el autor tiene una consecuencia práctica: cualquier afirmación del tipo
+``las pruebas pasan'' es reproducible ejecutando una única orden sobre el mismo
+\textit{commit}.
+
+La variable de entorno \texttt{VITE\_MOCK\_API} selecciona el transporte: con valor
+\texttt{true}, el cliente \acs{http} entrega las peticiones a la simulación en memoria
+(\cref{SEC:DES-DATA}), que es también el modo en que se ejecutan las pruebas.
+
+\subsection{Herramientas de análisis propias}
+
+En \texttt{scripts/} se incluyen utilidades deterministas escritas durante el proyecto, sin
+dependencia de ningún modelo de lenguaje:
+\begin{description}
+  \item[\texttt{analyze/endpoints.py} y \texttt{analyze/schemas.py}.] Recorren el documento
+        OpenAPI y listan las operaciones con su etiqueta, sus esquemas de petición y de
+        respuesta y la definición de los esquemas pedidos. De su salida se generó el
+        inventario de la \acs{api}.
+  \item[\texttt{analyze/coverage.py}.] Mide qué operaciones del inventario se invocan desde
+        el código de los módulos, excluyendo simulaciones y pruebas (\cref{SEC:TEST-COVERAGE}).
+  \item[\texttt{audit/style-audit.mjs}.] Comprueba que los estilos usan los
+        \textit{tokens} del sistema de diseño.
+  \item[\texttt{audit/ownership-check.mjs}.] Comprueba que cada línea de trabajo solo
+        modifica las rutas que tiene asignadas (\cref{SEC:IMP-PARALLEL}).
+\end{description}
+
+\subsection{Configuración de los agentes}
+
+Los agentes leen al arrancar las instrucciones del repositorio: \texttt{AGENTS.md}, común a
+ambos, y \texttt{CLAUDE.md}, específico de Claude Code, más el encargo priorizado de la línea
+paralela (\texttt{docs/coordination/CODEX\_BRIEF.md}). El repositorio incluye además una
+\textit{skill} de Claude Code con el lenguaje visual y la arquitectura de módulos
+(\texttt{.claude/skills/scde-frontend}), adaptada de la \textit{skill} pública
+\texttt{frontend-design} de Anthropic \cite{anthropic_skills_frontend_design}, y varios
+subagentes de propósito acotado en \texttt{.claude/agents/}, entre ellos un auditor de solo
+lectura para la rama paralela. Estas instrucciones se tratan como código: se versionan,
+se modifican mediante \textit{commits} y son ficheros compartidos sujetos al mapa de
+propiedad.

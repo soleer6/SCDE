@@ -1,5 +1,59 @@
-\pendiente{Redactar.}
+La verificación del \dfn{frontend} se apoya en tres niveles complementarios, todos
+automáticos y reproducibles con una sola orden sobre cualquier \textit{commit}:
+\begin{enumerate}
+  \item \textbf{Pruebas de flujo}, que montan pantallas reales con su enrutador, su
+        proveedor de sesión y la simulación del \dfn{backend}, y recorren un caso de uso
+        como lo haría una persona: buscar un elemento por su nombre accesible, escribir,
+        pulsar, y comprobar tanto lo que se muestra como el estado resultante de los datos
+        simulados (\cref{SEC:TEST-FLOWS}).
+  \item \textbf{Pruebas unitarias} de las piezas cuya lógica puede aislarse: el cliente
+        \acs{http} (nombres de campos del contrato, traducción de errores, renovación de la
+        sesión), el enrutador de la simulación, la conversión de coordenadas de las zonas o
+        el formato de los paneles de escritura.
+  \item \textbf{Verificaciones deterministas} que no ejecutan la aplicación: análisis
+        estático, compilación de producción, auditoría de estilo y auditoría de propiedad de
+        ficheros (\cref{SEC:TEST-AUDITS}).
+\end{enumerate}
 
-Pirámide aplicada: pruebas de flujo extremo a extremo en modo \dfn{mock} + pruebas unitarias
-de infraestructura + verificaciones deterministas (lint, estilo, propiedad) como condición
-previa a cada \textit{commit}.
+Se añade una medida que no es una prueba, pero orienta el trabajo: la cobertura del
+contrato, es decir, qué operaciones de la \acs{api} tienen interfaz (\cref{SEC:TEST-COVERAGE}).
+
+\subsection{Decisiones}
+
+\paragraph{Probar contra la simulación.} Todas las pruebas se ejecutan con
+\texttt{VITE\_MOCK\_API=true}. La simulación responde con los esquemas del documento OpenAPI
+y reproduce las reglas de negocio del \dfn{backend} que la interfaz necesita conocer
+(permisos por regla de asignación, concurrencia optimista, transiciones de estado válidas,
+validaciones de los ficheros \acs{pdf}), escritas a partir de la lectura de sus servicios. Así
+las pruebas son rápidas, deterministas e independientes de la infraestructura. El precio
+es evidente: una prueba que pasa demuestra que la interfaz cumple el contrato \emph{tal como
+lo interpreta la simulación}, no que el \dfn{backend} real se comporte igual. Por eso la
+validación con el servicio real se trata como una fase distinta (\cref{SEC:TEST-REAL}).
+
+\paragraph{Consultar como un usuario.} Las pruebas usan Testing Library
+\cite{testing_library} y localizan los elementos por su rol y su nombre accesible, no por
+clases ni por la estructura del \acs{dom}. Esta elección hace que una prueba falle si un
+control pierde su etiqueta, de modo que la batería ejerce también una comprobación parcial
+de accesibilidad. En la línea de gestión se extendió a recorridos de teclado (tabulación,
+Enter, Escape) y al destino del foco tras un error.
+
+\paragraph{Comprobar el contrato, no solo la pantalla.} Muchas aserciones inspeccionan la
+petición enviada (ruta, método, cuerpo y nombres de campo) o el estado de los datos simulados
+después de la acción. Un ejemplo: la prueba de importación comprueba que el envío
+\textit{multipart} contiene únicamente el campo \texttt{file}, y la de calificación, que un
+\texttt{old\_score} desfasado recibe \texttt{409 VERSION\_CONFLICT} mientras que el que
+coincide con la nota confirmada se acepta.
+
+\paragraph{Una prueba por defecto corregido.} Cuando se corrige un fallo se añade la prueba
+que lo reproduce. Varias de las pruebas actuales nacieron así: la selección de la ruta más
+específica en la simulación, las respuestas binarias, el autoguardado al cambiar de examen o
+la vuelta a la herencia en el editor de permisos (\cref{AP:ITERATIONS}).
+
+\subsection{Entorno de ejecución}
+
+Las pruebas se ejecutan con Vitest \cite{vitest_docs} sobre jsdom. jsdom no implementa el
+lienzo bidimensional del navegador, por lo que las capas de tinta comprueban sus datos y no
+su dibujo. Los tiempos de espera se ampliaron (8 segundos para las esperas asíncronas de
+Testing Library y 30 por prueba) porque, con dos agentes, sus servidores de desarrollo y sus
+pruebas ejecutándose a la vez en la misma máquina, los valores por defecto producían fallos
+intermitentes que no correspondían a defectos (\cref{AP:ITERATIONS}, entrada 12).

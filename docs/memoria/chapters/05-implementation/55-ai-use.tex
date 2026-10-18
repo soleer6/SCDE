@@ -1,11 +1,87 @@
-\pendiente{OBLIGATORIO revisar con el tutor. La Normativa de TFG de la EPS (8/5/2026, art. 5.1.3) exige declarar, al solicitar la defensa, que se han respetado las condiciones de uso de herramientas de IA especificadas por el ED-TFG. Consultar esas condiciones en la plataforma de TFG/Moodle ANTES de redactar esta sección.}
+\pendiente{OBLIGATORIO revisar con el tutor. La Normativa de TFG de la EPS (8/5/2026,
+art. 5.1.3) exige declarar, al solicitar la defensa, que se han respetado las condiciones de
+uso de herramientas de IA especificadas por el ED-TFG \cite{eps_normativa_tfg_2026}. Esas
+condiciones se publican en la plataforma de TFG, que requiere autenticación y no se ha
+podido consultar: el autor debe contrastar esta sección con ellas y adaptarla.}
 
-Hechos a declarar (detalle en \cref{AP:AI}):
+Este trabajo se ha desarrollado con herramientas de \acs{ia} generativa de forma central, no
+accesoria, y así se declara. Esta sección resume qué se hizo con ellas, bajo qué control y
+cómo se verificó el resultado; el detalle, con las instrucciones empleadas y los errores
+registrados, está en el \cref{AP:AI}.
+
+\subsection{Herramientas}
+
 \begin{itemize}
-  \item Herramientas: Claude Code (modelo Claude Opus) y Codex (OpenAI).
-  \item Tareas: análisis del repositorio y del contrato, generación de código, pruebas,
-        documentación técnica y este esqueleto.
-  \item Control humano: definición de objetivos, decisiones de producto, rechazo y
-        redirección del diseño visual, revisión e integración final.
-  \item Trazabilidad: historial de Git por rama, registros de coordinación y de iteraciones.
+  \item \textbf{Claude Code} (Anthropic) \cite{claude_code_docs}, con modelos de la familia
+        Claude Opus, como \dfn{agente} de la línea del núcleo docente, responsable de la
+        base común y editor de esta memoria.
+  \item \textbf{Codex} (OpenAI) \cite{openai_codex}, configurado con el modelo
+        \texttt{gpt-6.1-sol}, como \dfn{agente} de la línea de gestión, redactor de
+        borradores y responsable de publicar la demostración.
 \end{itemize}
+
+\subsection{Qué se automatizó}
+
+Los agentes ejecutaron la mayor parte del trabajo material: la lectura del repositorio y del
+contrato del \dfn{backend}, la escritura del código de la aplicación y de sus pruebas, los
+\textit{scripts} de análisis y de auditoría, la documentación técnica y los registros de
+coordinación, y los borradores de los capítulos de esta memoria. El estado del arte se
+redactó a partir de borradores de Codex revisados por la línea del núcleo; el resto de
+capítulos los redactó Claude Code, salvo la parte de la implementación y de las pruebas
+relativa a la línea de gestión, que parte de borradores de Codex. Los \textit{commits} se crearon con la identidad Git del
+autor y, por una regla del repositorio, sus mensajes no mencionan las herramientas: esta
+sección y el \cref{AP:AI} son, por tanto, la declaración de su uso, y el reparto por líneas
+de \cref{TAB:IMP-SPLIT} permite atribuir cada parte del código a su agente.
+
+\subsection{Qué decidió el autor}
+
+El autor definió los objetivos y el alcance, eligió las herramientas y la forma de trabajo,
+fijó las reglas que los agentes debían cumplir (no inventar operaciones de la \acs{api}, no
+modificar rutas ajenas, no publicar ni reescribir historial sin autorización), tomó las
+decisiones de producto y aceptó o rechazó los resultados. El rechazo de la primera dirección
+visual, que obligó a rehacer el sistema de diseño (\cref{SEC:DES-VISUAL}), es el ejemplo más
+claro de una decisión que ninguna comprobación automática habría tomado. La autorización
+para publicar la demostración también fue suya.
+
+\subsection{Cómo se verificó}
+
+El principio fue no aceptar una afirmación de un agente que no pudiera comprobarse en el
+repositorio. En la práctica:
+\begin{itemize}
+  \item cada iteración debía superar las mismas comprobaciones deterministas (análisis
+        estático, pruebas, compilación, auditorías de estilo y de propiedad) antes de
+        consolidarse (\cref{SEC:TEST-AUDITS});
+  \item las operaciones de la \acs{api} se contrastaron con el documento OpenAPI real y, en
+        los casos dudosos, con el código de las vistas de Django (\cref{SEC:AN-BACKEND});
+  \item cada línea revisó el trabajo de la otra: la del núcleo auditaba la rama de gestión, y
+        la de gestión detectó carencias de la base común que la del núcleo corrigió
+        (\cref{SEC:IMP-PARALLEL});
+  \item la redacción de la memoria se contrastó con el código y con el historial, lo que
+        sirvió también para detectar defectos (el autoguardado de anotaciones,
+        \cref{SEC:IMP-CRITICAL}) y datos erróneos en la propia documentación, como un
+        recuento de operaciones del contrato que se corrigió de 96 a 95.
+\end{itemize}
+
+\subsection{Errores atribuibles a los agentes}
+
+El uso de agentes no eliminó los errores, y declararlos forma parte de la honestidad que
+exige la normativa. Los registrados incluyen: un \textit{commit} consolidado con pruebas en
+rojo por no comprobar el código de salida de la verificación; una dirección visual que
+copiaba la paleta de la referencia en lugar de su principio de diseño; los dos defectos de
+autoguardado descritos en \cref{SEC:IMP-CRITICAL}; una regresión del editor de permisos en la
+línea de gestión; y un párrafo de un borrador del estado del arte que describía carencias de
+la base común ya corregidas. Todos se detectaron mediante pruebas, auditorías, la revisión
+cruzada o la revisión del autor, y se corrigieron con su prueba de regresión cuando
+procedía (\cref{AP:ITERATIONS}).
+
+\subsection{Límites}
+
+Los textos de esta memoria son borradores avanzados que el autor debe revisar, corregir y
+asumir como propios; las marcas de pendiente señalan lo que solo él puede aportar. Ninguna
+afirmación sobre resultados se apoya en mediciones que no consten en el repositorio: no se
+han hecho pruebas con usuarios ni, a la fecha de redacción, una validación completa contra el
+\dfn{backend} real (\cref{SEC:TEST-REAL}).
+
+\pendiente{El autor debe completar con su propia valoración: grado de revisión que aplicó a
+cada parte (código, pruebas, memoria), qué aprendió del proceso y cómo encaja este uso con
+las condiciones del ED-TFG.}

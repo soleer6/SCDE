@@ -89,6 +89,20 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
   creación `GRADE_ANNOTATION_REQUIRES_PROBLEM` / `PROBLEM_NOT_IN_MODEL`.
 - Cobertura: 56/94 en la rama (Annotations 6/6). Tests nuevos: `grading/ocr.test.jsx` (8).
 
+## Iteración 2026-10-19 · memoria: capítulo 5 (implementación) y 6.1
+- Redactados 5.1 metodología (fases, condición de cierre, reparto autor/agentes), 5.2
+  herramientas (tabla con versiones de `package.json` y del entorno), 5.3 partes críticas con
+  cuatro fragmentos de código (`old_score`, autoguardado, conversión de zonas, OCR) más la
+  subsección de gestión integrada desde el borrador de Codex (`admin.tex`, versión 40/40),
+  5.4 trabajo en paralelo y 5.5 uso de IA; 6.1 estrategia de pruebas.
+- Preámbulo: paquete `listings` con lenguaje JavaScript, `cleveref` para `lstlisting`;
+  `check_tex.py` reconoce `label={...}` de los listados.
+- Comprobado contra el repo antes de consolidar: commit de base `1ebeac9`, rama
+  `frontend/base-v2`, tiempos 8 s/30 s, entradas 12-13, auditoría 25 ficheros/28 operaciones,
+  modelo de Codex en su configuración.
+- Pendiente: integrar `06-testing/admin.tex` de Codex (91 casos propios, 94 totales en su
+  rama) y redactar 6.2-6.5.
+
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.
 - 2 tests con timeout bajo carga → ampliados localmente; entrada de texto con `change`.

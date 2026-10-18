@@ -26,7 +26,8 @@ for p in texs:
 
 labels = set()
 for p in texs:
-    labels |= set(re.findall(r'\\label\{([^}]+)\}', p.read_text(encoding='utf-8')))
+    # \label{...} and the label={...} option of lstlisting
+    labels |= {a or b for a, b in re.findall(r'\\label\{([^}]+)\}|label=\{([^}]+)\}', p.read_text(encoding='utf-8'))}
 used = set()
 for p in texs:
     for grp in re.findall(r'\\[cC]?ref\{([^}]+)\}', p.read_text(encoding='utf-8')):

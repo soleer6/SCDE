@@ -1,5 +1,73 @@
-\pendiente{Redactar. Distinguir con claridad qué decidió/validó el autor y qué ejecutaron los agentes.}
+El desarrollo se organizó en iteraciones cortas y cerradas: cada una parte de una tarea
+concreta, termina con el código, sus pruebas y la verificación automática superadas, y se
+consolida en un \textit{commit} con su entrada en el registro de iteraciones
+(\cref{AP:ITERATIONS}). El trabajo de programación lo ejecutaron dos \dfnpl{agente}, Claude
+Code y Codex; las decisiones de alcance, de producto y de aceptación correspondieron al autor.
+Esta sección describe las fases del proceso y deja explícito ese reparto, que se declara
+también en \cref{SEC:IMP-AI} y en \cref{AP:AI}.
 
-Material: base común antes de paralelizar; dos líneas (núcleo de corrección y gestión);
-\dfnpl{worktree} por agente; reparto por áreas funcionales con dependencias mínimas;
-encargos priorizados (P0/P1); revisión final por el autor.
+\subsection{Fases}
+
+\begin{enumerate}
+  \item \textbf{Prototipo previo.} Entre marzo y mayo de 2026 se construyó un primer
+        prototipo contra un contrato preliminar del \dfn{backend} (rama
+        \texttt{modulo-profesor}). Su contraste con el \dfn{backend} real motivó la
+        reescritura descrita en \cref{SEC:INTRO-CONTEXT}; se conserva en una etiqueta de
+        Git y no forma parte del resultado.
+  \item \textbf{Análisis del contrato.} Se extrajo del documento OpenAPI real el
+        inventario de operaciones y esquemas mediante \textit{scripts} deterministas, y
+        se contrastaron las vistas de Django en los casos dudosos (\cref{SEC:AN-BACKEND}).
+        El inventario resultante (\texttt{docs/frontend/API\_INVENTORY.md}) es desde
+        entonces la única fuente admitida para las llamadas a la \acs{api}.
+  \item \textbf{Base común.} Antes de repartir trabajo se construyó, en una única línea, la
+        base compartida: sistema de diseño, cliente \acs{http}, simulación del
+        \dfn{backend}, registro de módulos, inicio de sesión y los documentos de
+        coordinación (\textit{commit} \texttt{1ebeac9}, 17 de octubre de 2026). Sin ella,
+        el segundo agente no podía empezar sin modificar ficheros que el primero también
+        necesitaba.
+  \item \textbf{Desarrollo en paralelo.} A partir de la base se abrieron dos líneas sobre
+        \dfnpl{worktree} distintos: el núcleo docente (corrección, exámenes, incidencias de
+        escaneo, resultados y revisiones) y la gestión (administración de la organización y
+        de asignaturas, perfil y notificaciones). El reparto se hizo por áreas funcionales
+        con dependencias mínimas, no por volumen (\cref{SEC:IMP-PARALLEL}).
+  \item \textbf{Iteraciones autónomas.} En la última fase, cada agente recibía un encargo
+        priorizado y lo ejecutaba en bloques: tomar la siguiente tarea pendiente,
+        completarla con pruebas, superar las comprobaciones, hacer el \textit{commit},
+        actualizar su registro de progreso y terminar. El autor seguía el avance de forma
+        remota y no intervenía en cada bloque; las dudas se resolvían con un criterio
+        documentado y quedaban registradas para su revisión posterior.
+\end{enumerate}
+
+\subsection{Condición de cierre de una iteración}
+
+Ninguna iteración se daba por terminada sin superar la misma secuencia de comprobaciones:
+análisis estático (ESLint), pruebas (Vitest), compilación de producción (Vite) y auditoría de
+estilo, agrupadas en la orden \texttt{npm run check}, seguidas de la auditoría de propiedad de
+ficheros de la línea correspondiente (\cref{SEC:TEST-AUDITS}). La regla se endureció tras un
+error de proceso: en una iteración temprana se encadenó la verificación con el
+\textit{commit} sin comprobar el código de salida y se consolidó un estado con pruebas en
+rojo. Se corrigió en el \textit{commit} siguiente y, a partir de entonces, el \textit{commit}
+quedó condicionado al resultado de la verificación (\cref{AP:ITERATIONS}, entrada 13).
+
+Las pruebas no se escribían al final: cada funcionalidad incorporaba sus casos en la misma
+iteración, y varios defectos se descubrieron precisamente al escribirlos. Así ocurrió con el
+autoguardado de las anotaciones, cuya prueba reveló que una creación en curso podía escribir
+su identificador en el examen siguiente (\cref{SEC:IMP-CRITICAL}).
+
+\subsection{Reparto de responsabilidades}
+
+Al autor le correspondieron la definición de los objetivos y del alcance, la elección de las
+herramientas y de la forma de trabajo en paralelo, la aceptación o el rechazo de los
+resultados y la dirección de producto. El caso más visible fue el rechazo de la primera
+dirección visual, que condujo al sistema actual (\cref{SEC:DES-VISUAL}). También le
+correspondieron las autorizaciones con efectos externos, como la publicación de la
+demostración. A los agentes les correspondió la ejecución: lectura del repositorio y del
+contrato, propuesta de soluciones, escritura de código, pruebas y documentación técnica, y
+la redacción de borradores de esta memoria. Entre ambos se situó una capa de reglas escritas
+(instrucciones de proyecto, mapa de propiedad, guía de estilo y la prohibición de inventar
+operaciones de la \acs{api}) que convertía las decisiones del autor en restricciones
+comprobables.
+
+\pendiente{El autor debe confirmar y matizar este reparto con su experiencia directa: qué
+decisiones tomó personalmente en cada fase, qué propuestas de los agentes rechazó o corrigió
+y qué revisó línea a línea.}
