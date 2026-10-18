@@ -2,6 +2,7 @@ import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { api } from '../../lib/api/client.js';
+import { ApiError } from '../../lib/api/errors.js';
 import { useAuth } from '../../lib/auth/AuthProvider.jsx';
 import { db } from '../../lib/mock/db.js';
 import { loginAs, renderPage, resetDemo } from '../admin/test-utils.jsx';
@@ -121,6 +122,50 @@ it('does not mark a notification owned by another user', async () => {
 });
 it.each([
   ['una notificación', 'Marcar como leída: Notas publicadas', ['n-1'], '1 notificación sin leer'],
+  ['la página', 'Marcar esta página como leída', ['n-2', 'n-1'], '0 notificaciones sin leer'],
+])('marks %s once while pending and retries the original selection after failure', async (_label, action, ids, count) => {
+  renderPage(<><NotificationsBell /><NotificationsPage /></>);
+  await screen.findByRole('link', { name: '2 notificaciones sin leer' });
+  const trigger = await screen.findByRole('button', { name: action });
+  const other = screen.getByRole('button', { name: 'Marcar como leída: Revisión abierta' });
+  const original = structuredClone(db.notifications);
+  const pending = deferred();
+  const patch = vi.spyOn(api, 'patch').mockReturnValueOnce(pending.promise);
+  try {
+    act(() => { trigger.click(); trigger.click(); other.click(); });
+    expect(patch).toHaveBeenCalledTimes(1);
+    expect(patch).toHaveBeenLastCalledWith('/notifications/read/', { notification_ids: ids });
+    expect(trigger).toBeDisabled();
+    expect(other).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Marcar esta página como leída' })).toHaveAttribute('aria-busy', 'true');
+    act(() => { trigger.click(); other.click(); });
+    expect(patch).toHaveBeenCalledTimes(1);
+    expect(db.notifications).toEqual(original);
+    expect(screen.getByRole('link', { name: '2 notificaciones sin leer' })).toBeInTheDocument();
+
+    await act(async () => { pending.reject(new ApiError('PERMISSION_DENIED', 403)); });
+    const error = await screen.findByRole('alert');
+    await waitFor(() => expect(error.parentElement).toHaveFocus());
+    expect(error).toHaveTextContent('No tienes permiso para esta acción.');
+    expect(trigger).toBeEnabled();
+    expect(other).toBeEnabled();
+    expect(db.notifications).toEqual(original);
+    const retry = screen.getByRole('button', { name: 'Reintentar' });
+    act(() => { retry.click(); retry.click(); other.click(); });
+    await screen.findByRole('link', { name: count });
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+    expect(patch).toHaveBeenCalledTimes(2);
+    expect(patch).toHaveBeenLastCalledWith('/notifications/read/', { notification_ids: ids });
+    for (const notification of original) {
+      expect(db.notifications.find((n) => n.id === notification.id)).toEqual({
+        ...notification, status: ids.includes(notification.id) ? 'READ' : notification.status,
+      });
+    }
+    expect(screen.getByRole('button', { name: 'Marcar esta página como leída' })).not.toHaveAttribute('aria-busy', 'true');
+  } finally { patch.mockRestore(); }
+});
+it.each([
+  ['una notificación', 'Marcar como leída: Notas publicadas', ['n-1'], '1 notificación sin leer'],
   ['la página', 'Marcar esta página como leída', ['n-1', 'n-2'], '0 notificaciones sin leer'],
 ])('retries marking %s after repeated permission errors with the original selection', async (_label, action, ids, count) => {
   const user = userEvent.setup();
@@ -161,8 +206,10 @@ it.each([
     expect(screen.queryByRole('button', { name: `Marcar como leída: ${notification.title}` })).not.toBeInTheDocument();
   }
 });
-it('recovers repeated notification loading errors with keyboard retry without changing unread statuses', async () => {
+it.each(['unread', 'read', 'empty'])('restores focus after repeated notification loading errors (%s) without changing statuses', async (mode) => {
   const student = db.users.find((u) => u.id === 'u-elena');
+  if (mode === 'read') db.notifications.forEach((n) => { if (n.user_id === student.id) n.status = 'READ'; });
+  if (mode === 'empty') db.notifications = db.notifications.filter((n) => n.user_id !== student.id);
   const original = structuredClone(db.notifications);
   student.is_active = false;
   const user = userEvent.setup(); renderPage(<NotificationsPage />);
@@ -181,10 +228,17 @@ it('recovers repeated notification loading errors with keyboard retry without ch
   await user.tab();
   expect(screen.getByRole('button', { name: 'Reintentar' })).toHaveFocus();
   await user.keyboard('{Enter}');
-  await screen.findByRole('button', { name: 'Marcar como leída: Notas publicadas' });
+  if (mode === 'empty') await screen.findByText('No tienes notificaciones');
+  else await screen.findByRole('table');
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-  expect(screen.getByRole('table')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Marcar esta página como leída' })).toBeEnabled();
+  expect(document.body).not.toHaveFocus();
+  const results = screen.getByRole('region', { name: 'Notificaciones' });
+  await waitFor(() => expect(results).toHaveFocus());
+  expect(screen.getByRole('button', { name: 'Marcar esta página como leída' }).disabled).toBe(mode !== 'unread');
+  if (mode !== 'read') {
+    await user.tab();
+    expect(screen.getByRole('button', { name: mode === 'empty' ? 'Actualizar' : 'Marcar como leída: Revisión abierta' })).toHaveFocus();
+  }
   expect(db.notifications).toEqual(original);
 });
 it('identifies individual read actions by title and activates only the selected notification with the keyboard', async () => {

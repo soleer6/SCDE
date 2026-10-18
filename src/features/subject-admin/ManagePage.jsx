@@ -12,10 +12,12 @@ function Members({ subjectId, onPermissions }) {
   const [page, setPage] = useState(1);
   const state = useApi(() => getMembers(subjectId, page), [subjectId, page]);
   const [adding, setAdding] = useState(false);
+  const savingRef = useRef(false);
   const [removing, setRemoving] = useState(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
   const removalErrorRef = useRef(null);
+  const removalPendingRef = useRef(false);
   const removalTriggerRef = useRef(null);
   useEffect(() => {
     if (!removing) removalTriggerRef.current?.focus();
@@ -31,16 +33,24 @@ function Members({ subjectId, onPermissions }) {
       { key: 'actions', header: t('actions'), render: (m) => <div className="admin-actions"><Button size="sm" onClick={() => onPermissions(m)}>{t('inspect')}</Button><Button size="sm" variant="danger" onClick={(event) => { removalTriggerRef.current = event.currentTarget; setError(null); setRemoving(m); }}>{t('remove')}</Button></div> },
     ]} />
     <Pagination data={state.data} page={page} onChange={setPage} />
-    <Dialog open={adding} title={t('assign')} onClose={() => setAdding(false)}>
+    <Dialog open={adding} title={t('assign')} onClose={() => !savingRef.current && setAdding(false)}>
       {adding && <RecordForm initial={{ user_id: '', role: 'STUDENT', group_id: '' }} fields={[
         { name: 'user_id', label: t('user_id'), required: true },
         { name: 'role', label: t('role'), type: 'select', options: ['STUDENT', 'TEACHER', 'COORDINATOR'].map((value) => ({ value, label: t('common:roles.' + value) })) },
         { name: 'group_id', label: t('group_id') },
-      ]} onSave={async (values) => { await assignMember(subjectId, { ...values, group_id: values.group_id || null }); setAdding(false); state.reload(); }} />}
+      ]} onSave={async (values) => {
+        savingRef.current = true;
+        try {
+          await assignMember(subjectId, { ...values, group_id: values.group_id || null });
+          setAdding(false); state.reload();
+        } finally { savingRef.current = false; }
+      }} />}
     </Dialog>
-    <Dialog open={Boolean(removing)} title={t('remove')} onClose={() => !pending && setRemoving(null)} footer={<Button variant="danger" loading={pending} onClick={async () => {
+    <Dialog open={Boolean(removing)} title={t('remove')} onClose={() => !removalPendingRef.current && setRemoving(null)} footer={<Button variant="danger" loading={pending} onClick={async () => {
+      if (removalPendingRef.current) return;
+      removalPendingRef.current = true;
       setPending(true); setError(null);
-      try { await removeMember(subjectId, removing.id); setRemoving(null); state.reload(); } catch (err) { setError(err); } finally { setPending(false); }
+      try { await removeMember(subjectId, removing.id); setRemoving(null); state.reload(); } catch (err) { setError(err); } finally { removalPendingRef.current = false; setPending(false); }
     }}>{t('common:confirm')}</Button>}><p>{t('removeConfirm')}</p><p>{removing?.user_email}</p>{error && <div ref={removalErrorRef} tabIndex={-1}><ErrorState error={error} /></div>}</Dialog>
   </>;
 }
@@ -50,10 +60,12 @@ function Groups({ subjectId }) {
   const [page, setPage] = useState(1);
   const state = useApi(() => getGroups(subjectId, page), [subjectId, page]);
   const [editing, setEditing] = useState(null);
+  const savingRef = useRef(false);
   const [removing, setRemoving] = useState(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
   const removalErrorRef = useRef(null);
+  const removalPendingRef = useRef(false);
   const removalTriggerRef = useRef(null);
   useEffect(() => {
     if (!removing) removalTriggerRef.current?.focus();
@@ -69,15 +81,20 @@ function Groups({ subjectId }) {
       { key: 'actions', header: t('actions'), render: (g) => <div className="admin-actions"><Button size="sm" onClick={() => setEditing(g)}>{t('editGroup')}</Button><Button size="sm" variant="danger" onClick={(event) => { removalTriggerRef.current = event.currentTarget; setError(null); setRemoving(g); }}>{t('deleteGroup')}</Button></div> },
     ]} />
     <Pagination data={state.data} page={page} onChange={setPage} />
-    <Dialog open={Boolean(editing)} title={t(editing?.id ? 'editGroup' : 'createGroup')} onClose={() => setEditing(null)}>
+    <Dialog open={Boolean(editing)} title={t(editing?.id ? 'editGroup' : 'createGroup')} onClose={() => !savingRef.current && setEditing(null)}>
       {editing && <RecordForm key={editing.id ?? 'new'} initial={{ label: editing.label }} fields={[{ name: 'label', label: t('label'), required: true }]} onSave={async (values) => {
-        if (editing.id) await updateGroup(subjectId, editing.id, values); else await createGroup(subjectId, values);
-        setEditing(null); state.reload();
+        savingRef.current = true;
+        try {
+          if (editing.id) await updateGroup(subjectId, editing.id, values); else await createGroup(subjectId, values);
+          setEditing(null); state.reload();
+        } finally { savingRef.current = false; }
       }} />}
     </Dialog>
-    <Dialog open={Boolean(removing)} title={t('deleteGroup')} onClose={() => !pending && setRemoving(null)} footer={<Button variant="danger" loading={pending} onClick={async () => {
+    <Dialog open={Boolean(removing)} title={t('deleteGroup')} onClose={() => !removalPendingRef.current && setRemoving(null)} footer={<Button variant="danger" loading={pending} onClick={async () => {
+      if (removalPendingRef.current) return;
+      removalPendingRef.current = true;
       setPending(true); setError(null);
-      try { await deleteGroup(subjectId, removing.id); setRemoving(null); state.reload(); } catch (err) { setError(err); } finally { setPending(false); }
+      try { await deleteGroup(subjectId, removing.id); setRemoving(null); state.reload(); } catch (err) { setError(err); } finally { removalPendingRef.current = false; setPending(false); }
     }}>{t('common:confirm')}</Button>}><p>{t('deleteConfirm')}</p><p>{removing?.label}</p>{error && <div ref={removalErrorRef} tabIndex={-1}><ErrorState error={error} /></div>}</Dialog>
   </>;
 }
