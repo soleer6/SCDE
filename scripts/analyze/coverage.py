@@ -3,7 +3,9 @@
 Usage: python scripts/analyze/coverage.py docs/frontend/API_INVENTORY.md src/features [--md]
 Heuristic (deterministic): an operation counts as covered when its path pattern
 appears in a non-mock, non-test source file next to an api.<method>( call of the
-same HTTP method. Path params match any `${...}` expression or literal segment.
+same HTTP method (api.upload(path, form, 'PUT') counts as PUT; a bare
+request(path, { method }) call counts for its method). Path params match any
+`${...}` expression or literal segment.
 """
 import pathlib
 import re
@@ -34,8 +36,18 @@ def pattern(path):
 
 covered, missing = [], []
 for method, path, tag in ops:
-    rx = re.compile(r'api\.(' + METHOD[method] + r')\(\s*[`\'"]' + pattern(path) + r'[`\'"?]')
-    (covered if rx.search(code) else missing).append((method, path, tag))
+    q = r'[`\'"]'
+    rx = re.compile(r'api\.(' + METHOD[method] + r')\(\s*' + q + pattern(path) + r'[`\'"?]')
+    # api.upload(path, form, 'PUT') is a PUT, not a POST
+    put = re.compile(r'api\.upload\(\s*' + q + pattern(path) + q + r'[^)\n]*' + q + r'PUT' + q)
+    # bare request(path, { method: 'X', ... })
+    req = re.compile(r'request\(\s*' + q + pattern(path) + q + r'\s*,\s*\{[^}]*method:\s*' + q + method + q)
+    hit = rx.search(code) or req.search(code)
+    if method == 'PUT':
+        hit = hit or put.search(code)
+    elif method == 'POST' and hit and put.search(code) and not re.search(r'api\.post\(\s*' + q + pattern(path), code):
+        hit = None
+    (covered if hit else missing).append((method, path, tag))
 
 total = len(ops)
 print(f'Coverage: {len(covered)}/{total} operations ({100 * len(covered) // total}%)')

@@ -51,6 +51,19 @@ export function uploadBlankPdf(modelId, file) {
 }
 /* POST /models/{id}/qr-pdf/ -> PDF with QR codes (Blob) */
 export const generateQrPdf = async (modelId) => (await request(`/models/${modelId}/qr-pdf/`, { method: 'POST', raw: true })).blob();
+/* ---------------- Page profiles and recognition zones (RF-6.8) ----------------
+ * Zone coordinates are PDF points with the origin at the bottom-left corner. */
+/* GET /models/{id}/page-profiles/ -> PageProfileResponse[] */
+export const listPageProfiles = (modelId) => api.get(`/models/${modelId}/page-profiles/`).then(asList);
+/* POST /models/{id}/page-profiles/ { page_number } -> PageProfileResponse (409 NO_BLANK_PDF, PAGE_PROFILE_EXISTS…) */
+export const createPageProfile = (modelId, pageNumber) => api.post(`/models/${modelId}/page-profiles/`, { page_number: pageNumber });
+/* POST /page-profiles/{id}/zones/ CreateZoneRequest -> ZoneResponse[]
+ * (the OpenAPI declares one ZoneResponse, the Django view returns a list: one per page). */
+export const createZone = (profileId, body) =>
+  api.post(`/page-profiles/${profileId}/zones/`, body).then((r) => (Array.isArray(r) ? r : [r]));
+/* DELETE /zones/{id}/ -> 204 */
+export const deleteZone = (zoneId) => api.del(`/zones/${zoneId}/`);
+
 /* POST /models/{id}/problems/ { name, max_score, order?, zone_ids? } -> ProblemResponse */
 export const createProblem = (modelId, body) => api.post(`/models/${modelId}/problems/`, body);
 /* POST /problems/{id}/rubric/ { criteria: [{ description, score }] } -> RubricCriterionResponse[] (replaces) */

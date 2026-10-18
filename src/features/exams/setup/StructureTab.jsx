@@ -5,6 +5,7 @@ import { formatScore } from '../../../lib/format.js';
 import { Badge, Button, DataTable, EmptyState, Field, Input, Panel, Select, useToast } from '../../../ui';
 import { createModel, createProblem, generateQrPdf, getModel, uploadBlankPdf } from '../api.js';
 import RubricDialog from './RubricDialog.jsx';
+import ZonesSection from './ZonesSection.jsx';
 
 /** Models (variants) of the exam, their blank PDF and their problems + rubrics. */
 export default function StructureTab({ exam, perms, onChanged }) {
@@ -117,6 +118,7 @@ function ModelBlock({ model, perms, onChanged }) {
         </span>
         {perms.rubric && <NewProblemForm modelId={model.model_id} nextOrder={model.problems.length + 1} onCreated={onChanged} />}
       </div>
+      {perms.exams && pages > 0 && <ZonesSection modelId={model.model_id} pages={pages} onError={fail} />}
       <RubricDialog problem={rubricFor} onClose={() => setRubricFor(null)} onSaved={onChanged} />
     </Panel>
   );
