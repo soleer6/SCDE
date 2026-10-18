@@ -13,6 +13,65 @@ import AuditPage from './AuditPage.jsx';
 describe('organization administration in mock mode', () => {
   beforeEach(async () => { await resetDemo(); await loginAs(); });
 
+  it.each(['create', 'edit'])('keeps the user %s dialog open during saving and releases it after failure', async (mode) => {
+    const user = userEvent.setup(); renderPage(<UsersPage />);
+    const row = (await screen.findByText('javier.ruiz@uam.es')).closest('tr');
+    const originalUsers = structuredClone(db.users);
+    const open = () => mode === 'create'
+      ? user.click(screen.getByRole('button', { name: 'Crear usuario' }))
+      : user.click(within(row).getByRole('button', { name: 'Editar usuario' }));
+    await open();
+    const element = screen.getByRole('dialog');
+    const dialog = within(element);
+    const body = { email: 'guardado@uam.es', first_name: 'Ana', last_name: 'García', nia: '12345', ...(mode === 'create' ? { dni: '12345678Z' } : {}), is_staff: false };
+    const fill = (scope) => {
+      for (const [label, name] of [['Email', 'email'], ['Nombre', 'first_name'], ['Apellidos', 'last_name'], ['NIA', 'nia'], ...(mode === 'create' ? [['DNI', 'dni']] : [])]) {
+        fireEvent.change(scope.getByLabelText(label), { target: { value: body[name] } });
+      }
+    };
+    fill(dialog);
+    let rejectSave;
+    const request = new Promise((_, reject) => { rejectSave = reject; });
+    const operation = vi.spyOn(api, mode === 'create' ? 'post' : 'patch').mockImplementationOnce(() => request);
+    const path = mode === 'create' ? '/users/' : '/users/u-javier/';
+    try {
+      const form = dialog.getByRole('button', { name: 'Guardar' }).closest('form');
+      act(() => { fireEvent.submit(form); fireEvent.keyDown(window, { key: 'Escape' }); });
+      expect(screen.getByRole('dialog')).toBe(element);
+      expect(form).toHaveAttribute('aria-busy', 'true');
+      await user.keyboard('{Escape}');
+      await user.click(dialog.getByRole('button', { name: /^(Close|Cerrar)$/ }));
+      fireEvent.mouseDown(element.parentElement);
+      expect(screen.getByRole('dialog')).toBe(element);
+      expect(operation.mock.calls).toEqual([[path, body]]);
+      expect(db.users).toEqual(originalUsers);
+      await act(async () => { rejectSave(new ApiError('PERMISSION_DENIED', 403)); });
+      expect((await dialog.findByRole('alert')).parentElement).toHaveFocus();
+      expect(dialog.getByLabelText('Email')).toHaveValue(body.email);
+      expect(dialog.getByLabelText('Nombre')).toHaveValue(body.first_name);
+      expect(dialog.getByLabelText('Apellidos')).toHaveValue(body.last_name);
+      expect(dialog.getByLabelText('NIA')).toHaveValue(body.nia);
+      if (mode === 'create') expect(dialog.getByLabelText('DNI')).toHaveValue(body.dni);
+      expect(dialog.getByRole('button', { name: 'Guardar' })).toBeEnabled();
+      await user.keyboard('{Escape}');
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      await open();
+      const retry = within(screen.getByRole('dialog'));
+      fill(retry);
+      await user.click(retry.getByRole('button', { name: 'Guardar' }));
+      expect(await screen.findByText(body.email)).toBeInTheDocument();
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(operation.mock.calls).toEqual([[path, body], [path, body]]);
+      expect(db.users).toHaveLength(originalUsers.length + (mode === 'create' ? 1 : 0));
+      const saved = db.users.find((u) => u.email === body.email);
+      expect(saved).toMatchObject({ ...body, is_active: true });
+      if (mode === 'edit') {
+        expect(saved.id).toBe('u-javier');
+        expect(saved.dni).toBe(originalUsers.find((u) => u.id === 'u-javier').dni);
+      }
+    } finally { operation.mockRestore(); }
+  });
+
   it('sends one creation while saving and unlocks retry after a failed request', async () => {
     const user = userEvent.setup(); renderPage(<UsersPage />);
     await screen.findByText('admin@uam.es');
@@ -115,7 +174,8 @@ describe('organization administration in mock mode', () => {
     const user = userEvent.setup(); renderPage(<UsersPage />);
     const row = (await screen.findByText('javier.ruiz@uam.es')).closest('tr');
     await user.click(within(row).getByRole('button', { name: action }));
-    const dialog = within(screen.getByRole('dialog'));
+    const dialogElement = screen.getByRole('dialog');
+    const dialog = within(dialogElement);
     const confirm = dialog.getByRole('button', { name: 'Confirmar' });
     const originalUser = structuredClone(db.users.find((u) => u.id === 'u-javier'));
     let rejectRequest;
@@ -125,14 +185,19 @@ describe('organization administration in mock mode', () => {
       act(() => {
         confirm.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         confirm.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        fireEvent.keyDown(window, { key: 'Escape' });
       });
+      expect(screen.getByRole('dialog')).toBe(dialogElement);
       expect(operation).toHaveBeenCalledOnce();
       expect(operation.mock.calls[0][0]).toBe(path);
       expect(confirm).toBeDisabled();
       fireEvent.click(confirm);
       expect(operation).toHaveBeenCalledOnce();
       await user.keyboard('{Escape}');
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      await user.click(dialog.getByRole('button', { name: /^(Close|Cerrar)$/ }));
+      fireEvent.mouseDown(dialogElement.parentElement);
+      expect(dialogElement).toBeInTheDocument();
+      expect(operation).toHaveBeenCalledOnce();
       expect(db.users.find((u) => u.id === 'u-javier')).toEqual(originalUser);
       await act(async () => { rejectRequest(new ApiError('PERMISSION_DENIED', 403)); });
       const error = await dialog.findByRole('alert');
@@ -206,6 +271,38 @@ describe('organization administration in mock mode', () => {
     expect(search).toHaveValue('user-25@uam.es');
     expect(search).toHaveAccessibleDescription('Filtra por nombre, email o NIA solo en esta página. El total corresponde a todos los usuarios.');
     expect(next).toBeDisabled();
+  }, 15000);
+
+  it('recovers a failed user query with keyboard retry and keeps the page filter', async () => {
+    const admin = db.users.find((u) => u.id === 'u-admin');
+    admin.is_active = false;
+    const originalUsers = structuredClone(db.users);
+    const user = userEvent.setup(); renderPage(<UsersPage />);
+    const error = await screen.findByRole('alert');
+    expect(error).toHaveTextContent('No tienes permiso para esta acción.');
+    await waitFor(() => expect(error.parentElement).toHaveFocus());
+    expect(screen.queryByRole('button', { name: 'Editar usuario' })).not.toBeInTheDocument();
+    const search = screen.getByRole('textbox', { name: 'Buscar usuarios' });
+    await user.click(search);
+    await user.type(search, 'nobody@example.com{Enter}');
+    error.parentElement.focus();
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Reintentar' })).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect((await screen.findByRole('alert')).parentElement).toHaveFocus();
+    expect(search).toHaveValue('nobody@example.com');
+    admin.is_active = true;
+    await user.tab();
+    await user.keyboard('{Enter}');
+    expect(await screen.findByText('No hay registros')).toBeInTheDocument();
+    await waitFor(() => expect(search).toHaveFocus());
+    expect(search).toHaveValue('nobody@example.com');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(db.users).toEqual(originalUsers.map((row) => row.id === admin.id ? { ...row, is_active: true } : row));
+    await user.clear(search);
+    await user.type(search, 'javier.ruiz@uam.es{Enter}');
+    expect(await screen.findByText('javier.ruiz@uam.es')).toBeInTheDocument();
+    expect(screen.queryByText('maria.perez@uam.es')).not.toBeInTheDocument();
   }, 15000);
 
   it('shows the active course and creates a course without writing is_active', async () => {
@@ -286,6 +383,35 @@ describe('organization administration in mock mode', () => {
     await screen.findByText('Cambios guardados');
     expect(columns).not.toHaveAttribute('aria-invalid');
     expect(columns).not.toHaveAttribute('aria-describedby');
+  });
+
+  it('recovers repeated configuration loading errors with keyboard retry and focuses the recovered form', async () => {
+    const admin = db.users.find((u) => u.id === 'u-admin');
+    const originalConfig = structuredClone(db.org_config);
+    admin.is_active = false;
+    const user = userEvent.setup(); renderPage(<ConfigPage />);
+    const error = await screen.findByRole('alert');
+    expect(error).toHaveTextContent('No tienes permiso para esta acción.');
+    await waitFor(() => expect(error.parentElement).toHaveFocus());
+    expect(screen.queryByRole('button', { name: 'Guardar' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Motor OCR predeterminado')).not.toBeInTheDocument();
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Reintentar' })).toHaveFocus();
+    await user.keyboard('{Enter}');
+    const repeatedError = await screen.findByRole('alert');
+    await waitFor(() => expect(repeatedError.parentElement).toHaveFocus());
+    expect(db.org_config).toEqual(originalConfig);
+    admin.is_active = true;
+    await user.tab();
+    await user.keyboard('{Enter}');
+    const input = await screen.findByLabelText('Motor OCR predeterminado');
+    await waitFor(() => expect(input).toHaveFocus());
+    expect(input).toHaveValue(originalConfig.default_ocr_engine);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    await user.tab();
+    expect(screen.getByLabelText('Umbral de confianza (0–1)')).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Guardar' })).toBeEnabled();
+    expect(db.org_config).toEqual(originalConfig);
   });
 
   it('focuses a general save error and retries configuration with the keyboard without losing edits', async () => {

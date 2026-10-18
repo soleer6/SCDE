@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, ButtonLink, Dialog, ErrorState, Field, Input, PageHeader } from '../../ui';
 import { useApi } from '../../lib/hooks.js';
@@ -17,6 +17,7 @@ export default function SubjectsPage() {
   const [page, setPage] = useState(1);
   const [pending, setPending] = useState(false);
   const [importing, setImporting] = useState(false);
+  const importPendingRef = useRef(false);
   const [error, setError] = useState(null);
   const courseId = course || current.data?.id;
   const state = useApi(courseId ? () => searchCatalog({ course_id: courseId, search: query, page }) : null, [courseId, query, page]);
@@ -40,8 +41,8 @@ export default function SubjectsPage() {
       { key: 'actions', header: t('actions'), render: (s) => <ButtonLink to={`/subjects/${s.id}/manage`}>{t('manage')}</ButtonLink> },
     ]} />
     <Pagination data={state.data} page={page} onChange={setPage} />
-    <Dialog open={importing} title={t('import')} onClose={() => setImporting(false)}>
-      {importing && <ImportForm hint={t('importHint')} onImport={importSubjects} onComplete={state.reload} />}
+    <Dialog open={importing} title={t('import')} onClose={() => !importPendingRef.current && setImporting(false)}>
+      {importing && <ImportForm hint={t('importHint')} onImport={importSubjects} onComplete={state.reload} onPendingChange={(value) => { importPendingRef.current = value; }} />}
     </Dialog>
   </>;
 }

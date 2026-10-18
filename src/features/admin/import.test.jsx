@@ -7,12 +7,59 @@ import { ApiError } from '../../lib/api/errors.js';
 import { db } from '../../lib/mock/db.js';
 import { loginAs, renderPage, resetDemo } from './test-utils.jsx';
 import UsersPage from './UsersPage.jsx';
+import SubjectsPage from '../subject-admin/SubjectsPage.jsx';
 
 const upload = (content, name = 'users.json') => {
   const form = new FormData(); form.append('file', new File([content], name, { type: name.endsWith('.csv') ? 'text/csv' : 'application/json' })); return form;
 };
 beforeEach(async () => { await resetDemo(); await loginAs(); });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+it.each(['users', 'subjects'])('keeps the %s import open while uploading and permits closing after failure', async (kind) => {
+  const user = userEvent.setup();
+  renderPage(kind === 'users' ? <UsersPage /> : <SubjectsPage />);
+  await screen.findByText(kind === 'users' ? 'admin@uam.es' : 'MAT101');
+  const open = () => user.click(screen.getByRole('button', { name: kind === 'users' ? 'Importar usuarios' : 'Importar asignaturas' }));
+  await open();
+  const element = screen.getByRole('dialog');
+  const dialog = within(element);
+  const file = new File(['[]'], `${kind}.json`, { type: 'application/json' });
+  const input = dialog.getByLabelText('Archivo CSV o JSON');
+  await user.upload(input, file);
+  const usersBefore = structuredClone(db.users);
+  const subjectsBefore = structuredClone(db.subjects);
+  let rejectImport;
+  const request = new Promise((_, reject) => { rejectImport = reject; });
+  const operation = vi.spyOn(api, 'upload').mockImplementationOnce(() => request);
+  try {
+    const form = dialog.getByRole('button', { name: 'Importar archivo' }).closest('form');
+    act(() => { fireEvent.submit(form); fireEvent.submit(form); fireEvent.keyDown(window, { key: 'Escape' }); });
+    expect(screen.getByRole('dialog')).toBe(element);
+    await user.keyboard('{Escape}');
+    await user.click(dialog.getByRole('button', { name: /^(Close|Cerrar)$/ }));
+    fireEvent.mouseDown(element.parentElement);
+    expect(screen.getByRole('dialog')).toBe(element);
+    expect(form).toHaveAttribute('aria-busy', 'true');
+    expect(input).toBeDisabled();
+    expect(operation).toHaveBeenCalledOnce();
+    expect(operation.mock.calls[0][0]).toBe(`/${kind}/import/`);
+    expect([...operation.mock.calls[0][1].keys()]).toEqual(['file']);
+    expect(operation.mock.calls[0][1].get('file')).toBe(file);
+    expect(db.users).toEqual(usersBefore);
+    expect(db.subjects).toEqual(subjectsBefore);
+    await act(async () => { rejectImport(new ApiError('PERMISSION_DENIED', 403)); });
+    expect((await dialog.findByRole('alert')).parentElement).toHaveFocus();
+    expect(input.files[0]).toBe(file);
+    expect(input).toBeEnabled();
+    expect(dialog.getByRole('button', { name: 'Importar archivo' })).toBeEnabled();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await open();
+    expect(screen.getByLabelText('Archivo CSV o JSON').files).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Importar archivo' })).toBeDisabled();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  } finally { operation.mockRestore(); }
+}, 15000);
 
 it('imports users through the page and displays partial results', async () => {
   db.users.find((u) => u.id === 'u-javier').is_active = false;

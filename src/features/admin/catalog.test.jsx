@@ -1,7 +1,8 @@
 import { beforeEach, expect, it, vi, afterEach } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { api } from '../../lib/api/client.js';
+import { ApiError } from '../../lib/api/errors.js';
 import { db } from '../../lib/mock/db.js';
 import { loginAs, renderPage, resetDemo } from './test-utils.jsx';
 import CoursesPage from './CoursesPage.jsx';
@@ -10,6 +11,64 @@ import AuditPage from './AuditPage.jsx';
 
 beforeEach(async () => { await resetDemo(); await loginAs(); });
 afterEach(() => vi.restoreAllMocks());
+
+it.each(['create', 'edit'])('keeps the course %s dialog open until saving settles and allows recovery', async (mode) => {
+  const user = userEvent.setup(); renderPage(<CoursesPage />);
+  const originalCourses = structuredClone(db.courses);
+  const row = (await screen.findByText('2025-2026')).closest('tr');
+  const open = () => mode === 'create'
+    ? user.click(screen.getByRole('button', { name: 'Crear curso' }))
+    : user.click(within(row).getByRole('button', { name: 'Editar curso' }));
+  await open();
+  const dialogElement = screen.getByRole('dialog');
+  const dialog = within(dialogElement);
+  const label = 'Curso recuperado';
+  const body = { label, start_date: '2027-09-01', end_date: '2028-06-30' };
+  const fill = (scope) => {
+    fireEvent.change(scope.getByLabelText('Nombre del curso'), { target: { value: label } });
+    fireEvent.change(scope.getByLabelText('Fecha de inicio'), { target: { value: body.start_date } });
+    fireEvent.change(scope.getByLabelText('Fecha de fin'), { target: { value: body.end_date } });
+  };
+  fill(dialog);
+  let rejectSave;
+  const request = new Promise((_, reject) => { rejectSave = reject; });
+  const operation = vi.spyOn(api, mode === 'create' ? 'post' : 'patch').mockImplementationOnce(() => request);
+  const path = mode === 'create' ? '/courses/' : `/courses/${originalCourses.find((c) => c.label === '2025-2026').id}/`;
+  const form = dialog.getByRole('button', { name: 'Guardar' }).closest('form');
+  // Closing in the submit cycle must also wait for the result, before any render.
+  act(() => {
+    fireEvent.submit(form);
+    fireEvent.keyDown(window, { key: 'Escape' });
+  });
+  expect(screen.getByRole('dialog')).toBe(dialogElement);
+  expect(form).toHaveAttribute('aria-busy', 'true');
+  await user.keyboard('{Escape}');
+  await user.click(dialog.getByRole('button', { name: /^(Close|Cerrar)$/ }));
+  fireEvent.mouseDown(dialogElement.parentElement);
+  expect(screen.getByRole('dialog')).toBe(dialogElement);
+  expect(operation.mock.calls).toEqual([[path, body]]);
+  expect(db.courses).toEqual(originalCourses);
+  await act(async () => { rejectSave(new ApiError('PERMISSION_DENIED', 403)); });
+  const error = await dialog.findByRole('alert');
+  expect(error.parentElement).toHaveFocus();
+  expect(dialog.getByLabelText('Nombre del curso')).toHaveValue(label);
+  expect(dialog.getByLabelText('Fecha de inicio')).toHaveValue(body.start_date);
+  expect(dialog.getByLabelText('Fecha de fin')).toHaveValue(body.end_date);
+  expect(dialog.getByRole('button', { name: 'Guardar' })).toBeEnabled();
+  // A failed save releases the close guard; a later dialog can save normally.
+  await user.keyboard('{Escape}');
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  await open();
+  const retryDialog = within(screen.getByRole('dialog'));
+  fill(retryDialog);
+  await user.click(retryDialog.getByRole('button', { name: 'Guardar' }));
+  expect(await screen.findByText(label)).toBeInTheDocument();
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(operation.mock.calls).toEqual([[path, body], [path, body]]);
+  expect(db.courses).toHaveLength(originalCourses.length + (mode === 'create' ? 1 : 0));
+  const saved = db.courses.find((c) => c.label === label);
+  expect(saved).toMatchObject({ ...body, is_active: mode === 'edit' ? originalCourses.find((c) => c.label === '2025-2026').is_active : false });
+});
 
 it('lists historical courses, searches on the server and paginates', async () => {
   db.courses.push(...Array.from({ length: 26 }, (_, i) => ({ ...db.courses[1], id: `old-${i}`, label: `History ${i}` })));
@@ -88,6 +147,7 @@ it('recovers a failed users page with keyboard retry and preserves the local sea
   await user.tab();
   await user.keyboard('{Enter}');
   expect(await screen.findByText('extra25@uam.es')).toBeInTheDocument();
+  await waitFor(() => expect(search).toHaveFocus());
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(screen.getByText(/Página 2 de 2/)).toBeInTheDocument();
   expect(search).toHaveValue('extra25');
@@ -102,6 +162,7 @@ it('recovers a failed audit page with keyboard retry and preserves server filter
   const user = userEvent.setup(); renderPage(<AuditPage />);
   await screen.findByText('entity-0');
   const event = screen.getByLabelText('Evento');
+  expect(event).not.toHaveFocus();
   await user.type(event, 'TARGET');
   await user.click(screen.getByRole('button', { name: 'Aplicar filtros' }));
   await screen.findByText('entity-0');
@@ -113,12 +174,18 @@ it('recovers a failed audit page with keyboard retry and preserves server filter
   expect(event).toHaveValue('TARGET');
   await user.tab();
   expect(screen.getByRole('button', { name: 'Reintentar' })).toHaveFocus();
+  get.mockRejectedValueOnce(new Error('Temporary network failure'));
+  await user.keyboard('{Enter}');
+  expect((await screen.findByRole('alert')).parentElement).toHaveFocus();
+  await user.tab();
+  expect(screen.getByRole('button', { name: 'Reintentar' })).toHaveFocus();
   await user.keyboard('{Enter}');
   expect(await screen.findByText('entity-25')).toBeInTheDocument();
+  await waitFor(() => expect(event).toHaveFocus());
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(screen.getByText(/Página 2 de 2/)).toBeInTheDocument();
   expect(event).toHaveValue('TARGET');
-  expect(get.mock.calls).toEqual(Array.from({ length: 2 }, () => ['/audit-logs/', { page: 2, page_size: '25', event_type: 'TARGET' }]));
+  expect(get.mock.calls).toEqual(Array.from({ length: 3 }, () => ['/audit-logs/', { page: 2, page_size: '25', event_type: 'TARGET' }]));
   expect(db.audit_logs).toEqual(originalAudit);
 }, 15000);
 

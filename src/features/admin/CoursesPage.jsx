@@ -11,6 +11,7 @@ export default function CoursesPage() {
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
   const [editing, setEditing] = useState(null);
+  const savingRef = useRef(false);
   const courses = useApi(() => searchCatalog({ page, search: query }), [page, query]);
   const searchRef = useRef(null);
   const recovering = useRef(false);
@@ -41,11 +42,14 @@ export default function CoursesPage() {
       { key: 'actions', header: t('actions'), render: (c) => <Button size="sm" onClick={() => setEditing(c)}>{t('editCourse')}</Button> },
     ]} /></div>
     <Pagination data={courses.data} page={page} onChange={setPage} />
-    <Dialog open={Boolean(editing)} title={t(editing?.id ? 'editCourse' : 'newCourse')} onClose={() => setEditing(null)}>
+    <Dialog open={Boolean(editing)} title={t(editing?.id ? 'editCourse' : 'newCourse')} onClose={() => !savingRef.current && setEditing(null)}>
       {editing && <RecordForm key={editing.id ?? 'new'} initial={editing} fields={['label', 'start_date', 'end_date'].map((name) => ({ name, label: t(name), type: name === 'label' ? 'text' : 'date', required: name === 'label' }))} onSave={async (v) => {
-        const body = { label: v.label, start_date: v.start_date || null, end_date: v.end_date || null };
-        if (editing.id) await updateCourse(editing.id, body); else await createCourse(body);
-        setEditing(null); setQuery(''); setSearch(''); setPage(1); courses.reload();
+        savingRef.current = true;
+        try {
+          const body = { label: v.label, start_date: v.start_date || null, end_date: v.end_date || null };
+          if (editing.id) await updateCourse(editing.id, body); else await createCourse(body);
+          setEditing(null); setQuery(''); setSearch(''); setPage(1); courses.reload();
+        } finally { savingRef.current = false; }
       }} />}
     </Dialog>
   </>;

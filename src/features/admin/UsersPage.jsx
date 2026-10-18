@@ -21,11 +21,24 @@ export default function UsersPage() {
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState('');
   const actingRef = useRef(false);
+  const savingRef = useRef(false);
+  const importPendingRef = useRef(false);
   const confirmationErrorRef = useRef(null);
   useEffect(() => {
     if (confirm && error && !pending) confirmationErrorRef.current?.focus();
   }, [confirm, error, pending]);
   const users = useApi(() => getUsers({ page, page_size: pageSize }), [page, pageSize]);
+  const searchRef = useRef(null);
+  const recovering = useRef(false);
+  useEffect(() => {
+    if (users.loading) return;
+    if (users.error) {
+      recovering.current = true;
+    } else if (recovering.current && users.data) {
+      recovering.current = false;
+      searchRef.current?.focus();
+    }
+  }, [users.loading, users.error, users.data]);
   const filtered = users.data && { ...users.data, results: users.data.results.filter((u) => `${u.email} ${u.first_name} ${u.last_name} ${u.nia}`.toLowerCase().includes(query.toLowerCase())) };
   async function act(fn) {
     if (actingRef.current) return;
@@ -38,7 +51,7 @@ export default function UsersPage() {
   return <>
     <PageHeader eyebrow={t('management')} title={t('users')} actions={<><Button variant="primary" onClick={create}>{t('create')}</Button><Button onClick={() => setImporting(true)}>{t('importUsers')}</Button></>} />
     <form className="admin-actions" onSubmit={(e) => { e.preventDefault(); setQuery(search); }}>
-      <Field label={t('search')} hint={<span id={searchHintId}>{t('searchHint')}</span>}>{(id) => <Input id={id} aria-describedby={searchHintId} value={search} onChange={(e) => setSearch(e.target.value)} />}</Field>
+      <Field label={t('search')} hint={<span id={searchHintId}>{t('searchHint')}</span>}>{(id) => <Input ref={searchRef} id={id} aria-describedby={searchHintId} value={search} onChange={(e) => setSearch(e.target.value)} />}</Field>
       <Button type="submit">{t('common:search')}</Button>
       <Field label={t('pageSize')}>{(id) => <Select id={id} value={pageSize} onChange={(e) => { setPageSize(e.target.value); setPage(1); }} options={['25', '50', '100'].map((value) => ({ value, label: value }))} />}</Field>
       <Button disabled={pending} onClick={() => act(async () => {
@@ -52,17 +65,20 @@ export default function UsersPage() {
       { key: 'actions', header: t('actions'), render: (u) => <div className="admin-actions"><Button size="sm" onClick={() => setEditing(u)}>{t('edit')}</Button><Button size="sm" variant="danger" onClick={() => { setError(null); setConfirm({ user: u, type: 'toggle' }); }}>{t('toggle')}</Button><Button size="sm" variant="danger" onClick={() => { setError(null); setConfirm({ user: u, type: 'reset' }); }}>{t('reset')}</Button></div> },
     ]} />
     <Pagination data={users.data} page={page} onChange={setPage} />
-    <Dialog open={importing} title={t('importUsers')} onClose={() => setImporting(false)}>
-      {importing && <ImportForm hint={t('userImportHint')} onImport={importUsers} onComplete={users.reload} />}
+    <Dialog open={importing} title={t('importUsers')} onClose={() => !importPendingRef.current && setImporting(false)}>
+      {importing && <ImportForm hint={t('userImportHint')} onImport={importUsers} onComplete={users.reload} onPendingChange={(value) => { importPendingRef.current = value; }} />}
     </Dialog>
-    <Dialog open={Boolean(editing)} title={t(editing?.id ? 'edit' : 'create')} onClose={() => setEditing(null)}>
+    <Dialog open={Boolean(editing)} title={t(editing?.id ? 'edit' : 'create')} onClose={() => !savingRef.current && setEditing(null)}>
       {editing && <RecordForm key={editing.id ?? 'new'} initial={editing} fields={fields} onSave={async (values) => {
-        const body = Object.fromEntries(fields.map(({ name }) => [name, values[name]]));
-        if (editing.id) await updateUser(editing.id, body); else await createUser(body);
-        setEditing(null); users.reload(); setNotice(t('saved'));
+        savingRef.current = true;
+        try {
+          const body = Object.fromEntries(fields.map(({ name }) => [name, values[name]]));
+          if (editing.id) await updateUser(editing.id, body); else await createUser(body);
+          setEditing(null); users.reload(); setNotice(t('saved'));
+        } finally { savingRef.current = false; }
       }} />}
     </Dialog>
-    <Dialog open={Boolean(confirm)} title={t(confirm?.type === 'reset' ? 'reset' : 'toggle')} onClose={() => !pending && setConfirm(null)} footer={<Button variant="danger" loading={pending} onClick={() => act(async () => {
+    <Dialog open={Boolean(confirm)} title={t(confirm?.type === 'reset' ? 'reset' : 'toggle')} onClose={() => !actingRef.current && setConfirm(null)} footer={<Button variant="danger" loading={pending} onClick={() => act(async () => {
       if (confirm.type === 'reset') { await resetPassword(confirm.user.id); setNotice(t('resetDone')); }
       else { await updateUser(confirm.user.id, { is_active: !confirm.user.is_active }); users.reload(); setNotice(t('saved')); }
       setConfirm(null);
