@@ -122,6 +122,30 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
   agente lanzadas a la vez sobre un worktree el 2026-10-19).
 - `check_tex.py` OK. Sin cambios de código.
 
+## Iteración 2026-10-19 · test de contrato del mock contra el OpenAPI real
+- Motivo: la validación con el backend real (6.5) sigue sin poder hacerse (Docker Desktop
+  parado; la imagen arrastra easyocr, PostgreSQL, Redis y MinIO). Se automatiza la parte
+  que no necesita el servidor: que el mock responda lo que declara el contrato.
+- `scripts/analyze/openapi-snapshot.mjs` guarda una instantánea JSON recortada del
+  OpenAPI (rutas y esquemas, sin prosa ni ejemplos; hash del YAML en el fichero) en
+  `src/test/contract/openapi.json`. `validate.js` implementa el subconjunto de OpenAPI 3.0
+  que emite drf-spectacular, más estricto en un punto: un campo no declarado es error.
+- `mock-contract.test.js` recorre los GET con mock registrado (20 operaciones en la rama),
+  rellena los parámetros con ids del seed (uno por estado distinto) y pide cada ruta como
+  gestora, dos docentes con roles cruzados y una alumna: 235 respuestas JSON validadas.
+- Resultado de la primera pasada (89 violaciones): ninguna era un campo inventado por el
+  mock salvo la propuesta conocida de gap-2; dos eran artefactos del propio test (una ruta
+  literal emparejada con `:id`, descarga de PDF con `fetch` relativo bajo jsdom) y el
+  resto, respuestas por rol que el OpenAPI no declara → **gap-10**, confirmado leyendo las
+  vistas Django. Las formas reales se transcriben en `backend-shapes.js`; el test falla si
+  una deja de hacer falta.
+- Error propio detectado al verificar: el recorte de la instantánea eliminaba las
+  *propiedades* llamadas `description` (lo trataba como prosa) → falsos positivos en
+  `rubric_criteria`. Corregido antes del commit.
+- Comprobación de que el test detecta fallos: añadir un campo a `problemOut` lo hace fallar.
+- Fuera de alcance (futuro): validar también cuerpos de petición y respuestas de
+  operaciones de escritura.
+
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.
 - 2 tests con timeout bajo carga → ampliados localmente; entrada de texto con `change`.

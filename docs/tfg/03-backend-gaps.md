@@ -98,6 +98,26 @@ desde el frontend; son preguntas para el equipo backend.
   el formato `{ strokes: [{ points }] }` con coordenadas 0-1 (y el tamaño real de la
   página); declarar los códigos de error y devolver el resultado del OCR al crear.
 
+## gap-10 · Respuestas que dependen del rol y el OpenAPI no declara
+Detectado por el test de contrato del mock (`src/test/contract/`), contrastado con el código.
+- `GET /exams/{id}/`, `GET /subjects/{id}/exams/` y `GET /my-exams/` declaran `ExamFull`,
+  pero las vistas (`apps/exams/views/exams.py`) eligen serializer por rol: `ExamFull`
+  (`can_create_exams`), `ExamTeacher` (sin `student_permissions`) o `ExamBasic` (alumnado:
+  sin `models_problems` ni `convocation`). Un cliente generado del esquema daría por
+  presentes campos que faltan.
+- `ExamFull.models_problems` se tipa como `[{string: string}]` (`extend_schema_field` con
+  `DictField(child=CharField())`, comentado como "Simplificado"), pero `problems` es una
+  lista de `ProblemResponse`.
+- `GET /exams/{id}/instances/` declara `PaginatedInstanceResponseList`, pero un alumno
+  recibe una lista sin paginar de `StudentInstanceSerializer` (`InstanceListView`), y
+  `GET /instances/{id}/` le devuelve también `StudentInstanceSerializer`, no `InstanceResponse`.
+- **Mitigación**: el frontend ya trataba estas formas; el test acepta como alternativas las
+  formas reales transcritas de los serializers (`backend-shapes.js`) y falla si alguna deja
+  de usarse (señal de que el hueco se ha corregido).
+- **Propuesta**: declarar `oneOf` con los tres serializers de examen y los dos de instancia
+  (`PolymorphicProxySerializer` de drf-spectacular) y tipar `models_problems` con un
+  serializer propio.
+
 ## Otras observaciones
 - `CreateReviewSerializer.notify_students` tiene `default=False`, pero la vista usa
   `get(..., True)`: el valor efectivo depende de si el cliente envía el campo. El frontend
