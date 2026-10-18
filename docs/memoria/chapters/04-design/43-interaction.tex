@@ -1,6 +1,84 @@
-\pendiente{Redactar con capturas de pantalla (files/) y diagramas de flujo por actor.}
+El diseño de la interacción partió de una regla extraída del propio contrato
+(\cref{SEC:AN-BACKEND}): las pantallas se ordenan según el ciclo de vida del recurso
+principal, la instancia de examen, que recorre los estados \texttt{ASSEMBLING},
+\texttt{RECEIVED}, \texttt{QUEUED}, \texttt{PENDING\_GRADING}, \texttt{GRADED},
+\texttt{PUBLISHED}, \texttt{IN\_REVIEW}, \texttt{FINALIZED} y \texttt{ARCHIVED}, con el
+desvío \texttt{PENDING\_REVIEW} cuando una revisión obliga a recalificar. Cada transición
+permitida se convierte en una acción con su permiso y su error esperado; cada listado
+paginado, en una tabla con estados de carga, vacío, error y falta de permiso; cada condición
+de visibilidad del servidor, en una variante de la vista.
 
-Flujos principales: docente (inicio $\rightarrow$ asignatura $\rightarrow$ examen
-$\rightarrow$ corrección $\rightarrow$ marcar corregido $\rightarrow$ publicar
-$\rightarrow$ abrir revisión $\rightarrow$ resolver); estudiante (inicio $\rightarrow$
-examen $\rightarrow$ nota y desglose $\rightarrow$ solicitud de revisión).
+\subsection{Una ruta, dos vistas según el rol}
+
+Como el rol depende de la asignatura, la ruta del examen (\texttt{/exams/:id}) no es la
+misma pantalla para todos: si el usuario es estudiante en esa asignatura ve su resultado;
+si es docente o coordinador, el panel del examen. Esta decisión evita duplicar rutas y hace
+que un mismo enlace al examen lleve a cada persona a lo que le corresponde.
+
+\subsection{Flujo docente}
+
+El recorrido principal de un docente es: inicio $\rightarrow$ asignatura $\rightarrow$
+examen $\rightarrow$ corrección $\rightarrow$ marcar como corregido $\rightarrow$ publicar
+notas $\rightarrow$ abrir la revisión $\rightarrow$ resolver solicitudes.
+\begin{itemize}
+  \item \textbf{Inicio y asignaturas.} La página de inicio resume las tareas pendientes
+        del usuario (exámenes por corregir y revisiones por resolver), tal como las
+        devuelve la operación \texttt{/my-tasks/}. Cada asignatura muestra sus exámenes y, si el usuario
+        tiene permisos de gestión, enlaza con la administración de miembros y grupos.
+  \item \textbf{Panel del examen.} Lista las instancias con su estado como insignia de
+        color, filtros por estado (pendientes, corregidas, publicadas) y las acciones que
+        los permisos del usuario autorizan: publicar notas, gestionar la revisión, exportar
+        notas, resolver incidencias de escaneo y configurar el examen. Solo una acción por
+        vista se presenta como principal.
+  \item \textbf{Configuración del examen.} Permite crear modelos, subir el \acs{pdf} en
+        blanco, definir problemas con sus \dfnpl{rubrica}, programar la convocatoria y
+        establecer las reglas de asignación de correctores.
+  \item \textbf{Corrección.} La pantalla de corrección sitúa el examen escaneado en el
+        centro, sobre un fondo de mesa que lo distingue de la interfaz, y a un lado los
+        problemas con sus criterios de \dfn{rubrica} o su nota manual. Se navega entre
+        páginas con las flechas del teclado o avance y retroceso de página, y se deshace el
+        último trazo con \texttt{Ctrl+Z}. Las notas se envían con el valor anterior para el
+        control de concurrencia: si otra persona ha calificado el mismo problema entretanto,
+        el servidor responde \texttt{VERSION\_CONFLICT} y la interfaz lo explica en lugar de
+        sobrescribir. Las anotaciones se guardan solas (\cref{SEC:DES-ANNOTATION}) y la
+        barra de herramientas muestra en todo momento si el trabajo está guardado.
+  \item \textbf{Incidencias de escaneo.} Cuando el reconocimiento no puede asignar una
+        página o un examen a un estudiante, el panel enlaza con una pantalla que permite
+        identificar al estudiante y el modelo, reordenar, aceptar, mover o descartar
+        páginas y adjuntar páginas huérfanas.
+  \item \textbf{Revisiones.} Una bandeja reúne las solicitudes de revisión pendientes que
+        el servidor asigna al usuario; cada una se resuelve con un mensaje que el estudiante
+        verá. La bandeja se oculta a quien solo es estudiante en todas sus asignaturas.
+\end{itemize}
+
+\subsection{Flujo del estudiante}
+
+El recorrido del estudiante es más corto: inicio $\rightarrow$ examen $\rightarrow$ nota y
+desglose $\rightarrow$ solicitud de revisión. La vista se diseñó para leerse de arriba
+abajo: primero la nota, grande y en tipografía con serifa; después, el estado del periodo
+de revisión con sus fechas; luego, si la asignatura lo permite, el desglose por problema,
+las páginas corregidas con las anotaciones y el comentario general del profesorado; y por
+último el formulario de revisión, en el que se marcan los problemas cuya corrección se
+quiere revisar y se explica el motivo. Cada bloque depende de los permisos de visibilidad
+que el examen concede al estudiante y de la ventana de revisión, tal como los aplica el
+\dfn{backend}; cuando un bloque no está disponible, la vista dice por qué y cuándo lo
+estará, en lugar de omitirlo sin más.
+
+\subsection{Gestión de la organización}
+
+Los gestores de la organización (\texttt{is\_staff}) disponen de rutas protegidas por una
+guarda específica: usuarios, cursos, configuración y auditoría, implementadas en la línea
+paralela (\cref{SEC:IMP-PARALLEL}), y la ingesta manual de escaneos con la consulta de
+motores de reconocimiento y páginas sin examen.
+
+\subsection{Principios comunes}
+
+Todas las pantallas comparten unas reglas de composición: empiezan con una cabecera con
+migas de pan, un antetítulo con contexto real (asignatura, fecha), el título y, si procede,
+una entradilla; los registros se muestran en tablas y no en mosaicos de tarjetas idénticas;
+las acciones destructivas piden confirmación en un diálogo; los estados vacíos dicen qué
+va a ocurrir a continuación; y el mismo verbo acompaña a la acción desde el botón hasta el
+aviso de confirmación (``Publicar notas'' $\rightarrow$ ``Notas publicadas'').
+
+\pendiente{Incluir capturas de pantalla (files/) del panel del examen, la corrección y la
+vista del estudiante, y un diagrama de flujo por actor.}

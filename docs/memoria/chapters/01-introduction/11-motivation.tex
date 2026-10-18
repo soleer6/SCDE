@@ -1,12 +1,42 @@
-\pendiente{Redactar.}
+La corrección de exámenes escritos sigue siendo, en buena parte de la docencia
+universitaria, un proceso en papel. El profesorado recoge los cuadernillos, los reparte
+entre quienes corrigen, anota cada hoja a mano, suma las puntuaciones y transcribe las notas
+a una hoja de cálculo o al \acs{lms} de la asignatura. El estudiante, por su parte, recibe
+una cifra final y, si quiere entender cómo se ha llegado a ella, debe acudir a una revisión
+presencial en la que el examen vuelve a estar en manos de otra persona. Es un proceso lento
+para quien corrige, difícil de coordinar cuando hay varios correctores y poco transparente
+para quien es evaluado.
 
-Material:
-\begin{itemize}
-  \item La corrección en papel es lenta y su revisión, opaca para el estudiante.
-  \item El \dfn{backend} SCDEE (\acs{tfg} de A.~Canay Reguera) cubre ingesta, reconocimiento,
-        calificación y revisión, pero sin \dfn{frontend} no es usable por docentes ni estudiantes.
-  \item La calidad de uso es crítica: un docente corrige decenas de exámenes seguidos; un
-        estudiante consulta una nota con nerviosismo. Legibilidad y calma frente a espectáculo.
-  \item Oportunidad metodológica: los \dfnpl{agente} actuales permiten estudiar qué parte de
-        construir un \dfn{frontend} a partir de un \dfn{backend} existente es automatizable.
-\end{itemize}
+El Sistema de Corrección Digital de Exámenes Escritos (SCDEE) aborda este problema
+digitalizando el ciclo completo: los exámenes se escanean, el sistema reconoce a qué
+estudiante y a qué modelo pertenece cada página, el profesorado corrige sobre la imagen
+del examen con \dfnpl{rubrica} por problema, las notas se publican y el estudiante puede
+consultar su examen corregido y solicitar una revisión dentro de un plazo. El
+\dfn{backend} de este sistema se desarrolló como un \acs{tfg} independiente
+\cite{scdee_backend_repo}: ofrece una \acs{api} \acs{rest} con la ingesta de escaneos, el
+reconocimiento de páginas, la calificación con control de concurrencia, la máquina de
+estados de cada examen y la gestión de revisiones. Sin embargo, un \dfn{backend} no es, por
+sí solo, utilizable por docentes ni estudiantes: hace falta una interfaz que convierta esas
+operaciones en tareas comprensibles.
+
+Esa interfaz tiene exigencias particulares. Un docente puede corregir muchos exámenes
+seguidos, de modo que cada paso innecesario, cada ambigüedad sobre el estado de un examen y
+cada pérdida de trabajo por un guardado fallido se multiplican. Un estudiante, en cambio,
+consulta su nota pocas veces y a menudo con cierta tensión; lo que necesita es claridad,
+no densidad de información. En ambos casos la prioridad es la legibilidad y la calma propias
+de una herramienta educativa, no el impacto visual. Por eso este trabajo dedica una parte
+importante del esfuerzo al diseño de la interacción y a un sistema visual sobrio y
+accesible (\cref{SEC:DES-INTERACTION,SEC:DES-VISUAL}).
+
+Existe, además, una motivación metodológica. Los \dfnpl{agente} basados en modelos de
+lenguaje de gran tamaño (\acsp{llm}) son ya capaces de leer un repositorio, modificar código,
+ejecutar pruebas y verificar resultados con cierta autonomía
+\cite{claude_code_docs,openai_codex}. Construir el \dfn{frontend} de un \dfn{backend} ya
+existente es un caso especialmente propicio para estudiar su alcance: el contrato de la
+\acs{api} está fijado por una especificación OpenAPI \cite{openapi_spec}; buena parte del
+trabajo es sistemática (un formulario por operación, una tabla por listado paginado, un
+mensaje por cada error documentado), y otra parte exige criterio humano (qué flujo seguir,
+qué mostrar a cada actor, qué estética transmite una herramienta educativa). Este
+\acs{tfg} se ha desarrollado con dos agentes de programación trabajando en paralelo bajo la
+supervisión del autor, y analiza qué parte del proceso es automatizable y cuál no
+(\cref{CAP:GENERALIZATION}).

@@ -1,13 +1,35 @@
-\pendiente{Redactar como lista de objetivos verificables y enlazar cada uno con el capítulo que lo evidencia.}
+El objetivo general de este trabajo es construir el \dfn{frontend} del sistema SCDEE,
+integrado con el contrato real de su \dfn{backend}, y documentar el proceso de desarrollo
+asistido por agentes de programación de forma que pueda generalizarse. Se concreta en los
+objetivos específicos siguientes, cada uno verificable con la evidencia que se indica.
 
-Propuesta de objetivos (a validar con el tutor):
-\begin{enumerate}
-  \item O1. Construir un \dfn{frontend} funcional para los cuatro actores del sistema
-        (gestor, coordinación, docente, estudiante). \emph{Evidencia:} \cref{CAP:DESIGN,CAP:IMPLEMENTATION}.
-  \item O2. Integrarlo con el contrato real del \dfn{backend}, sin inventar operaciones.
-        \emph{Evidencia:} \cref{SEC:AN-BACKEND,SEC:TEST-COVERAGE}.
-  \item O3. Garantizar calidad verificable: pruebas de flujo, comprobaciones de estilo y accesibilidad.
+\begin{description}
+  \item[O1. Interfaz para todos los actores.] Construir una aplicación web de página única
+        (\acs{spa}) que cubra los flujos de los cuatro actores del sistema: gestión de la
+        organización, coordinación de asignatura, docencia y estudiantado.
+        \emph{Evidencia:} \cref{SEC:AN-ACTORS,CAP:DESIGN,CAP:IMPLEMENTATION}.
+  \item[O2. Fidelidad al contrato.] Integrar la interfaz con la especificación OpenAPI del
+        \dfn{backend} sin inventar operaciones ni campos, y documentar como propuestas los
+        datos que la interfaz necesita y el contrato no ofrece.
+        \emph{Evidencia:} \cref{SEC:AN-BACKEND,SEC:AN-GAPS,SEC:TEST-COVERAGE,AP:API}.
+  \item[O3. Desarrollo independiente del servidor.] Disponer de una \dfn{mock} que responda
+        con los mismos formatos y reglas de negocio que el servidor real, de modo que el
+        mismo código funcione contra ambos.
+        \emph{Evidencia:} \cref{SEC:DES-DATA,SEC:TEST-REAL}.
+  \item[O4. Calidad verificable.] Acompañar el código de pruebas de flujo automatizadas y
+        de comprobaciones deterministas de estilo y de reparto del trabajo que se ejecuten
+        antes de cada \textit{commit}.
         \emph{Evidencia:} \cref{CAP:TESTING}.
-  \item O4. Documentar el proceso y analizar su generalización a un sistema agéntico
-        \dfn{backend} $\rightarrow$ \dfn{frontend}. \emph{Evidencia:} \cref{CAP:GENERALIZATION}.
-\end{enumerate}
+  \item[O5. Lenguaje visual educativo y accesible.] Definir un sistema de diseño basado en
+        \textit{tokens} y componentes primitivos que garantice una apariencia coherente y
+        legible, tomando como referencia las pautas \acs{wcag} \cite{wcag22}.
+        \emph{Evidencia:} \cref{SEC:DES-VISUAL,AP:STYLE}.
+  \item[O6. Análisis del proceso agéntico.] Registrar el proceso (decisiones, errores y
+        correcciones), declarar con transparencia el uso de herramientas de \acs{ia} y
+        analizar qué partes de la construcción de un \dfn{frontend} a partir de un
+        \dfn{backend} son deterministas, cuáles requieren razonamiento y cuáles requieren
+        a una persona.
+        \emph{Evidencia:} \cref{SEC:IMP-AI,CAP:GENERALIZATION,AP:ITERATIONS,AP:AI}.
+\end{description}
+
+\pendiente{Validar la lista de objetivos con el tutor.}

@@ -1,6 +1,96 @@
-\pendiente{Redactar (ADR-3, ADR-4, ADR-5, ADR-6, ADR-8).}
+Toda comunicación con el \dfn{backend} pasa por un único cliente \acs{http}
+(\texttt{src/lib/api/client.js}). Cada módulo funcional define en su \texttt{api.js} una
+función por operación que utiliza, con la ruta y los nombres de campo exactamente como
+aparecen en la especificación (en inglés y en \textit{snake\_case}); las pantallas nunca
+construyen peticiones directamente.
 
-Puntos: cliente \acs{http} único con renovación de \textit{token} sin duplicar peticiones;
-errores simbólicos; sesión = usuario del inicio de sesión + \textit{claims} del \acs{jwt};
-\dfn{mock} en la capa de transporte con las mismas respuestas que el \dfn{backend} y sus
-reglas de negocio; permisos en la interfaz como espejo (nunca como autorización).
+\subsection{Cliente \acs{http} y renovación de la sesión}
+
+El cliente añade la cabecera de autorización con el \textit{token} de acceso, serializa los
+cuerpos \acs{json} o envía formularios \textit{multipart} para la subida de ficheros, y
+normaliza las respuestas: las listas del \dfn{backend} llegan unas veces como vectores y
+otras como sobres paginados (\texttt{count}, \texttt{page}, \texttt{page\_size},
+\texttt{total\_pages}, \texttt{results}), y dos funciones auxiliares las reducen a una forma
+común.
+
+El \dfn{backend} emite \textit{tokens} \acs{jwt} de acceso de vida corta y
+\textit{tokens} de renovación rotatorios: cada renovación invalida el anterior y devuelve
+un par nuevo. Si una petición recibe un 401, el cliente renueva la sesión y la repite una
+vez. Cuando varias peticiones fallan a la vez, todas esperan a la misma renovación en lugar
+de lanzar una cada una (renovación \emph{single-flight}); de lo contrario, la segunda
+renovación usaría un \textit{token} ya invalidado por la primera y cerraría la sesión sin
+motivo. Si la renovación falla, se borran los \textit{tokens} y se notifica al proveedor de
+sesión, que devuelve al usuario a la pantalla de acceso.
+
+Los errores del \dfn{backend} son simbólicos: un objeto con un \texttt{error\_code} y, en
+los errores de validación, un diccionario de campos con sus códigos. El cliente los
+convierte en una excepción tipada, y la interfaz traduce cada código a un mensaje en el
+idioma del usuario. Así, un mensaje como ``la revisión no está abierta'' procede del
+mismo código \texttt{REVIEW\_NOT\_OPEN} que devuelve el servidor, y los fallos de red se
+tratan como un código más (\texttt{NETWORK\_ERROR}).
+
+\subsection{Sesión}
+
+La respuesta del inicio de sesión incluye los datos básicos del usuario, pero no si es
+gestor de su organización: los indicadores \texttt{is\_staff} e \texttt{is\_superadmin}
+solo viajan como \textit{claims} dentro del \acs{jwt}. Por eso la sesión del
+\dfn{frontend} se construye combinando el usuario devuelto por el inicio de sesión con los
+\textit{claims} decodificados del \textit{token} (ADR-4). La decodificación no verifica la
+firma, porque su único uso es decidir qué mostrar; la autorización sigue siendo
+responsabilidad exclusiva del servidor.
+
+Los \textit{tokens} se guardan en el almacenamiento local del navegador. Es una decisión
+consciente con un coste conocido: un ataque de \acs{xss} podría leerlos. La alternativa más
+segura, \textit{cookies} \texttt{httpOnly}, exige cambios en el \dfn{backend} y queda
+fuera del alcance de este trabajo (\cref{SEC:AN-RNF}).
+
+\subsection{Roles por asignatura y permisos como espejo}
+
+En SCDEE no existe un rol global de profesor o estudiante: el rol (coordinación, docencia o
+estudiante) es una propiedad de la pertenencia a cada asignatura, y una misma persona puede
+corregir en una asignatura y examinarse en otra. La interfaz obtiene la lista de
+asignaturas del usuario con su rol en cada una y la conserva en memoria durante la sesión
+(ADR-5). Las vistas que dependen del rol, como la del examen, consultan el rol de la
+asignatura concreta.
+
+Cada pertenencia tiene además un conjunto de permisos (publicar notas, gestionar
+revisiones, resolver incidencias, exportar notas, crear exámenes\ldots) con valores por
+defecto por rol y excepciones por persona. La interfaz contiene una copia de la tabla de
+valores por defecto del \dfn{backend} y la usa como \emph{espejo} (ADR-6): para no mostrar
+acciones que el servidor va a rechazar. Nunca la usa como autorización. Si el espejo y el
+servidor discrepan, prevalece el servidor, y su respuesta 403 se muestra como un estado de
+error explícito.
+
+\subsection{Simulación del \textit{backend} en la capa de transporte}
+
+Para desarrollar y probar sin depender del servidor, la variable de entorno
+\texttt{VITE\_MOCK\_API} sustituye la función \texttt{fetch} del cliente por un enrutador
+en memoria (ADR-3). Cada módulo registra, junto a su código, manejadores para las
+operaciones que usa; el enrutador los compila a expresiones regulares, comprueba el
+\textit{token} simulado, aplica una latencia artificial configurable y devuelve objetos
+\texttt{Response} reales. Los manejadores trabajan sobre una base de datos en memoria
+sembrada con asignaturas, exámenes, instancias, problemas y rúbricas de ejemplo, que
+persiste en el navegador y se reinicia con el parámetro \texttt{?resetMock}.
+
+La regla que da sentido a este diseño es que la simulación devuelve \emph{exactamente} los
+formatos del OpenAPI (nombres en \textit{snake\_case}, decimales como cadenas, sobres de
+paginación con 25 elementos por página) y replica las reglas de negocio verificadas en el
+código del \dfn{backend}: permisos por rol, transiciones válidas de la máquina de estados,
+concurrencia optimista en las notas, visibilidad del estudiante según la ventana de
+revisión. Por eso el mismo código de servicios funciona contra la simulación y contra el
+servidor, y las pruebas de flujo ejercitan, de hecho, el contrato
+(\cref{SEC:TEST-FLOWS}). El coste es mantener esa fidelidad, y el riesgo, que una
+discrepancia entre simulación y servidor pase inadvertida hasta probar con el
+\dfn{backend} real (\cref{SEC:TEST-REAL}). Un ejemplo de este riesgo, detectado y
+corregido, fue que el enrutador simulado resolvía las rutas en orden de registro, de modo
+que \texttt{/subjects/:id/} capturaba \texttt{/subjects/export/}; se corrigió eligiendo la
+ruta más específica, como hace Django con sus convertidores de ruta (\cref{AP:ITERATIONS}).
+
+\subsection{Caché local de notas conocidas}
+
+El contrato no permite al profesorado leer las notas por problema de una instancia, aunque
+sí escribirlas (gap-1, \cref{SEC:AN-GAPS}). Como volver a calificar exige enviar la nota
+anterior para el control de concurrencia, la interfaz recuerda en el navegador las notas
+que el propio usuario ha puesto (ADR-8). Es una solución provisional, explícitamente
+marcada como tal: si la nota se puso desde otro navegador, la interfaz lo detecta (hay
+total pero no desglose conocido) y lo advierte en lugar de suponer un valor.

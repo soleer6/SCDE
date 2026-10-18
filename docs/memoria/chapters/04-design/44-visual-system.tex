@@ -1,11 +1,75 @@
-\pendiente{Redactar e incluir capturas de la v1 rechazada y de la v2.}
+El sistema visual se construye en dos niveles (ADR-9). El primero son los
+\textit{tokens}: variables \acs{css} con todos los valores de color, tipografía, tamaño,
+radio y sombra (\texttt{src/styles/tokens.css}). El segundo son las primitivas de
+\texttt{src/ui}, componentes que usan solo esos \textit{tokens}. Los módulos funcionales
+componen pantallas con las primitivas y, si necesitan estilos propios, se limitan a la
+maquetación con clases prefijadas por su identificador; no pueden escribir colores ni
+tipografías literales ni redefinir las clases de las primitivas. Estas reglas no dependen
+de la buena voluntad de quien programa: un auditor determinista las comprueba antes de cada
+\textit{commit} (\cref{SEC:TEST-AUDITS}).
 
-Material:
+\subsection{Una primera dirección rechazada}
+
+La primera versión del sistema (v1) se inspiró en una referencia visual aportada por el
+autor: fondo oscuro, tipografía monoespaciada, etiquetas en mayúsculas y un acento dorado.
+Al revisarla, el autor la rechazó porque transmitía una herramienta financiera y no una
+aplicación educativa. El análisis posterior mostró que la referencia se había interpretado
+de forma demasiado literal: de ella solo interesaba el minimalismo (jerarquía construida con
+espacio, líneas finas, pocos elementos), no su paleta ni su tipografía. Este episodio es
+uno de los ejemplos más claros de decisión que no podía inferirse del código y requería a
+una persona (\cref{SEC:GEN-CLASSIFICATION}).
+
+\pendiente{Incluir capturas comparativas de la v1 rechazada y de la v2.}
+
+\subsection{La dirección actual: clara y educativa}
+
+La versión vigente (v2) busca la calma de un entorno de estudio, en el papel que cumple
+Moodle en la universidad pero con más contención:
 \begin{itemize}
-  \item v1 (oscura, monoespaciada, acento dorado) tomada de una referencia visual
-        aportada por el autor; rechazada por no transmitir una herramienta educativa.
-  \item v2: clara y educativa; azul tinta para acciones, rojo de corrección solo para
-        suspensos y errores, ámbar para pendientes; Atkinson Hyperlegible + Source Serif 4.
-  \item El cambio se hizo en \textit{tokens} y primitivas: las pantallas de la línea paralela
-        lo heredaron sin modificarse (evidencia de la arquitectura).
+  \item \textbf{Color con significado.} Fondo de papel frío (\texttt{\#f6f7f9}) y
+        superficies blancas; un único color de acción, azul tinta (\texttt{\#2d4fa3}),
+        para botones, enlaces, el paso actual y el foco. El rojo de corregir
+        (\texttt{\#b83a2e}) se reserva para suspensos, errores y acciones destructivas; el
+        verde (\texttt{\#2e7d4f}), para aprobados y tareas terminadas; el ámbar
+        (\texttt{\#9a6410}), para lo pendiente o lo que requiere atención; y un gris
+        azulado, para los estados de procesamiento. Cada estado de la instancia tiene
+        asignado uno de estos tonos, de modo que el color de una insignia siempre significa
+        lo mismo en toda la aplicación.
+  \item \textbf{Tipografía para leer.} Atkinson Hyperlegible \cite{atkinson_hyperlegible},
+        diseñada por el Braille Institute para maximizar la distinción entre caracteres,
+        para todo el texto de la interfaz; Source Serif 4 para títulos de página y cifras
+        importantes (la nota, los totales), y una monoespaciada solo para códigos
+        (asignaturas, identificadores). Texto base de 15 píxeles, frases en minúscula
+        inicial, sin mayúsculas sostenidas ni espaciado amplio.
+  \item \textbf{Formas y profundidad.} Radios moderados para paneles y controles, bordes de
+        un píxel y una única sombra, reservada a la hoja del examen, los diálogos y los
+        avisos: lo único que ``flota'' es lo que de verdad está por encima.
+  \item \textbf{Movimiento.} Solo como respuesta a una acción del usuario, y se respeta la
+        preferencia del sistema de reducir el movimiento.
 \end{itemize}
+
+\subsection{Accesibilidad}
+
+Se fijó un mínimo común, apoyado en las primitivas para que ninguna pantalla pueda
+saltárselo: anillo de foco azul de dos píxeles en todos los controles, etiqueta asociada a
+cada campo, navegación por teclado en las filas de las tablas, un color de texto secundario
+mínimo para cualquier texto real y diálogos y avisos con los roles y atributos
+\acs{aria} correspondientes. Se toman como referencia las pautas \acs{wcag} 2.2
+\cite{wcag22}, aunque no se ha realizado una auditoría formal de conformidad
+(\cref{SEC:CONC-FUTURE}).
+
+\subsection{Diseño adaptable}
+
+A partir de 900 píxeles de ancho, la aplicación muestra la barra superior, la navegación
+lateral y el contenido; por debajo, la navegación se convierte en una franja horizontal.
+Las tablas se desplazan dentro de su marco y ningún otro elemento puede desbordar la
+pantalla.
+
+\subsection{Evidencia de la arquitectura}
+
+El cambio completo de v1 a v2 se hizo tocando únicamente los \textit{tokens}, las
+primitivas y el \acs{css} del armazón. Las pantallas que Codex desarrollaba en paralelo lo
+heredaron sin ninguna modificación, porque su \acs{css} propio se limitaba a unas pocas
+reglas de maquetación. Para no romper las ramas en curso, los nombres de los
+\textit{tokens} de v1 se mantuvieron como alias de los nuevos. La guía completa se recoge en
+el \cref{AP:STYLE}.

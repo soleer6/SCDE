@@ -1,5 +1,55 @@
-\pendiente{Redactar (ADR-7).}
+La anotación a mano alzada sobre el examen escaneado es la interacción más característica
+del sistema y la que más condiciona el rendimiento percibido. El \dfn{backend} ofrece
+anotaciones individuales de tres tipos (\texttt{TEXT}, \texttt{STYLUS} y \texttt{AUDIO})
+asociadas a una instancia y a un número de página, con un contenido opaco que guarda en
+su almacenamiento de objetos y devuelve mediante un enlace de descarga firmado. El
+contrato no impone, por tanto, cómo representar un dibujo: es una decisión del
+\dfn{frontend} (ADR-7).
 
-Una anotación \texttt{STYLUS} por página con todos sus trazos (coordenadas relativas 0--1 y
-grosor relativo al ancho de página) más una anotación \texttt{TEXT} como comentario general;
-guardado automático diferido. Alternativa descartada: una anotación por trazo.
+\subsection{Modelo de datos}
+
+Se eligió el modelo siguiente:
+\begin{itemize}
+  \item \textbf{Una anotación \texttt{STYLUS} por página} con todos sus trazos. Su contenido
+        es un documento \acs{json} versionado, \texttt{\{v: 1, strokes: [...]\}}, en el que
+        cada trazo guarda sus puntos, su color, su herramienta y su grosor.
+  \item \textbf{Una anotación \texttt{TEXT} sin problema asociado} como comentario general
+        del examen, que el estudiante verá durante la revisión.
+\end{itemize}
+Los puntos se expresan en coordenadas relativas (entre 0 y 1) respecto al ancho y al alto
+de la página, y el grosor, en proporción al ancho. Así, un trazo se dibuja igual con
+cualquier zoom o tamaño de pantalla, y la corrección hecha en un monitor se ve en su sitio
+en el móvil de un estudiante. Esta idea procede del prototipo anterior
+(\cref{SEC:INTRO-CONTEXT}), que ya usaba coordenadas relativas en su lienzo. El campo de
+versión permite cambiar el formato en el futuro sin perder las anotaciones existentes.
+
+\subsection{Alternativa descartada}
+
+La alternativa natural era una anotación por trazo, que encaja con la forma del contrato.
+Se descartó porque un examen corregido puede acumular cientos de trazos, y cada uno
+supondría una petición al crearlo, otra al deshacerlo y otra por cada enlace firmado al
+cargar el examen. Con una anotación por página, abrir una instancia requiere tantas
+descargas como páginas anotadas, y guardar, una petición por página modificada.
+
+\subsection{Guardado automático diferido}
+
+El docente no pulsa nunca ``guardar''. Cada trazo actualiza el estado local y
+programa el guardado de su página tras 1,2 segundos sin cambios; si se dibuja de nuevo
+antes, el temporizador se reinicia. La primera vez se crea la anotación de la página y, a
+partir de ahí, se actualiza la existente. Lo mismo ocurre con el comentario general. La
+barra de herramientas indica si hay cambios guardándose, guardados o con error. Al cambiar
+de instancia se cancelan los temporizadores pendientes, para que un guardado no se aplique
+a la instancia equivocada. Este diseño agrupa en una sola petición una ráfaga de trazos, a
+cambio de una ventana de pérdida acotada: los trazos de los últimos 1,2 segundos se pierden
+si se abandona la página antes de que se guarden. Vaciar los guardados pendientes al salir
+es una mejora sencilla que queda anotada como trabajo futuro.
+
+\subsection{Representación}
+
+Cada página del \acs{pdf} se dibuja con PDF.js \cite{pdfjs} (a través de la biblioteca
+\texttt{react-pdf}), y sobre ella se superpone un lienzo del mismo tamaño en el que se
+pintan los trazos. El lienzo escala las coordenadas relativas al tamaño real de la página
+en cada momento, que se recalcula cuando cambia el ancho disponible. En la vista del
+estudiante se reutiliza el mismo componente en modo de solo lectura.
+
+\pendiente{Incluir una captura de la pantalla de corrección con anotaciones.}

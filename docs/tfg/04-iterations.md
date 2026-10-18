@@ -36,6 +36,14 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
 - Verificación: `npm run check` (27 tests, 4 ficheros; 8 nuevos de la feature), auditoría de
   propiedad OK. Cobertura de la rama claude: 48/94. Sin probar contra backend real.
 
+## Iteración 2026-10-18 · memoria: capítulos 1 y 4
+- Redactados en prosa académica los capítulos 1 (motivación, objetivos O1-O6, contexto y
+  delimitación frente al TFG de backend, estructura) y 4 (arquitectura con tabla de módulos,
+  capa de datos, interacción por actor, sistema visual v1→v2, modelo de anotación).
+- Al contrastar el texto con el código se detectó que el autoguardado de anotaciones cancela
+  los temporizadores al salir (pérdida de hasta 1,2 s de trazos); se documenta como trabajo futuro.
+- `check_tex.py` busca ahora etiquetas en todos los .tex (antes solo en main.tex).
+
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.
 - 2 tests con timeout bajo carga → ampliados localmente; entrada de texto con `change`.

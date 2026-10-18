@@ -1,18 +1,54 @@
-\pendiente{Redactar. Es la sección que delimita la autoría individual (Normativa TFG EPS, art. 2.1: el TFG es individual).}
+SCDEE se concibió como dos \acsp{tfg} acoplados. El \dfn{backend}, desarrollado por Anxo
+Canay Reguera \cite{scdee_backend_repo}, implementa con Django REST Framework la lógica de
+negocio, la persistencia, el almacenamiento de escaneos y anotaciones y la \acs{api}
+\acs{rest} bajo el prefijo \texttt{/api/v1/}. Este trabajo desarrolla el \dfn{frontend}.
+Como la Normativa de \acs{tfg} de la \acs{eps} establece que el trabajo es individual
+\cite{eps_normativa_tfg_2026}, conviene delimitar con precisión qué pertenece a cada uno.
 
-Material:
-\begin{itemize}
-  \item SCDEE se concibió como dos \acs{tfg} acoplados: \dfn{backend} (A.~Canay Reguera,
-        tutor E.~Anguiano Rey) y \dfn{frontend} (este trabajo). La memoria del
-        \dfn{backend} lo describe así en su sección de contexto.
-  \item Contrato entre ambos: \acs{api} \acs{rest} \texttt{/api/v1/}, especificación OpenAPI
-        generada (drf-spectacular), versión analizada: rama \texttt{backend}, commit
-        \texttt{a8eb9f43} (19/05/2026).
-  \item Alcance de ESTE trabajo: todo el código de \texttt{src/} del repositorio de
-        \dfn{frontend}, los \dfnpl{mock}, las pruebas, los scripts de análisis y auditoría
-        y la documentación técnica. Fuera de alcance: cualquier cambio en el \dfn{backend}
-        (los huecos detectados se trasladan como propuestas, \cref{SEC:AN-GAPS}).
-  \item Versión previa del \dfn{frontend} (prototipo, rama \texttt{modulo-profesor}) conservada
-        en la etiqueta \texttt{legacy/modulo-profesor-v1}; explicar por qué se reescribió
-        (\cref{SEC:AN-BACKEND}).
-\end{itemize}
+\subsection*{El contrato entre ambos trabajos}
+
+El punto de unión es la especificación OpenAPI que el \dfn{backend} genera automáticamente
+con drf-spectacular. La versión analizada corresponde a la rama \texttt{backend} del
+repositorio, \textit{commit} \texttt{a8eb9f43} del 19 de mayo de 2026, y describe 96
+operaciones y 127 esquemas. Donde la especificación podía no reflejar el comportamiento
+real (autenticación, permisos, visibilidad para el estudiante, transiciones de estado,
+concurrencia en las notas) se leyó además el código fuente de las vistas y los servicios
+(\cref{SEC:AN-BACKEND}). El \dfn{frontend} se ha construido contra ese contrato sin
+modificarlo: cuando la interfaz necesitaba un dato que ninguna operación ofrece, el hueco
+se ha documentado como propuesta para el \dfn{backend} (\cref{SEC:AN-GAPS}) en lugar de
+resolverlo con una operación inventada.
+
+\subsection*{Alcance de este trabajo}
+
+Pertenece a este \acs{tfg} todo el código del repositorio de \dfn{frontend}: la capa de
+acceso a la \acs{api}, la gestión de la sesión, la \dfn{mock}, el sistema de diseño, las
+pantallas de cada módulo funcional, las pruebas automatizadas, los \textit{scripts} de
+análisis del contrato y de auditoría, y la documentación técnica que se resume en esta
+memoria. Queda fuera de su alcance cualquier cambio en el \dfn{backend}. Tampoco se ha
+realizado una validación con usuarios reales (\cref{SEC:CONC-FUTURE}).
+
+\subsection*{Punto de partida}
+
+El repositorio de \dfn{frontend} ya contenía un prototipo (rama \texttt{modulo-profesor},
+quince \textit{commits} entre marzo y mayo de 2026) escrito contra un contrato preliminar
+del \dfn{backend} que solo implementaba la comprobación de estado del servidor y describía
+el resto de operaciones como planificadas. Al compararlo con el \dfn{backend} real se
+encontraron desajustes estructurales: nombres distintos en los campos de los
+\textit{tokens}, un rol global de profesor o estudiante que en el \dfn{backend} es un rol
+por asignatura, estados de examen inexistentes y datos guardados en el navegador como
+fuente de verdad (\cref{SEC:AN-BACKEND}). Se decidió reescribir la capa de datos y la
+interfaz en lugar de adaptarlas. El prototipo se conserva íntegro en la etiqueta
+\texttt{legacy/modulo-profesor-v1}; de él se reutilizó la idea de expresar las coordenadas
+de las anotaciones en relación con el tamaño de la página (\cref{SEC:DES-ANNOTATION}).
+
+\subsection*{Forma de trabajo}
+
+El desarrollo se ha realizado con dos \dfnpl{agente}, Claude Code \cite{claude_code_docs} y
+Codex \cite{openai_codex}, trabajando en paralelo sobre \dfnpl{worktree} distintos del
+mismo repositorio \cite{git_worktree} bajo la dirección y revisión del autor. El reparto,
+los mecanismos de coordinación y la auditoría entre agentes se describen en
+\cref{SEC:IMP-PARALLEL}; el detalle de qué se delegó en estas herramientas y cómo se
+verificó, en \cref{SEC:IMP-AI} y en el \cref{AP:AI}.
+
+\pendiente{Confirmar el nombre del tutor y, si procede, la relación formal entre ambos
+TFG (tutor común, calendario de defensa).}

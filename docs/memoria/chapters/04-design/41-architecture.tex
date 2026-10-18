@@ -1,5 +1,113 @@
-\pendiente{Redactar a partir de docs/tfg/02-architecture-decisions.md (ADR-1, ADR-2, ADR-9, ADR-10). Incluir diagrama de módulos.}
+El \dfn{frontend} es una aplicación de página única (\acs{spa}) escrita en JavaScript con
+React \cite{react_docs}, empaquetada con Vite \cite{vite_docs} y con enrutado en el
+cliente mediante React Router. Las decisiones de arquitectura se registraron durante el
+desarrollo en formato de \textit{Architecture Decision Record}: contexto, decisión y
+consecuencias. Esta sección recoge las que dan forma a la estructura general; las relativas
+a los datos, el aspecto visual y las anotaciones se tratan en las secciones siguientes.
 
-Idea central: cada funcionalidad es un módulo autodescubierto
-(\texttt{src/features/<id>/index.jsx}: rutas, navegación, simulación, textos); la
-aplicación no tiene un fichero central de rutas que editar.
+\subsection{Capas}
+
+El código fuente se organiza en cuatro capas con dependencias en un único sentido:
+\begin{description}
+  \item[\texttt{src/styles} y \texttt{src/ui}.] El sistema de diseño: los
+        \textit{tokens} visuales (colores, tipografías, radios, sombras) y una veintena de
+        componentes primitivos (cabecera de página, botones, campos de formulario, tabla
+        de datos, insignias de estado, carril de estados, diálogos, avisos, estados vacío,
+        de carga y de error). No conocen el dominio (\cref{SEC:DES-VISUAL}).
+  \item[\texttt{src/lib}.] Infraestructura sin interfaz propia: el cliente \acs{http}, el
+        almacenamiento de \textit{tokens}, el proveedor de sesión, la simulación del
+        \dfn{backend}, los \textit{hooks} genéricos de carga de datos y ejecución de
+        acciones, el espejo de la tabla de permisos y las utilidades de formato
+        (\cref{SEC:DES-DATA}).
+  \item[\texttt{src/app}.] El armazón: barra superior, navegación lateral, enrutador con
+        sus guardas de acceso, internacionalización y el registro de módulos.
+  \item[\texttt{src/features}.] Un directorio por área funcional, con sus pantallas, sus
+        funciones de acceso a la \acs{api}, sus manejadores de simulación y sus textos.
+\end{description}
+Las capas inferiores se consideraron \emph{compartidas y congeladas}: un módulo funcional
+no puede modificarlas, solo usarlas. Cualquier cambio en ellas se solicita y se anuncia en
+un fichero de coordinación (\cref{SEC:IMP-PARALLEL}).
+
+\subsection{Módulos funcionales autodescubiertos}
+
+La decisión estructural más importante (ADR-1) responde a un problema concreto: dos
+agentes iban a trabajar en paralelo, y en una aplicación React convencional el enrutador,
+el menú, los ficheros de traducción y los datos simulados son ficheros centrales que toda
+funcionalidad nueva modifica; serían, por tanto, el principal foco de conflictos al unir
+ramas. Para evitarlo, cada directorio \texttt{src/features/<id>/} expone en su
+\texttt{index.jsx} un objeto declarativo con:
+\begin{itemize}
+  \item \texttt{id} y \texttt{order}: identificador (que es también el espacio de nombres
+        de sus textos) y posición en la navegación;
+  \item \texttt{routes}: rutas con su componente y su guarda (\texttt{public},
+        \texttt{auth} por defecto, o \texttt{staff} para gestores de la organización);
+  \item \texttt{nav}: entradas de menú, agrupadas en las secciones \emph{trabajo},
+        \emph{gestión} y \emph{cuenta}, con una condición opcional de visibilidad que
+        recibe la sesión;
+  \item \texttt{mocks}: manejadores de la simulación para las operaciones que el módulo
+        utiliza;
+  \item \texttt{i18n}: textos en español e inglés;
+  \item \texttt{slots}: componentes que el armazón inserta en puntos predefinidos, como
+        la campana de notificaciones de la barra superior.
+\end{itemize}
+El registro (\texttt{src/app/registry.js}) descubre todos los módulos en tiempo de
+compilación mediante \texttt{import.meta.glob}, los ordena, registra sus manejadores de
+simulación y construye a partir de ellos las rutas y la navegación. Añadir una
+funcionalidad consiste, por tanto, en crear un directorio: nunca exige editar un fichero
+compartido. Las pantallas se cargan de forma diferida, de modo que cada módulo genera su
+propio fragmento de código.
+
+La consecuencia práctica se comprobó al unir las ramas de ambos agentes: no hubo ningún
+conflicto en el código, solo uno en un documento de coordinación de solo añadidos, que se
+resolvió por unión (\cref{AP:ITERATIONS}). Además, el módulo resulta ser la unidad natural
+de trabajo para un agente, lo que se retoma en el \cref{CAP:GENERALIZATION}.
+
+\Cref{TAB:DES-FEATURES} enumera los módulos existentes. Algunos no tienen rutas propias:
+el resultado del estudiante, por ejemplo, se muestra en la misma ruta que el panel docente
+del examen, y es el rol del usuario en esa asignatura el que decide qué vista aparece
+(\cref{SEC:DES-INTERACTION}).
+
+\begin{table}[ht]
+  \centering
+  \small
+  \begin{tabular}{|l|p{6.2cm}|l|}
+    \hline
+    \textbf{Módulo} & \textbf{Responsabilidad y rutas} & \textbf{Autoría} \\
+    \hline
+    \texttt{auth} & Inicio de sesión (\texttt{/login}) & Claude \\
+    \texttt{workspace} & Inicio, asignaturas y página de asignatura
+                         (\texttt{/}, \texttt{/subjects}, \texttt{/subjects/:id}) & Claude \\
+    \texttt{exams} & Panel del examen y su configuración
+                     (\texttt{/exams/:id}, \texttt{/exams/:id/setup}) & Claude \\
+    \texttt{results} & Vista del estudiante dentro de \texttt{/exams/:id} & Claude \\
+    \texttt{grading} & Corrección sobre el examen escaneado
+                       (\texttt{/instances/:id/grade}) & Claude \\
+    \texttt{reviews} & Bandeja de solicitudes de revisión (\texttt{/reviews}) & Claude \\
+    \texttt{ingestion} & Incidencias de escaneo (\texttt{/exams/:id/issues}) y
+                         escaneos manuales para gestores (\texttt{/scans}) & Claude \\
+    \texttt{admin} & Usuarios, cursos, configuración y auditoría de la organización & Codex \\
+    \texttt{subject-admin} & Miembros, grupos y permisos de la asignatura
+                             (\texttt{/subjects/:id/manage}) & Codex \\
+    \texttt{notifications} & Notificaciones (campana de la barra superior) & Codex \\
+    \texttt{profile} & Perfil y cuenta del usuario & Codex \\
+    \hline
+  \end{tabular}
+  \caption{Módulos funcionales del \textit{frontend}. La autoría indica qué agente
+           implementó cada módulo bajo la supervisión del autor.}
+  \label{TAB:DES-FEATURES}
+\end{table}
+
+\pendiente{Añadir un diagrama de capas y módulos (figura en files/).}
+
+\subsection{Otras decisiones de alcance general}
+
+\paragraph{El contrato real como única fuente (ADR-2).} El inventario de operaciones y
+esquemas se genera con \textit{scripts} a partir de la especificación OpenAPI y se mantiene
+en el repositorio. Está prohibido usar operaciones o campos que no aparezcan en él; los
+datos que faltan se registran como huecos del \dfn{backend} (\cref{SEC:AN-GAPS}).
+
+\paragraph{JavaScript en lugar de TypeScript (ADR-10).} El prototipo de partida estaba
+escrito en JavaScript, y migrarlo habría consumido un tiempo que se prefirió dedicar a la
+funcionalidad. Los formatos de cada operación se documentan junto a la función que la
+invoca y en el inventario. La generación de tipos a partir de la especificación OpenAPI es
+una mejora evidente que se recoge como trabajo futuro (\cref{SEC:CONC-FUTURE}).

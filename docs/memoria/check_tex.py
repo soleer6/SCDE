@@ -24,7 +24,9 @@ for p in texs:
         print(f'unbalanced braces: {p.relative_to(root)} {s.count("{")}/{s.count("}")}')
         errors += 1
 
-labels = set(re.findall(r'\\label\{([^}]+)\}', main))
+labels = set()
+for p in texs:
+    labels |= set(re.findall(r'\\label\{([^}]+)\}', p.read_text(encoding='utf-8')))
 used = set()
 for p in texs:
     for grp in re.findall(r'\\[cC]?ref\{([^}]+)\}', p.read_text(encoding='utf-8')):

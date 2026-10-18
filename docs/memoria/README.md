@@ -1,6 +1,6 @@
 # Memoria del TFG (frontend) — esqueleto LaTeX
 
-**Estado:** esqueleto. Estructura completa + material factual verificado en cada sección +
+**Estado:** borrador avanzado en redacción. Capítulos 1 (introducción) y 4 (diseño) redactados en prosa (2026-10-18); el resto, esqueleto con material factual y marcas `\pendiente{...}` (en rojo en el PDF) para lo que exige dato o decisión del autor.
 marcas `\pendiente{...}` (en rojo en el PDF) para lo que falta redactar o decidir.
 No contiene prosa final: la redacción es del autor.
 
