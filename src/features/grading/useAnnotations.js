@@ -25,13 +25,15 @@ export function useAnnotations(instanceId, { readOnly = false } = {}) {
   const [error, setError] = useState(null);
   const [saveState, setSaveState] = useState('idle'); // idle | pending | saving | saved | error
   const ids = useRef({ stylus: {}, text: null }); // page -> annotation id
-  const timers = useRef({});
+  const timers = useRef({}); // key -> { id, fn } of the pending debounced save
   const latest = useRef({ strokesByPage: {}, comment: '' });
 
   useEffect(() => {
     let alive = true;
+    ids.current = { stylus: {}, text: null };
     setLoading(true);
     (async () => {
+      const own = ids.current;
       try {
         const list = await listAnnotations(instanceId);
         const byPage = {};
@@ -40,10 +42,10 @@ export function useAnnotations(instanceId, { readOnly = false } = {}) {
           list.map(async (a) => {
             const payload = await readAnnotationPayload(a);
             if (a.annotation_type === 'STYLUS') {
-              ids.current.stylus[a.page_number] = a.id;
+              own.stylus[a.page_number] = a.id;
               byPage[a.page_number] = parseStrokes(payload);
             } else if (a.annotation_type === 'TEXT' && !a.problem_id) {
-              ids.current.text = a.id;
+              own.text = a.id;
               text = payload;
             }
           }),
@@ -58,10 +60,17 @@ export function useAnnotations(instanceId, { readOnly = false } = {}) {
         if (alive) setLoading(false);
       }
     })();
-    const pending = timers.current;
     return () => {
       alive = false;
-      Object.values(pending).forEach(clearTimeout);
+      // Leaving the instance (or the page) must not drop the last strokes:
+      // run the pending saves now instead of cancelling them. Each save reads
+      // its payload and annotation id synchronously, before the next load.
+      const pending = Object.values(timers.current);
+      timers.current = {};
+      pending.forEach(({ id, fn }) => {
+        clearTimeout(id);
+        fn();
+      });
     };
   }, [instanceId]);
 
@@ -69,13 +78,14 @@ export function useAnnotations(instanceId, { readOnly = false } = {}) {
     async (page) => {
       const strokes = latest.current.strokesByPage[page] ?? [];
       const payload = JSON.stringify({ v: 1, strokes });
+      const own = ids.current; // this instance's ids, even if the user moves on meanwhile
       setSaveState('saving');
       try {
-        const id = ids.current.stylus[page];
+        const id = own.stylus[page];
         if (id) await updateAnnotation(id, { payload });
         else {
           const created = await createAnnotation(instanceId, { annotation_type: 'STYLUS', payload, page_number: page, x: 0, y: 0 });
-          ids.current.stylus[page] = created.id;
+          own.stylus[page] = created.id;
         }
         setSaveState('saved');
       } catch (e) {
@@ -88,13 +98,14 @@ export function useAnnotations(instanceId, { readOnly = false } = {}) {
 
   const persistComment = useCallback(async () => {
     const payload = latest.current.comment;
-    if (!payload && !ids.current.text) return;
+    const own = ids.current;
+    if (!payload && !own.text) return;
     setSaveState('saving');
     try {
-      if (ids.current.text) await updateAnnotation(ids.current.text, { payload });
+      if (own.text) await updateAnnotation(own.text, { payload });
       else {
         const created = await createAnnotation(instanceId, { annotation_type: 'TEXT', payload, page_number: 1, x: 0, y: 0 });
-        ids.current.text = created.id;
+        own.text = created.id;
       }
       setSaveState('saved');
     } catch (e) {
@@ -104,9 +115,13 @@ export function useAnnotations(instanceId, { readOnly = false } = {}) {
   }, [instanceId]);
 
   const schedule = (key, fn) => {
-    clearTimeout(timers.current[key]);
+    clearTimeout(timers.current[key]?.id);
     setSaveState('pending');
-    timers.current[key] = setTimeout(fn, SAVE_DELAY);
+    const id = setTimeout(() => {
+      delete timers.current[key];
+      fn();
+    }, SAVE_DELAY);
+    timers.current[key] = { id, fn };
   };
 
   const setPageStrokes = useCallback(
