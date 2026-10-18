@@ -110,6 +110,9 @@ describe('mock responses follow the backend contract', () => {
           }
           const schema = declared.content?.['application/json']?.schema;
           if (!schema) continue;
+          // File downloads (e.g. /users/export/?export_format=json): drf-spectacular declares a
+          // binary string, and renames `format` after the query parameter of the same name.
+          if (schema.type === 'string' && [schema.format, schema.export_format].includes('binary')) continue;
           checked += 1;
           const body = await res.json();
           const errors = validate(schema, body);
