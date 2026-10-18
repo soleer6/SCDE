@@ -7,7 +7,8 @@ import { getUnreadCount } from './api.js';
 export default function NotificationsBell() {
   const { t } = useTranslation('notifications');
   const { session } = useAuth();
-  const [count, setCount] = useState(null);
+  const [result, setResult] = useState(null);
+  const count = result?.session === session ? result.count : null;
   useEffect(() => {
     let alive = true;
     let timer;
@@ -15,8 +16,8 @@ export default function NotificationsBell() {
     const refresh = async () => {
       if (document.hidden || !session) return;
       const current = ++sequence;
-      try { const data = await getUnreadCount(); if (alive && current === sequence) setCount(data.unread_count); }
-      catch { if (alive && current === sequence) setCount(null); }
+      try { const data = await getUnreadCount(); if (alive && current === sequence) setResult({ session, count: data.unread_count }); }
+      catch { if (alive && current === sequence) setResult({ session, count: null }); }
     };
     const visibility = () => {
       clearInterval(timer);
