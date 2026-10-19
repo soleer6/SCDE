@@ -1,6 +1,182 @@
-\pendiente{Ajustar al formato que pida el ED-TFG. Mantener honestidad y trazabilidad.}
+\pendiente{Ajustar al formato que exija el ED-TFG para la declaración de uso de IA
+(plataforma de TFG, art.~5.1.3 de la normativa \cite{eps_normativa_tfg_2026}); el contenido
+de este apéndice está pensado para poder trasladarse a ese formato sin cambios de fondo.}
 
-Contenido previsto: herramientas y versiones; reparto de tareas; instrucciones de proyecto
-utilizadas (\texttt{AGENTS.md}, \texttt{CLAUDE.md}, encargo de la línea paralela, guía de
-estilo, \textit{skill}); decisiones humanas; errores introducidos por los agentes y cómo se
-detectaron.
+Este apéndice detalla la declaración resumida en la \cref{SEC:IMP-AI}. Todo lo que afirma
+puede comprobarse en el repositorio del \dfn{frontend} (historial de Git, ficheros de
+instrucciones y registros de coordinación) o, cuando se trata de la orquestación, en los
+\textit{scripts} del autor que se citan, que residen fuera del repositorio. Las cifras se
+refieren al estado de las ramas a 19 de octubre de 2026 (\textit{commits} \texttt{a21f8ef}
+de la línea del núcleo y \texttt{91475a0} de la línea de gestión).
+
+\section*{Herramientas}
+
+\begin{description}
+  \item[Claude Code (Anthropic).] Agente de programación de línea de órdenes
+        \cite{claude_code_docs}, ejecutado en la máquina del autor sobre el
+        \dfn{worktree} \texttt{SCDE-claude} (rama \texttt{claude/core-flows}). En la fase
+        final se usó con el modelo Claude Opus~5.5, que es el que figura en las líneas de
+        coautoría de los \textit{commits} descritas más abajo. Ya se había utilizado en el
+        prototipo previo: el \textit{commit} \texttt{1e8e9bd} (15 de abril de 2026) añade
+        ocho subagentes en \texttt{.claude/agents/} (análisis del \dfn{backend}, capa de
+        servicios, autenticación, anotaciones, paneles, revisión de código y redacción),
+        que siguen en el repositorio aunque el prototipo no forma parte del resultado.
+  \item[Codex (OpenAI).] Agente de programación \cite{openai_codex}, configurado con el
+        modelo \texttt{gpt-6.1-sol}, sobre el \dfn{worktree} \texttt{SCDE-codex} (rama
+        \texttt{codex/admin-ops}). Se ejecutaba en un entorno aislado que no le permitía
+        escribir en el directorio \texttt{.git}; por eso, en la fase autónoma, redactaba
+        el mensaje de cada \textit{commit} en un fichero y el lanzador lo consolidaba al
+        terminar, limitado a las rutas que el mapa de propiedad asigna a su línea.
+\end{description}
+
+Ninguna de las dos herramientas tuvo acceso a credenciales de publicación en repositorios
+remotos: las reglas del proyecto prohíben a ambas hacer \textit{push}, reescribir el
+historial o fusionar ramas ajenas, y el único \textit{merge} permitido es el de la rama local
+de integración, que solo combina las dos líneas para ejecutar la batería conjunta.
+
+\section*{Instrucciones de proyecto}
+
+Los agentes no recibieron indicaciones sueltas sino un conjunto de ficheros versionados que
+leían al comenzar cada sesión (\cref{TAB:AI-INSTRUCTIONS}). Al estar en el repositorio,
+cualquier cambio de reglas queda registrado como un \textit{commit} más y sujeto al mapa de
+propiedad.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{p{0.34\textwidth}p{0.08\textwidth}p{0.48\textwidth}}
+    \toprule
+    \textbf{Fichero} & \textbf{Líneas} & \textbf{Función} \\
+    \midrule
+    \texttt{AGENTS.md} & 16 & Reglas comunes: lecturas previas, rutas propias, no inventar
+      operaciones, simulación con la forma exacta del OpenAPI, verificación antes del
+      \textit{commit}, prohibiciones de Git y mensajes sin mención de herramientas de
+      \acs{ia}. \\
+    \texttt{CLAUDE.md} & 21 & Contexto y convenciones específicos de Claude Code. \\
+    \texttt{docs/coordination/CODEX\_BRIEF.md} & 98 & Encargo priorizado de la línea de
+      gestión: alcance por módulos, orden de lectura y criterios de aceptación. \\
+    \texttt{docs/coordination/OWNERSHIP.json} & --- & Mapa de propiedad de rutas por
+      línea, que comprueba \texttt{ownership-check.mjs}. \\
+    \texttt{docs/coordination/REQUESTS.md} & --- & Canal de peticiones entre líneas para
+      cambios en ficheros compartidos y hallazgos de auditoría. \\
+    \texttt{docs/frontend/STYLE\_GUIDE.md} & 73 & Lenguaje visual v2, de obligado
+      cumplimiento (\cref{AP:STYLE}). \\
+    \texttt{.claude/skills/scde-frontend/SKILL.md} & 54 & Procedimiento para construir un
+      módulo y autocrítica visual \cite{anthropic_skills_frontend_design}. \\
+    \texttt{.claude/agents/*.md} & --- & Nueve subagentes acotados; ocho del prototipo y un
+      auditor de solo lectura de la rama paralela, añadido en esta fase. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Ficheros de instrucciones que leían los agentes (recuento de líneas en
+    \texttt{a21f8ef}).\label{TAB:AI-INSTRUCTIONS}}
+\end{table}
+
+En la fase de iteraciones autónomas se añadió un encargo de misión, fuera del repositorio,
+con la lista priorizada de tareas de cada agente, las reglas de cierre de una iteración y un
+fichero de progreso por agente, en el que cada ejecución anotaba qué había hecho, con qué
+\textit{commit} y qué seguía. Ese encargo remite a las reglas del repositorio y declara que,
+en caso de conflicto, prevalecen estas.
+
+\section*{Orquestación del trabajo autónomo}
+
+El autor lanzaba y seguía las iteraciones desde un servicio de mensajería: un programa en
+un ordenador de placa reducida recibía las órdenes y, mediante una conexión SSH restringida
+a una única orden, invocaba en la máquina de desarrollo un lanzador que arrancaba la sesión
+del agente sobre su \dfn{worktree}, guardaba su registro y, al terminar, la relanzaba con la
+tarea siguiente. Cada agente enviaba un mensaje breve al empezar y otro al acabar, con el
+\textit{commit} resultante, y el autor podía detener una ejecución en cualquier momento.
+
+El diseño inicial de este relanzador permitió que se ejecutaran varias sesiones del mismo
+agente a la vez sobre el mismo \dfn{worktree} (\cref{TAB:IT-PHASE2}, caso~31). Lo detectó
+el autor al revisar el historial y se corrigió en el propio lanzador, que desde entonces
+rechaza una segunda sesión de un agente mientras la anterior siga activa. La lección se
+recoge en la \cref{SEC:GEN-PROPOSAL}.
+
+\section*{Reparto del trabajo}
+
+La \cref{TAB:AI-SPLIT} resume quién produjo cada parte. En la columna de revisión,
+\emph{cruzada} significa que la otra línea auditó el resultado con las comprobaciones de la
+\cref{SEC:TEST-AUDITS}; la revisión final del autor sobre todo el contenido está pendiente
+de su propia declaración al final de la \cref{SEC:IMP-AI}.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{p{0.30\textwidth}p{0.26\textwidth}p{0.34\textwidth}}
+    \toprule
+    \textbf{Parte} & \textbf{Producida por} & \textbf{Verificación} \\
+    \midrule
+    Análisis del contrato e inventario de la \acs{api} & Claude Code (\textit{scripts}
+      deterministas) & Contraste con las vistas de Django en los casos dudosos \\
+    Base común y sistema de diseño & Claude Code & Batería, auditor de estilo; dirección
+      visual aceptada por el autor tras rechazar la primera \\
+    Núcleo docente (corrección, exámenes, escaneos, resultados, revisiones) & Claude Code
+      (34 \textit{commits} desde \texttt{1ebeac9}) & Batería propia y conjunta, prueba de
+      contrato \\
+    Gestión (organización, asignaturas, cuenta, notificaciones) & Codex (28
+      \textit{commits}) & Auditoría cruzada por Claude Code, prueba de contrato en la rama
+      de integración \\
+    Publicación de la demostración & Codex, con autorización del autor & Comprobación de
+      la dirección publicada antes de anunciarla \\
+    Capítulo 2 (estado del arte) & Borradores de Codex & Revisión e integración por
+      Claude Code \\
+    Resto de la memoria y apéndices & Claude Code; partes de gestión desde borradores de
+      Codex & Contraste con el código, el historial y \texttt{docs/tfg/} \\
+    \bottomrule
+  \end{tabular}
+  \caption{Reparto del trabajo entre los agentes.\label{TAB:AI-SPLIT}}
+\end{table}
+
+\section*{Decisiones del autor}
+
+Las decisiones que no tomaron los agentes, por estar reservadas al autor en las
+instrucciones o por requerir su criterio, fueron: el alcance y los objetivos del trabajo
+(\cref{CAP:INTRODUCTION}); la elección de las dos herramientas y de la organización en dos
+líneas paralelas con un auditor; las reglas de Git y de propiedad de ficheros; el rechazo
+de la primera dirección visual (\cref{TAB:IT-PHASE1}, caso~16); la autorización para
+publicar la demostración; y el diseño y la corrección del relanzador. Las decisiones menores
+que surgieron durante las iteraciones autónomas las tomaron los agentes con un criterio
+explícito y quedaron anotadas en los registros (\texttt{docs/tfg/}, los ficheros de progreso
+y el registro de la línea de gestión) para su revisión posterior.
+
+\section*{Errores introducidos por los agentes}
+
+Los registros recogen los siguientes errores atribuibles a los agentes, con el mecanismo que
+los detectó; el detalle de cada uno está en el \cref{AP:ITERATIONS}:
+\begin{itemize}
+  \item \emph{De proceso}: un \textit{commit} con pruebas en rojo por no comprobar el código
+        de salida (caso~13); una afirmación documentada sobre la auditoría de propiedad que
+        no se correspondía con el código (caso~24); y un \textit{commit} de la línea de
+        gestión que importaba un fichero no incluido y rompió la rama de integración
+        (caso~27). Los dos primeros los detectaron la propia batería y el contraste de la
+        memoria con el código; el tercero, la batería de la rama de integración.
+  \item \emph{De diseño}: una dirección visual que imitaba la paleta de la referencia en
+        lugar de su principio (caso~16), detectada por el autor.
+  \item \emph{De funcionamiento}: los dos defectos del autoguardado (casos 21 y 22), la
+        pérdida de respuestas al recargar la bandeja de revisiones (caso~29), las tablas
+        que se desmontaban al refrescar (caso~30) y una regresión del editor de permisos de
+        la línea de gestión. Todos se corrigieron con una prueba de regresión.
+  \item \emph{De las herramientas propias}: \texttt{coverage.py} infravaloraba la cobertura
+        (caso~23) y el recorte del OpenAPI generaba falsos positivos (caso~25).
+  \item \emph{De documentación}: un recuento de operaciones del contrato (96 en lugar de
+        95) y un párrafo de un borrador del estado del arte que describía carencias ya
+        corregidas, ambos detectados al revisar la memoria.
+\end{itemize}
+
+Un último error afecta a esta propia declaración. La regla de que los mensajes de
+\textit{commit} no mencionen herramientas de \acs{ia} no se cumplió en 14
+\textit{commits} de la línea del núcleo, que incluyen una línea
+\texttt{Co-Authored-By} con el nombre del modelo, añadida por la configuración por defecto
+de Claude Code. Se detectó al revisar el historial y desde entonces se omite; los
+\textit{commits} afectados no se han modificado porque las reglas prohíben reescribir el
+historial. La inconsistencia no oculta nada: esas líneas atribuyen el trabajo a la misma
+herramienta que declara este apéndice.
+
+\section*{Qué no se delegó en la verificación}
+
+Ningún resultado se aceptó por la sola afirmación de un agente. Las cifras de pruebas y de
+cobertura que aparecen en la memoria se obtuvieron ejecutando las órdenes del proyecto
+sobre un \textit{commit} identificado, y cualquier lector puede reproducirlas con esas
+mismas órdenes (\cref{SEC:IMP-TOOLS}). Lo que no se ha podido verificar se declara como
+tal: no hubo pruebas con usuarios ni validación completa contra el \dfn{backend} real
+(\cref{SEC:TEST-REAL}).
