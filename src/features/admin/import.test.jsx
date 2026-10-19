@@ -82,6 +82,9 @@ it('imports users through the page and displays partial results', async () => {
   expect(spy).toHaveBeenCalledOnce();
   await screen.findByText('Importación completada');
   const stats = within(screen.getByRole('dialog'));
+  await waitFor(() => expect(stats.getByRole('status', { name: 'Importación completada' })).toHaveFocus());
+  await user.tab();
+  expect(stats.getByRole('button', { name: 'Descargar errores' })).toHaveFocus();
   for (const label of ['Creados', 'Reactivados', 'Actualizados', 'Filas con errores']) expect(stats.getByText(label).nextElementSibling).toHaveTextContent('1');
   expect(stats.getByText('Filas procesadas').nextElementSibling).toHaveTextContent('4');
   expect(stats.getByRole('button', { name: 'Descargar errores' })).toBeInTheDocument();
@@ -102,6 +105,7 @@ it('imports once during repeated submits, recovers after failure and requires a 
   await user.upload(fileInput, file);
   let rejectImport;
   const pendingImport = new Promise((_, reject) => { rejectImport = reject; });
+  const realUpload = api.upload.bind(api);
   const uploadSpy = vi.spyOn(api, 'upload').mockImplementationOnce(() => pendingImport);
   try {
     const submit = screen.getByRole('button', { name: 'Importar archivo' });
@@ -120,8 +124,19 @@ it('imports once during repeated submits, recovers after failure and requires a 
     expect(fileInput).toBeEnabled();
     expect(fileInput.files[0]).toBe(file);
     expect(db.users.some((row) => row.email === 'unica@uam.es')).toBe(false);
+    let releaseImport;
+    const responseGate = new Promise((resolve) => { releaseImport = resolve; });
+    uploadSpy.mockImplementationOnce(async (...args) => { await responseGate; return realUpload(...args); });
+    await user.tab({ shift: true });
+    expect(submit).toHaveFocus();
     fireEvent.submit(form);
+    expect(screen.queryByRole('status', { name: 'Importación completada' })).not.toBeInTheDocument();
+    expect(db.users.some((row) => row.email === 'unica@uam.es')).toBe(false);
+    await act(async () => { releaseImport(); });
     await screen.findByText('Importación completada');
+    await waitFor(() => expect(screen.getByRole('status', { name: 'Importación completada' })).toHaveFocus());
+    await user.tab({ shift: true });
+    expect(fileInput).toHaveFocus();
     expect(uploadSpy).toHaveBeenCalledTimes(2);
     expect(db.users.filter((row) => row.email === 'unica@uam.es')).toHaveLength(1);
     expect(submit).toBeDisabled();
@@ -129,8 +144,11 @@ it('imports once during repeated submits, recovers after failure and requires a 
     expect(uploadSpy).toHaveBeenCalledTimes(2);
     await user.upload(fileInput, new File([JSON.stringify([{ first_name: 'Eva', last_name: 'López', email: 'otra@uam.es' }])], 'next.json', { type: 'application/json' }));
     expect(submit).toBeEnabled();
+    expect(screen.queryByRole('status', { name: 'Importación completada' })).not.toBeInTheDocument();
+    expect(fileInput).toHaveFocus();
     fireEvent.submit(form);
     await screen.findByText('Importación completada');
+    await waitFor(() => expect(screen.getByRole('status', { name: 'Importación completada' })).toHaveFocus());
     expect(uploadSpy).toHaveBeenCalledTimes(3);
     expect(db.users.filter((row) => row.email === 'otra@uam.es')).toHaveLength(1);
   } finally { uploadSpy.mockRestore(); }
@@ -232,7 +250,10 @@ it('downloads opaque error objects without assuming their fields', async () => {
     await user.upload(screen.getByLabelText('Archivo CSV o JSON'), new File(['[{}]'], 'invalid.json', { type: 'application/json' }));
     fireEvent.submit(screen.getByRole('button', { name: 'Importar archivo' }).closest('form'));
     await screen.findByText('Importación completada');
-    await user.click(screen.getByRole('button', { name: 'Descargar errores' }));
+    await waitFor(() => expect(screen.getByRole('status', { name: 'Importación completada' })).toHaveFocus());
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Descargar errores' })).toHaveFocus();
+    await user.keyboard('{Enter}');
     await waitFor(() => expect(create).toHaveBeenCalledOnce());
     expect(create.mock.calls[0][0].type).toBe('application/json');
     expect(click.mock.instances[0].download).toBe('import-errors.json');
