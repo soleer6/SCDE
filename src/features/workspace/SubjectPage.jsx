@@ -109,7 +109,8 @@ export default function SubjectPage() {
           />
         </Panel>
       </div>
-      {canCreate && <NewExamDialog subjectId={s.id} open={creating} onClose={() => setCreating(false)} />}
+      {/* Mounted only while open, so a cancelled draft does not come back. */}
+      {canCreate && creating && <NewExamDialog subjectId={s.id} open onClose={() => setCreating(false)} />}
     </>
   );
 }

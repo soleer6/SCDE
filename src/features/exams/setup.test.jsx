@@ -1,6 +1,6 @@
 /* Exam setup page (RF-6.x, RF-8.x) in mock mode: the four tabs as the user sees them. */
-import { beforeEach, describe, expect, it } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import i18n from '../../app/i18n.js';
@@ -37,6 +37,8 @@ const renderAt = (path) =>
 const withMembers = listMockRoutes().some((r) => r.startsWith('GET /subjects/:subject/members/'));
 
 const tab = (name) => screen.findByRole('tab', { name: new RegExp(`^${name}`) });
+
+afterEach(() => vi.restoreAllMocks());
 
 beforeEach(async () => {
   localStorage.clear();
@@ -174,5 +176,38 @@ describe('exam setup', () => {
     await loginAs('maria.perez@uam.es', 'prof123');
     expect(await listSubjectMembers('s-prg102', ['STUDENT'])).toHaveLength(114);
     expect((await listSubjectMembers('s-prg102', ['COORDINATOR', 'TEACHER'])).map((m) => m.user_id)).toEqual(['u-maria']);
+  });
+});
+
+describe('new exam', () => {
+  it('starts empty each time it opens, ignores Enter without a name and opens the setup of the created exam', async () => {
+    const user = userEvent.setup();
+    await loginAs('maria.perez@uam.es', 'prof123');
+    const post = vi.spyOn(api, 'post');
+    renderAt('/subjects/s-mat101');
+    await user.click(await screen.findByRole('button', { name: 'Nuevo examen' }));
+    let dialog = await screen.findByRole('dialog', { name: 'Nuevo examen' });
+    await user.type(within(dialog).getByLabelText('Nombre'), 'Borrador');
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    // Regression: the dialog stayed mounted and kept what was typed before cancelling.
+    await user.click(screen.getByRole('button', { name: 'Nuevo examen' }));
+    dialog = await screen.findByRole('dialog', { name: 'Nuevo examen' });
+    const name = within(dialog).getByLabelText('Nombre');
+    expect(name).toHaveValue('');
+    // Enter without a name never reaches the backend (it would answer FIELD_REQUIRED).
+    await user.type(name, '{Enter}');
+    expect(post.mock.calls.filter(([path]) => path.endsWith('/exams/'))).toHaveLength(0);
+    expect(within(dialog).getByRole('button', { name: 'Crear y configurar' })).toBeDisabled();
+
+    await user.type(name, 'Parcial 3');
+    fireEvent.change(within(dialog).getByLabelText('Fecha y hora (opcional)'), { target: { value: '2026-12-01T10:00' } });
+    await user.click(within(dialog).getByRole('button', { name: 'Crear y configurar' }));
+    expect(await screen.findByText('Examen creado')).toBeInTheDocument();
+    const created = db.exams.find((e) => e.name === 'Parcial 3');
+    expect(created).toMatchObject({ subject_id: 's-mat101', date: new Date('2026-12-01T10:00').toISOString() });
+    expect(await tab('Datos')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
