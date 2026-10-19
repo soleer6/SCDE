@@ -674,6 +674,65 @@ it('validates before mutating roles and blocks archived courses, exams and missi
   expect(db.memberships).toEqual(snapshot);
 });
 
+it('focuses fresh directory results after searching and paging and retries the same failed search', async () => {
+  db.subjects = Array.from({ length: 26 }, (_, i) => ({ ...db.subjects[0], id: `extra-${i}`, code: `TEST${i}`, name: `Subject ${i}` }));
+  const user = userEvent.setup(); renderPage(<SubjectsPage />);
+  await screen.findByText('TEST0');
+  const results = screen.getByRole('region', { name: 'Asignaturas' });
+  const search = screen.getByLabelText('Buscar asignaturas');
+  expect(results).not.toHaveFocus();
+  const originalGet = api.get.bind(api);
+  let releasePage;
+  const gate = new Promise((resolve) => { releasePage = resolve; });
+  const get = vi.spyOn(api, 'get').mockImplementationOnce(async (...args) => {
+    await gate;
+    return originalGet(...args);
+  });
+  await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+  expect(get).toHaveBeenLastCalledWith('/search/', { course_id: 'c-2627', search: '', page: 2 });
+  expect(results).not.toHaveFocus();
+  await act(async () => { releasePage(); });
+  await screen.findByText('TEST25');
+  await waitFor(() => expect(results).toHaveFocus());
+  await user.tab();
+  expect(within(results).getByRole('link', { name: 'Administrar' })).toHaveFocus();
+  await user.type(search, 'TEST0{Enter}');
+  await screen.findByText('TEST0');
+  await waitFor(() => expect(results).toHaveFocus());
+  expect(screen.getByText(/Página 1 de 1/)).toBeInTheDocument();
+  expect(get).toHaveBeenLastCalledWith('/search/', { course_id: 'c-2627', search: 'TEST0', page: 1 });
+  get.mockRejectedValueOnce(new Error('Temporary network failure'));
+  await user.click(search);
+  await user.keyboard('{Enter}');
+  expect((await screen.findByRole('alert')).parentElement).toHaveFocus();
+  expect(search).toHaveValue('TEST0');
+  await user.click(search);
+  await user.keyboard('{Enter}');
+  await screen.findByText('TEST0');
+  await waitFor(() => expect(results).toHaveFocus());
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  await user.click(search);
+  await user.keyboard('{Enter}');
+  await waitFor(() => expect(results).toHaveFocus());
+  expect(get).toHaveBeenCalledTimes(5);
+  get.mockRejectedValueOnce(new Error('Temporary network failure'));
+  await user.click(search);
+  await user.keyboard('{Enter}');
+  expect((await screen.findByRole('alert')).parentElement).toHaveFocus();
+  await user.tab();
+  expect(screen.getByRole('button', { name: 'Reintentar' })).toHaveFocus();
+  await user.keyboard('{Enter}');
+  await screen.findByText('TEST0');
+  await waitFor(() => expect(search).toHaveFocus());
+  await user.clear(search);
+  await user.type(search, 'MISSING{Enter}');
+  await within(results).findByText('No hay registros');
+  await waitFor(() => expect(results).toHaveFocus());
+  await user.tab();
+  expect(within(results).getByRole('button', { name: 'Crear asignatura' })).toHaveFocus();
+  expect(db.subjects).toHaveLength(26);
+});
+
 it('returns to the previous page after deleting its final subject without resetting the search', async () => {
   db.subjects = Array.from({ length: 26 }, (_, i) => ({ ...db.subjects[0], id: `extra-${i}`, code: `TEST${i}`, name: `Subject ${i}` }));
   const user = userEvent.setup(); renderPage(<SubjectsPage />);
@@ -706,6 +765,10 @@ it('disables editing and deleting historical subjects while allowing creation in
   await screen.findByText('MAT101');
   fireEvent.change(screen.getByLabelText('Curso'), { target: { value: 'c-2526' } });
   const row = (await screen.findByText('OLD100')).closest('tr');
+  const results = screen.getByRole('region', { name: 'Asignaturas' });
+  await waitFor(() => expect(results).toHaveFocus());
+  await user.tab();
+  expect(within(row).getByRole('link', { name: 'Administrar' })).toHaveFocus();
   expect(within(row).getByRole('button', { name: 'Editar asignatura' })).toBeDisabled();
   expect(within(row).getByRole('button', { name: 'Eliminar asignatura' })).toBeDisabled();
   expect(screen.getByRole('button', { name: 'Crear asignatura' })).toBeEnabled();

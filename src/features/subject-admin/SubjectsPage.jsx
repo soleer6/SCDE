@@ -20,6 +20,9 @@ export default function SubjectsPage() {
   const [editing, setEditing] = useState(null);
   const [removing, setRemoving] = useState(null);
   const resultsRef = useRef(null);
+  const searchRef = useRef(null);
+  const focusAfterQuery = useRef(null);
+  const recovering = useRef(false);
   const restoreFocus = useRef(null);
   const importPendingRef = useRef(false);
   const closeImport = useCallback(() => { if (!importPendingRef.current) setImporting(false); }, []);
@@ -27,6 +30,22 @@ export default function SubjectsPage() {
   const courseId = course || current.data?.id;
   const state = useApi(courseId ? () => searchCatalog({ course_id: courseId, search: query, page }) : null, [courseId, query, page]);
   const displayed = current.error && !courseId ? current : { ...state, loading: !courseId || state.loading };
+  useEffect(() => {
+    if (state.loading) return;
+    if (state.error) {
+      focusAfterQuery.current = null;
+      recovering.current = true;
+    } else if (recovering.current && state.data) {
+      recovering.current = false;
+      if (!focusAfterQuery.current) searchRef.current?.focus();
+    }
+  }, [state.loading, state.error, state.data]);
+  useEffect(() => {
+    const target = focusAfterQuery.current;
+    if (!target || state.loading || state.error || target.data === state.data) return;
+    focusAfterQuery.current = null;
+    resultsRef.current?.focus();
+  }, [state.loading, state.error, state.data]);
   useEffect(() => {
     // Wait for fresh results, including after a failed reload and retry.
     const target = restoreFocus.current;
@@ -43,16 +62,21 @@ export default function SubjectsPage() {
         downloadBlob(blob, 'subjects.json');
       } catch (err) { setError(err); } finally { setPending(false); }
     }}>{t('export')}</Button></>} />
-    <form className="admin-actions" onSubmit={(e) => { e.preventDefault(); setQuery(search); setPage(1); }}>
-      <Field label={t('course')} hint={t('courseHint')}>{(id) => <Input id={id} value={course || current.data?.id || ''} onChange={(e) => { setCourse(e.target.value); setPage(1); }} />}</Field>
-      <Field label={t('search')}>{(id) => <Input id={id} value={search} onChange={(e) => setSearch(e.target.value)} />}</Field><Button type="submit">{t('common:search')}</Button>
+    <form className="admin-actions" onSubmit={(e) => {
+      e.preventDefault();
+      focusAfterQuery.current = { data: state.data };
+      if (page === 1 && query === search) state.reload();
+      else { setQuery(search); setPage(1); }
+    }}>
+      <Field label={t('course')} hint={t('courseHint')}>{(id) => <Input id={id} value={course || current.data?.id || ''} onChange={(e) => { focusAfterQuery.current = { data: state.data }; setCourse(e.target.value); setPage(1); }} />}</Field>
+      <Field label={t('search')}>{(id) => <Input ref={searchRef} id={id} value={search} onChange={(e) => setSearch(e.target.value)} />}</Field><Button type="submit">{t('common:search')}</Button>
     </form>
     {error && <ErrorState error={error} />}
     <section ref={resultsRef} tabIndex={-1} aria-label={t('directory')}><Records state={displayed} focusError action={<Button disabled={current.loading || Boolean(current.error)} onClick={() => setEditing({})}>{t('createSubject')}</Button>} columns={[
       { key: 'code', header: t('code'), render: (s) => <code className="admin-identifier">{s.code}</code> }, { key: 'name', header: t('name') },
       { key: 'actions', header: t('actions'), render: (s) => <div className="admin-actions"><ButtonLink to={`/subjects/${s.id}/manage`}>{t('manage')}</ButtonLink><Button size="sm" disabled={s.course_id !== current.data?.id} onClick={() => setEditing(s)}>{t('editSubject')}</Button><Button size="sm" variant="danger" disabled={s.course_id !== current.data?.id} onClick={() => setRemoving(s)}>{t('deleteSubject')}</Button></div> },
     ]} /></section>
-    <Pagination data={state.data} page={page} onChange={setPage} />
+    <Pagination data={state.data} page={page} onChange={(value) => { focusAfterQuery.current = { data: state.data }; setPage(value); }} />
     {editing && <SubjectEditor subject={editing} onClose={() => setEditing(null)} onSaved={(created) => {
       restoreFocus.current = { data: state.data };
       setEditing(null);
