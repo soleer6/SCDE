@@ -80,16 +80,21 @@ describe('page management contract (mock = backend services)', () => {
 });
 
 describe('scan incidents page', () => {
-  it('lets the coordinator identify the student and accept an extra page', async () => {
+  // Kept apart from the incident flow so that each test renders a single lazy
+  // route (exam page vs. issues page); isolated, the flow takes ~0.8 s.
+  it('links the exam page to its pending incidents', async () => {
     await loginAs('javier.ruiz@uam.es', 'prof123');
     renderAt('/exams/e-fis-p1');
     const link = await screen.findByRole('link', { name: 'Resolver incidencias (2)' });
     expect(link).toHaveAttribute('href', '/exams/e-fis-p1/issues');
+  });
 
-    const user = userEvent.setup();
-    await user.click(link);
+  it('lets the coordinator identify the student and accept an extra page', async () => {
+    await loginAs('javier.ruiz@uam.es', 'prof123');
+    renderAt('/exams/e-fis-p1/issues');
     expect(await screen.findByRole('heading', { name: 'Incidencias de escaneo' })).toBeInTheDocument();
 
+    const user = userEvent.setup();
     await user.click(await rowOf('Faltan páginas'));
     await user.selectOptions(await screen.findByLabelText('Estudiante'), 'u-hugo');
     await user.click(screen.getByRole('button', { name: 'Guardar datos' }));
