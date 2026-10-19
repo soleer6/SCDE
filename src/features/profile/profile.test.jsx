@@ -1,4 +1,4 @@
-import { beforeEach, expect, it } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { api } from '../../lib/api/client.js';
@@ -10,10 +10,35 @@ beforeEach(async () => { await resetDemo(); await loginAs('elena.rodriguez@estud
 it('updates only the allowed profile fields for a student', async () => {
   const user = userEvent.setup(); renderPage(<ProfilePage />);
   const input = await screen.findByLabelText('Email');
+  expect(input).not.toHaveFocus();
+  expect(screen.queryByRole('status')).not.toBeInTheDocument();
   fireEvent.change(input, { target: { value: 'elena.nueva@uam.es' } });
   await user.click(screen.getByLabelText('Recibir notificaciones por email'));
-  await user.click(screen.getByRole('button', { name: 'Guardar' }));
-  await screen.findByText('Cambios guardados');
+  const patch = api.patch.bind(api);
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const pendingPatch = vi.spyOn(api, 'patch').mockImplementationOnce(async (...args) => {
+    await gate;
+    return patch(...args);
+  });
+  try {
+    await user.click(screen.getByRole('button', { name: 'Guardar' }));
+    expect(pendingPatch).toHaveBeenCalledWith('/profile/', { email: 'elena.nueva@uam.es', email_notifications_enabled: false });
+    expect(input).toBeDisabled();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(db.users.find((u) => u.id === 'u-elena').email).toBe('elena.rodriguez@estudiante.uam.es');
+    release();
+    const saved = await screen.findByRole('status');
+    expect(saved).toHaveTextContent('Cambios guardados');
+    await waitFor(() => expect(saved).toHaveFocus());
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Guardar' })).toHaveFocus();
+    await user.click(screen.getByLabelText('Recibir notificaciones por email'));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  } finally {
+    release();
+    pendingPatch.mockRestore();
+  }
   expect(db.users.find((u) => u.id === 'u-elena')).toMatchObject({ email: 'elena.nueva@uam.es', email_notifications_enabled: false, first_name: 'Elena', is_staff: false });
   expect(await api.get('/profile/')).not.toHaveProperty('password');
 });
@@ -68,7 +93,11 @@ it('focuses a rejected email and preserves preferences while correcting it with 
   await user.tab();
   expect(screen.getByRole('button', { name: 'Guardar' })).toHaveFocus();
   await user.keyboard('{Enter}');
-  await screen.findByText('Cambios guardados');
+  const saved = await screen.findByRole('status');
+  expect(saved).toHaveTextContent('Cambios guardados');
+  await waitFor(() => expect(saved).toHaveFocus());
+  await user.tab();
+  expect(screen.getByRole('button', { name: 'Guardar' })).toHaveFocus();
   expect(email).not.toHaveAttribute('aria-invalid');
   expect(email).not.toHaveAttribute('aria-describedby');
   expect(db.users.find((u) => u.id === 'u-elena')).toMatchObject({ email: 'elena.corregida@uam.es', email_notifications_enabled: false });

@@ -25,7 +25,7 @@ export default function ProfilePage() {
     <PageHeader eyebrow={t('account')} title={t('title')} lede={t('hint')} />
     {state.loading ? <Loader /> : state.error ? <div ref={errorRef} tabIndex={-1}><ErrorState error={state.error} onRetry={state.reload} /></div> : state.data && <>
       <KeyValue items={['first_name', 'last_name', 'nia', 'dni'].map((key) => ({ label: t(key), value: state.data[key] || '—' }))} />
-      <RecordForm initial={{ email: state.data.email, email_notifications_enabled: state.data.email_notifications_enabled }} fields={[
+      <RecordForm focusOnSaved initial={{ email: state.data.email, email_notifications_enabled: state.data.email_notifications_enabled }} fields={[
         { name: 'email', label: t('email'), type: 'email', autoComplete: 'email', required: true },
         { name: 'email_notifications_enabled', label: t('notifications'), type: 'checkbox' },
       ]} onSave={updateProfile} />
