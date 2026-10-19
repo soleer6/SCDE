@@ -1,1 +1,178 @@
-\pendiente{Convertir la tabla de docs/tfg/04-iterations.md (16 iteraciones: síntoma, detección, causa, corrección).}
+% Apéndice C. Fuente: docs/tfg/04-iterations.md (registro técnico mantenido durante
+% el desarrollo) e historial de la rama claude/core-flows (17-19/10/2026). Los
+% identificadores de commit se han comprobado con git log antes de citarlos.
+
+Este apéndice recoge los errores, fallos de prueba y problemas de proceso que
+aparecieron durante el desarrollo, y cómo se resolvieron. Su propósito es doble:
+dar trazabilidad a las decisiones descritas en los capítulos \ref{CAP:IMPLEMENTATION}
+y \ref{CAP:TESTING}, y servir de material empírico para la clasificación del
+\cref{SEC:GEN-CLASSIFICATION}, que distingue entre lo que una herramienta
+determinista detecta por sí sola y lo que exige razonamiento o una persona.
+
+\section*{Procedencia y formato}
+El registro se mantuvo en \texttt{docs/tfg/04-iterations.md} a medida que surgían
+los problemas, con un formato fijo: síntoma observado, mecanismo que lo detectó,
+causa identificada y corrección aplicada. Las tablas de este apéndice lo
+transcriben sin añadir casos. La columna «Detección» es la más relevante para el
+análisis: indica si el problema lo hizo visible una herramienta (Git, el
+\textit{linter}, Vitest, los auditores propios), la lectura del código o una
+persona. Cuando la corrección corresponde a un \textit{commit} identificable se
+indica su identificador.
+
+\section*{Primera fase: base, flujos principales e integración (17 y 18 de octubre)}
+
+La \cref{TAB:IT-PHASE1} reproduce los veinte casos registrados durante la
+construcción de la base v2, los primeros flujos y la primera integración de las
+dos líneas de trabajo.
+
+\begin{table}[htbp]
+  \centering
+  \scriptsize
+  \begin{tabular}{rp{0.22\textwidth}p{0.12\textwidth}p{0.24\textwidth}p{0.26\textwidth}}
+    \toprule
+    \textbf{\#} & \textbf{Síntoma} & \textbf{Detección} & \textbf{Causa} & \textbf{Corrección} \\
+    \midrule
+    1 & \texttt{git clone} del \dfn{backend} falla (\textit{early EOF}) & Git &
+      Repositorio con binarios grandes y conexión lenta &
+      Clon parcial (\texttt{--filter=blob:none}) con \textit{sparse checkout} \\
+    2 & \textit{Sparse checkout} vacío & Inspección de ficheros &
+      Git Bash convirtió \texttt{/backend/} en una ruta de Windows &
+      \texttt{MSYS\_NO\_PATHCONV=1} \\
+    3 & \texttt{git ls-tree -l} se bloquea & Tiempo de espera &
+      Pedir tamaños obliga a descargar los objetos en un clon parcial &
+      Árbol obtenido con la \acs{api} de GitHub \\
+    4 & 8 errores de \textit{lint} en la línea base & \textit{Linter} &
+      Código previo & Eliminados al retirar el código heredado \\
+    5 & Falsos positivos del auditor de estilo & Auditor propio &
+      Reglas demasiado amplias & Expresiones más precisas y excepciones explícitas \\
+    6 & La regla de radios no detecta nada o lo detecta todo & Auditor propio &
+      Un espacio opcional antes de la aserción permitía retroceder &
+      Espacio dentro de la aserción \\
+    7 & \texttt{react-refresh/only-export-components} & \textit{Linter} &
+      Constantes y componentes en el mismo módulo & Módulo \texttt{model.js} aparte \\
+    8 & \texttt{set-state-in-effect} & \textit{Linter} &
+      Estado actualizado de forma síncrona en un efecto & Hook \texttt{usePdfUrl}
+      con estado indexado por identificador \\
+    9 & \texttt{package-lock.json} alterado en el \dfn{worktree} ajeno & Git &
+      Versión distinta de npm & Restaurado antes de que empezase la otra línea \\
+    10 & Prueba de flujo falla en \texttt{clearRect} & Vitest &
+      jsdom no implementa el lienzo 2D & Guarda ante contexto nulo \\
+    11 & «Found multiple elements» & Vitest &
+      El \texttt{caption} accesible duplica el título de la tabla &
+      Consulta por rol \texttt{heading} \\
+    12 & 2 de 12 pruebas intermitentes bajo carga & Vitest &
+      Esperas de 1\,s con dos agentes y un servidor en la misma máquina &
+      Esperas de 8\,s y 30\,s (\texttt{7fa8584}) \\
+    13 & \textbf{Commit con pruebas fallidas} & Revisión de la salida &
+      La cadena de órdenes no comprobaba el código de salida &
+      Corrección inmediata; el \textit{commit} se condiciona al resultado \\
+    14 & Prueba de la otra línea falla solo al integrar & Vitest en la rama de
+      integración & Una ruta con parámetro capturaba una ruta literal &
+      Se elige la ruta más específica, como Django (\texttt{dffb48f}) \\
+    15 & Conflicto en \texttt{REQUESTS.md} & Git & Ambas líneas añaden líneas &
+      Resolución por unión \\
+    16 & \textbf{Dirección visual rechazada} & Autor &
+      Se copió la paleta de la referencia, no solo su minimalismo &
+      Sistema v2 claro y educativo (\texttt{15b20df}) \\
+    17 & Los datos simulados no se regeneran entre pruebas & Vitest &
+      El reinicio no borraba las tablas añadidas por extensiones &
+      Reinicio completo antes de reaplicarlas (\texttt{b99a8b2}) \\
+    18 & Descarga simulada con contenido «[object Blob]» & Vitest (petición de la
+      otra línea) & \texttt{Blob} de jsdom incompatible con \texttt{Response} de
+      Node & Bytes leídos con \texttt{FileReader} (\texttt{b99a8b2}) \\
+    19 & Sesión de gestor no reconocida en pruebas & Vitest &
+      El auxiliar de inicio de sesión fijaba \texttt{isStaff} a falso &
+      Derivarlo de las \textit{claims} del \acs{jwt} \\
+    20 & \texttt{POST /orphan-pages/\{id\}/attach/} inutilizable & Lectura del
+      código Django & La vista lee un campo que su serializador no define &
+      Otra operación equivalente; hueco gap-5 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Registro de la primera fase (fuente: \texttt{docs/tfg/04-iterations.md}).\label{TAB:IT-PHASE1}}
+\end{table}
+
+\section*{Segunda fase: funcionalidad avanzada, contrato y memoria (18 y 19 de octubre)}
+
+A partir de la funcionalidad de incidencias de escaneo el registro pasó a
+organizarse por iteraciones de trabajo, cada una cerrada con pruebas y
+\textit{commit}. La \cref{TAB:IT-PHASE2} extrae de esas entradas los problemas
+encontrados, con el mismo formato.
+
+\begin{table}[htbp]
+  \centering
+  \scriptsize
+  \begin{tabular}{rp{0.22\textwidth}p{0.12\textwidth}p{0.24\textwidth}p{0.26\textwidth}}
+    \toprule
+    \textbf{\#} & \textbf{Síntoma} & \textbf{Detección} & \textbf{Causa} & \textbf{Corrección} \\
+    \midrule
+    21 & Se pierden hasta 1,2\,s de trazos al salir del corrector & Contraste de la
+      memoria con el código & El autoguardado cancelaba los temporizadores &
+      Ejecutar los guardados pendientes (\texttt{452ad81}) \\
+    22 & Trazos guardados en el examen anterior & Prueba nueva del arreglo 21 &
+      Los identificadores de anotación no se reiniciaban al cambiar de instancia &
+      Mapa de identificadores por instancia (\texttt{452ad81}) \\
+    23 & Cobertura del contrato infravalorada (48 en vez de 54 de 94) & Revisión de
+      la herramienta & \texttt{coverage.py} no reconocía dos formas de llamada &
+      Patrones ampliados (\texttt{af64bea}) \\
+    24 & La auditoría de propiedad no revisaba los cambios locales & Redacción de la
+      sección~\ref{SEC:IMP-PARALLEL} & Se documentó como hecho, pero el guion no se
+      llegó a modificar & Implementado y probado (\texttt{08b881b}) \\
+    25 & Falsos positivos en \texttt{rubric\_criteria} & Verificación previa al
+      \textit{commit} & El recorte del OpenAPI eliminaba propiedades llamadas
+      \texttt{description} & Recorte limitado a la prosa (\texttt{66147de}) \\
+    26 & Prueba de contrato falla solo al integrar & Vitest en la rama de
+      integración & Una descarga binaria se validaba como \acs{json} &
+      Respuestas binarias excluidas (\texttt{9cbea2c}) \\
+    27 & Rama de integración rota (14 de 16 ficheros de prueba) & Vitest en la rama
+      de integración & Un \textit{commit} de la otra línea importaba un fichero no
+      incluido & Notificado en \texttt{REQUESTS.md}; corregido por esa línea \\
+    28 & 18 discrepancias de las mutaciones simuladas con el contrato & Prueba de
+      contrato & Una del \dfn{mock} (\texttt{page\_dimensions} nulo); el resto,
+      respuestas reales no declaradas & Simulación corregida; hueco gap-11
+      (\texttt{18574e0}) \\
+    29 & Se borran las respuestas escritas en otras solicitudes de revisión &
+      Revisión del código & La recarga sustituía la lista por el indicador de carga &
+      Lista montada durante la recarga (\texttt{56ef0f8}) \\
+    30 & Prueba de incidencias intermitente (9--11\,s) & Vitest bajo carga &
+      Además de la contención del procesador, el refresco desmontaba la tabla y la
+      prueba pulsaba una fila obsoleta & Tablas montadas al refrescar; prueba de
+      regresión (\texttt{d32554e}, \texttt{00c1137}) \\
+    31 & \textbf{Varias sesiones del mismo agente sobre un \dfn{worktree}} &
+      Revisión del historial & El orquestador relanzaba un agente sin comprobar si
+      seguía activo & Exclusión en el orquestador (fuera del repositorio) \\
+    \bottomrule
+  \end{tabular}
+  \caption{Problemas registrados en la segunda fase.\label{TAB:IT-PHASE2}}
+\end{table}
+
+La línea de gestión mantuvo su propio registro
+(\texttt{docs/coordination/codex-log.md}). Sus incidencias fueron de la misma
+naturaleza: la ejecución de Vitest y de los auditores fallaba en su entorno
+aislado por falta de permisos para crear procesos y hubo que repetirla con
+permiso; dos pruebas excedieron el tiempo de espera bajo carga; y una regresión
+propia (el editor de permisos recuperaba un valor antiguo) se detectó en
+revisión y se corrigió con una prueba.
+
+\section*{Lectura del registro}
+
+Agrupando los 31 casos por el mecanismo que los hizo visibles, la mayoría los
+detectó una herramienta sin intervención: Git, el \textit{linter}, Vitest o los
+auditores propios. La ejecución de la batería en la rama de integración merece
+mención aparte: los casos 14, 26 y 27 solo se manifestaban al unir las dos
+líneas, lo que justifica integrar con frecuencia y no al final.
+
+Un segundo grupo exigió razonamiento sobre el código: el hueco del
+\dfn{backend} del caso 20, los fallos del autoguardado (21 y 22), que no
+producían ningún error visible, o el caso 30, en el que la primera explicación
+(la contención del procesador) era cierta pero incompleta y solo una segunda
+investigación encontró el defecto de la interfaz. Los casos 23 y 25 muestran que
+las herramientas de verificación propias también fallan y deben verificarse a su
+vez; el 24, que una afirmación documentada no equivale a un cambio hecho.
+
+Solo dos casos requirieron a una persona: el rechazo de la dirección visual (16)
+y la detección de sesiones duplicadas del orquestador (31). Junto con el error
+de proceso del caso 13, son los que motivaron reglas explícitas de trabajo
+(condicionar el \textit{commit} al resultado de las pruebas, guía de estilo con
+auditor y una sola sesión por agente), descritas en los capítulos \ref{CAP:IMPLEMENTATION} y \ref{CAP:GENERALIZATION}.
+Esta distribución es la base empírica de la clasificación del
+\cref{SEC:GEN-CLASSIFICATION}.
