@@ -16,7 +16,7 @@ export default function ExamPage() {
   const exam = useApi(() => getExam(examId), [examId]);
   const { roleOf, loading } = useMySubjects();
 
-  if (exam.loading || loading) return <Loader page />;
+  if (exam.initialLoading || loading) return <Loader page />;
   if (exam.error) return <ErrorState error={exam.error} onRetry={exam.reload} />;
   const role = roleOf(exam.data.subject_id);
   if (role === 'STUDENT' && !session?.isStaff) return <StudentResultView exam={exam.data} />;

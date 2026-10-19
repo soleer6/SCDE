@@ -65,7 +65,7 @@ export default function ScansPage() {
           </Panel>
 
           <Panel title={t('orphans.title')} flush>
-            {orphans.loading && !orphans.data ? (
+            {orphans.initialLoading ? (
               <Loader />
             ) : orphans.error ? (
               <ErrorState error={orphans.error} onRetry={orphans.reload} />

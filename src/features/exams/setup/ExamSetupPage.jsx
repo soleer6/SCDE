@@ -24,7 +24,7 @@ export default function ExamSetupPage() {
   const [tab, setTab] = useState('structure');
 
   // Only the first load shows the loader: reloading after a save must not unmount the tabs.
-  if ((exam.loading && !exam.data) || loading) return <Loader page />;
+  if (exam.initialLoading || loading) return <Loader page />;
   if (exam.error) return <ErrorState error={exam.error} onRetry={exam.reload} />;
   const e = exam.data;
   const role = roleOf(e.subject_id);
