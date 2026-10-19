@@ -13,7 +13,9 @@ El denominador son las 94 operaciones del documento OpenAPI, excluida la comprob
 salud del servicio (\cref{SEC:AN-BACKEND}). La \cref{TAB:TEST-COVERAGE} recoge la medición por
 etiqueta del contrato sobre los \textit{commits} \texttt{18574e0} (núcleo) y
 \texttt{b52bb00} (gestión), y su unión, calculada sobre la rama de integración que los
-combina. En la columna de gestión se ha descontado una atribución falsa del inicio de
+combina. La medición se repitió sobre \texttt{0b28e41} y la integración \texttt{3003df7},
+con los mismos resultados: los \textit{commits} intermedios corrigieron comportamiento y
+añadieron pruebas, pero no invocaron operaciones nuevas. En la columna de gestión se ha descontado una atribución falsa del inicio de
 sesión, que la heurística encuentra en un fichero auxiliar de pruebas
 (\texttt{test-utils.jsx}) cuyo nombre no sigue la convención que el filtro excluye.
 

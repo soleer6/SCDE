@@ -1,11 +1,12 @@
 Esta sección describe las baterías de las dos líneas de trabajo. Las cifras corresponden a
 ejecuciones de \texttt{npm run check} sobre \textit{commits} concretos: la línea del núcleo
-sobre \texttt{18574e0} y la de gestión sobre \texttt{b52bb00}. Son recuentos de casos que
+sobre \texttt{0b28e41} y la de gestión sobre \texttt{5d929ef}, integradas en
+\texttt{3003df7}. Son recuentos de casos que
 terminan correctamente, no medidas de cobertura de líneas, de ramas ni de requisitos.
 
 \subsection{Núcleo docente}
 
-La rama del núcleo contiene 50 casos en diez ficheros (\cref{TAB:TEST-CORE}). Los casos de
+La rama del núcleo contiene 64 casos en trece ficheros (\cref{TAB:TEST-CORE}). Los casos de
 flujo montan la aplicación con su enrutador y su proveedor de sesión, inician sesión con uno
 de los usuarios de la simulación y recorren el caso de uso hasta comprobar tanto la pantalla
 como el estado de los datos simulados.
@@ -27,7 +28,15 @@ como el estado de los datos simulados.
     \texttt{ingestion/ingestion.test.jsx} & 9 & Reglas de las operaciones de páginas
       (mover solo dentro del mismo examen, reordenar, aceptar, descartar, huérfanas solo
       para gestores, estudiante duplicado), pantallas de incidencias y de escaneos y
-      enlace a las incidencias desde la página del examen. \\
+      enlace a las incidencias desde la página del examen; subida de un escaneo. \\
+    \texttt{workspace/workspace.test.jsx} & 7 & Resumen por rol (cola de corrección,
+      exámenes del estudiante, gestor sin asignaturas), progreso de corrección, columnas
+      ocultas al estudiante, acceso denegado, reintento y una sola petición de exámenes. \\
+    \texttt{results/results.test.jsx} & 4 & Examen escaneado visible en el resultado y
+      solicitudes de revisión: recuento de las creadas, todas ya pedidas y plazo cerrado
+      entretanto, con el foco correspondiente. \\
+    \texttt{reviews/reviews.test.jsx} & 3 & Nombres accesibles por solicitud, conservación
+      de las demás respuestas al resolver una, solicitud ya resuelta y estado vacío. \\
     \texttt{grading/ocr.test.jsx} & 8 & Formato de los paneles de escritura; nota
       reconocida aplicada o propuesta según la confianza; texto reconocido añadido al
       comentario y borrado de la anotación temporal; la tinta de página ignora los
@@ -48,11 +57,11 @@ como el estado de los datos simulados.
     \texttt{test/contract/validate.test.js} & 3 & Validador del subconjunto de OpenAPI
       (referencias, composición, campos no declarados). \\
     \midrule
-    \textbf{Total} & \textbf{50} & \\
+    \textbf{Total} & \textbf{64} & \\
     \bottomrule
   \end{tabular}
   \caption{Pruebas de la línea del núcleo docente (\textit{commit}
-    \texttt{18574e0}).\label{TAB:TEST-CORE}}
+    \texttt{0b28e41}).\label{TAB:TEST-CORE}}
 \end{table}
 
 Dos ejemplos muestran el tipo de aserción. La prueba del contrato de calificación guarda
@@ -68,11 +77,11 @@ segundo defecto descrito en \cref{SEC:IMP-CRITICAL}.
 \subsection{Gestión}
 
 La batería de la línea de gestión, redactada en detalle en un borrador de Codex y resumida
-aquí, contenía en el \textit{commit} \texttt{b52bb00} 104 casos en ocho ficheros: 101 de
-sus módulos y los tres del cliente compartido (\cref{TAB:TEST-ADMIN}). Los recuentos son los
-registrados por esa línea en su bitácora; son coherentes con la ejecución conjunta en la
-rama de integración (\textit{commit} \texttt{7c229d1}), que sumó 151 casos en diecisiete
-ficheros ($50 + 101$, con el fichero del cliente común contado una vez). En esa ejecución
+aquí, contiene en el \textit{commit} \texttt{5d929ef} 107 casos en ocho ficheros: 104 de
+sus módulos y los tres del cliente compartido (\cref{TAB:TEST-ADMIN}). Los recuentos por
+fichero se obtuvieron con \texttt{vitest list} en la rama de integración
+(\textit{commit} \texttt{3003df7}), cuya ejecución sumó 168 casos correctos en veinte
+ficheros ($64 + 104$, con el fichero del cliente común contado una vez). En esa ejecución
 conjunta, las escrituras de la línea de gestión pasan también por el verificador de
 contrato del núcleo.
 
@@ -90,20 +99,22 @@ contrato del núcleo.
     Importación y exportación de usuarios & 11 & Resultados parciales, \acs{csv} con
       marca de orden de bytes y finales de línea de Windows, errores, reintento con un
       fichero corregido, exportación sin secretos. \\
-    Gestión de asignaturas & 32 & Alta, edición y baja de asignaturas con validación,
+    Gestión de asignaturas & 33 & Alta, edición y baja de asignaturas con validación,
       confirmación y permisos; miembros, grupos, permisos efectivos y excepciones,
-      separación de permisos entre pestañas. \\
+      separación de permisos entre pestañas; foco en el directorio tras buscar y
+      paginar. \\
     Importación de asignaturas & 5 & Relaciones en \acs{json}, errores por fila, acceso
       restringido. \\
-    Notificaciones & 19 & Lectura individual y por página, aislamiento entre cuentas,
-      orden de respuestas, cambio de sesión, visibilidad de la pestaña y desmontaje. \\
+    Notificaciones & 21 & Lectura individual y por página, aislamiento entre cuentas,
+      orden de respuestas, cambio de sesión, visibilidad de la pestaña, desmontaje y foco
+      tras paginar y actualizar. \\
     Perfil & 3 & Campos editables, corrección del correo y recuperación de la carga. \\
     \midrule
-    \textbf{Total propio} & \textbf{101} & Más 3 del cliente compartido: 104. \\
+    \textbf{Total propio} & \textbf{104} & Más 3 del cliente compartido: 107. \\
     \bottomrule
   \end{tabular}
-  \caption{Pruebas de la línea de gestión (\textit{commit} \texttt{b52bb00}), según su
-    registro.\label{TAB:TEST-ADMIN}}
+  \caption{Pruebas de la línea de gestión (\textit{commit} \texttt{5d929ef}), contadas en
+    la integración \texttt{3003df7}.\label{TAB:TEST-ADMIN}}
 \end{table}
 
 Tres técnicas caracterizan esta batería. La primera es el \textbf{reloj controlado}: la
@@ -155,3 +166,32 @@ sesiones. Aun así se separó en su propia prueba la comprobación del enlace de
 del examen, para que cada caso monte una sola ruta de carga diferida; precargar esas rutas
 antes de la batería se probó y se descartó por no producir mejora medible
 (\textit{commit} \texttt{d32554e}).
+
+La explicación por contención resultó incompleta. Un fallo posterior de la misma prueba
+reveló un defecto real: tras cada acción, la pantalla de incidencias volvía a mostrar el
+indicador de carga, desmontaba la tabla y la volvía a montar, de modo que la prueba podía
+pulsar una fila ya retirada del \acs{dom}; el mismo efecto hacía perder al usuario el foco
+y la posición de desplazamiento. La corrección limita el indicador a la carga inicial,
+marca la región con \texttt{aria-busy} durante los refrescos y se aplicó también al panel
+del examen y a la pantalla de escaneos; la prueba de regresión falla sin ella
+(\textit{commit} \texttt{00c1137}). Un segundo fallo intermitente, en la gestión del foco
+tras recargar los resultados del estudiante, se debía a un efecto que dependía solo de la
+marca de fin de carga: con latencia nula, React agrupaba las actualizaciones y el efecto no
+volvía a ejecutarse; pasó a depender también de los datos (\textit{commit}
+\texttt{76e4841}). Ambos casos muestran que un fallo intermitente atribuido al entorno
+merece una segunda mirada antes de darse por explicado.
+
+\subsection{Pruebas nacidas de defectos}
+
+Las catorce pruebas que la línea del núcleo añadió entre \texttt{18574e0} y
+\texttt{0b28e41} se escribieron, en su mayoría, para fijar un defecto encontrado al auditar
+una pantalla, y en cada caso se comprobó que fallaban sin la corrección. La bandeja de
+revisiones borraba los borradores de respuesta de las demás solicitudes al resolver una
+(\texttt{56ef0f8}). El formulario de solicitud de revisión anunciaba un envío correcto
+aunque el servidor no creara ninguna solicitud, porque la simulación devolvía también las
+existentes cuando el servidor solo devuelve las creadas (\texttt{a21f8ef}). La página de la
+asignatura pedía dos veces la lista de exámenes, antes y después de conocer el rol del
+usuario (\texttt{76e4841}). Y en el entorno de pruebas toda descarga de un \acs{pdf}
+fallaba con un error que solo aparecía como aviso en la consola, de modo que la vista del
+estudiante mostraba el error en lugar del examen escaneado sin que ninguna aserción lo
+detectara (\texttt{0b28e41}).
