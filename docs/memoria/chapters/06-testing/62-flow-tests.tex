@@ -118,6 +118,20 @@ Escape mientras la operación sigue pendiente. La tercera es la \textbf{recupera
 teclado}: tras uno o dos fallos consecutivos, la prueba alcanza el reintento con Tab y Enter
 y verifica a qué elemento vuelve el foco y que se conservan filtros, página y datos.
 
+Las operaciones de alta, edición y baja de asignaturas, las últimas incorporadas, añadieron
+diez casos al fichero de gestión de asignaturas. Uno recorre el ciclo completo: alta desde un
+filtro histórico (comprobando que el cuerpo no lleva curso), cambio de coordinador con la
+consiguiente transición de roles en las membresías y baja confirmada. Otro provoca un código
+duplicado y verifica que se conservan los valores y que el foco pasa al campo inválido. Tres
+casos parametrizados, uno por operación, aplican las promesas controladas a dos envíos y un
+Escape en el mismo ciclo. Los restantes comprueban las claves exactas de
+\texttt{SubjectResponse} y los estados 201 y 204, los permisos (el coordinador puede editar,
+un docente no, y no se cruza la organización), las validaciones previas al cambio de roles,
+el retroceso de página tras borrar la última fila y las acciones deshabilitadas en cursos
+históricos. El caso de forma de respuesta invoca los manejadores directamente; en la
+ejecución conjunta, además, las respuestas de estas escrituras pasan por el verificador de
+mutaciones (\cref{SEC:TEST-CONTRACT}).
+
 El borrador de la línea de gestión delimita con cuidado lo que estas pruebas no acreditan, y
 esos límites se mantienen aquí: una sola petición desde la interfaz no demuestra que el
 servidor sea idempotente; los eventos de formulario de Testing Library no reproducen la

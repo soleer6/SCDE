@@ -171,6 +171,21 @@ porque el contrato no fija su estructura, y pueden descargarse en \acs{json}. La
 exportaciones distinguen la descarga binaria de usuarios de la respuesta estructurada de
 asignaturas.
 
+\paragraph{Alta, edición y baja de asignaturas.} El directorio de asignaturas
+(\texttt{/admin/subjects}) permite al gestor crear, editar y eliminar asignaturas con
+\texttt{POST /subjects/}, \texttt{PATCH /subjects/\{id\}/} y \texttt{DELETE /subjects/\{id\}/}.
+El cuerpo de alta lleva nombre, código, identificador del coordinador y, solo si se rellena,
+semestre; no lleva curso, porque la operación crea la asignatura en el curso activo de la
+organización. Por eso el formulario advierte de ese destino aunque el directorio muestre un
+curso histórico, cuyas filas tienen la edición y la baja deshabilitadas, y tras crear vuelve
+al curso actual. La baja exige confirmación y conserva el destinatario si falla; tras una
+mutación correcta el foco pasa al botón de creación, porque la fila que abrió el diálogo
+puede haber desaparecido, y al borrar la última fila de una página posterior a la primera se
+retrocede una página sin perder la búsqueda. Los manejadores simulados devuelven
+\texttt{SubjectResponse} con los estados declarados (201, 200 y 204) y comprueban la unicidad
+del código en el curso, la organización del coordinador y que la asignatura no tenga
+exámenes antes de borrarla.
+
 \paragraph{Permisos por asignatura.} La gestión de una asignatura se divide en pestañas
 independientes para que cada una exija solo el permiso de su operación: quien puede
 gestionar grupos puede usar esa pestaña aunque no pueda listar miembros. El editor de
@@ -200,6 +215,5 @@ foco vuelve a un destino concreto de la página (el buscador, el filtro de event
 de resultados), sin perder filtros ni página. Estas comprobaciones se hicieron sobre un
 \acs{dom} simulado y no sustituyen una evaluación con tecnologías de apoyo
 (\cref{SEC:AN-RNF}).
-
-\pendiente{El autor debe revisar esta subsección, redactada a partir del borrador de la
-línea de gestión, y valorar si se mantiene a este nivel de detalle o se resume más.}
+% Decisión editorial (19/10/2026): se mantiene este nivel de resumen; el borrador
+% completo de la línea de gestión (unas 330 líneas) queda en mission/memoria-codex.
