@@ -1,1 +1,99 @@
-\pendiente{Redactar al final, contrastando cada objetivo de \cref{SEC:INTRO-OBJECTIVES} con su evidencia.}
+Este trabajo se propuso construir el \dfn{frontend} de SCDEE contra el contrato real de su
+\dfn{backend} y documentar el proceso de desarrollo asistido por agentes de forma que pudiera
+generalizarse (\cref{SEC:INTRO-OBJECTIVES}). Esta sección contrasta cada objetivo con la
+evidencia reunida en los capítulos anteriores y expone después las limitaciones que
+condicionan el alcance de esas conclusiones. Las cifras corresponden al estado de las ramas
+a 19 de octubre de 2026: \textit{commit} \texttt{9cbea2c} del núcleo docente,
+\texttt{f910350} de la gestión y su unión en la rama de integración.
+
+\subsection{Grado de cumplimiento de los objetivos}
+
+\paragraph{O1. Interfaz para todos los actores.} Cumplido. La aplicación cubre los flujos de
+los cuatro actores identificados en \cref{SEC:AN-ACTORS}: la línea del núcleo docente
+resuelve la creación y configuración de exámenes, la ingesta y resolución de incidencias,
+la corrección con anotaciones y \dfnpl{rubrica}, la publicación de notas y las revisiones,
+y la vista del estudiante; la línea de gestión, la administración de la organización, de
+usuarios, cursos y asignaturas, la cuenta y las notificaciones. Los roles se aplican por
+asignatura, tal como los define el \dfn{backend}, y no como un rol global
+(\cref{SEC:DES-ARCH}).
+
+\paragraph{O2. Fidelidad al contrato.} Cumplido, con las salvedades que el propio objetivo
+prevé. De las 94 operaciones del contrato, 87 se invocan desde los módulos funcionales y 89
+desde el conjunto de la aplicación (\cref{SEC:TEST-COVERAGE}); las cinco restantes quedaron
+fuera por decisión de alcance o porque fallan en el servicio (gap-5). No se ha inventado
+ninguna operación: cuando la interfaz necesitaba algo que el contrato no ofrece, se
+registró como hueco con su evidencia y una propuesta (\cref{SEC:AN-GAPS}). El objetivo se
+reforzó al final del desarrollo con una prueba que valida cada respuesta de la simulación
+contra los esquemas del documento OpenAPI; esa prueba descubrió que varias operaciones
+devuelven formas distintas según el rol sin declararlo (gap-10), lo que confirma que la
+fidelidad al contrato no basta cuando el contrato es incompleto.
+
+\paragraph{O3. Desarrollo independiente del servidor.} Cumplido en lo que depende del
+\dfn{frontend}. La simulación reproduce las respuestas y las reglas de negocio analizadas
+---conflictos de versión en las notas, transiciones de estado, permisos por asignatura---
+y el mismo código cambia de transporte con una variable de entorno (\cref{SEC:DES-DATA}).
+Lo que no se ha podido demostrar es la segunda mitad del objetivo, que el mismo código
+\emph{funcione} contra el servidor real, porque esa ejecución no se ha realizado
+(\cref{SEC:TEST-REAL}).
+
+\paragraph{O4. Calidad verificable.} Cumplido. La rama del núcleo tiene 45 casos de prueba
+en nueve ficheros, la de gestión 94, y su unión ejecuta 136 casos que terminan
+correctamente, junto con el análisis estático, la compilación de producción y las
+auditorías de estilo y de propiedad (\cref{SEC:TEST-FLOWS,SEC:TEST-AUDITS}). Todas estas
+comprobaciones se exigen antes de cada \textit{commit}. Su valor quedó demostrado en el
+propio proceso: varias pruebas nacieron de defectos reales y la integración periódica de las
+dos ramas detectó fallos que ninguna veía por separado (\cref{SEC:IMP-PARALLEL}).
+
+\paragraph{O5. Lenguaje visual educativo y accesible.} Cumplido en cuanto al sistema de
+diseño y parcialmente en cuanto a la accesibilidad. Los \textit{tokens}, los componentes
+primitivos y la guía de estilo (\cref{SEC:DES-VISUAL,AP:STYLE}) dan a ambas líneas una
+apariencia común, y la auditoría de estilo impide los valores literales. La accesibilidad
+se ha atendido con etiquetas, roles \acs{aria} y gestión del foco, tomando \acs{wcag} 2.2 como referencia, pero no se ha hecho una auditoría
+formal de conformidad ni pruebas con tecnologías de apoyo.
+
+\paragraph{O6. Análisis del proceso agéntico.} Cumplido. El proceso quedó registrado en el
+historial de Git, en las bitácoras de coordinación y en el registro de iteraciones
+(\cref{AP:ITERATIONS}); el uso de herramientas de \acs{ia} se declara en
+\cref{SEC:IMP-AI,AP:AI}; y \cref{CAP:GENERALIZATION} descompone la construcción del
+\dfn{frontend} en etapas, clasifica cada una como determinista, de razonamiento o de
+decisión humana, y propone una arquitectura para automatizarla.
+
+\subsection{Lecciones del proceso}
+
+Tres resultados del trabajo van más allá de la aplicación concreta. El primero es que el
+contrato generado automáticamente es un punto de partida necesario pero insuficiente: diez
+huecos, cuatro de ellos discrepancias entre lo declarado y lo que el código hace, solo
+aparecieron al leer las vistas de Django o al validar la simulación contra el esquema. El
+segundo es que el control de calidad de un desarrollo con agentes debe imponerlo el entorno
+y no la disciplina del agente: el cambio que se confirmó con pruebas fallidas llegó al
+historial porque la orden encadenada no comprobaba el resultado, no por falta de
+instrucciones (\cref{SEC:GEN-PROPOSAL}). El tercero es
+que el reparto del trabajo entre dos agentes en paralelo funcionó cuando la propiedad de cada
+fichero estaba declarada y se comprobaba mecánicamente, y que los fallos de coordinación
+observados procedieron de la orquestación (sesiones duplicadas del mismo agente) y no de la
+división en sí.
+
+\subsection{Limitaciones}
+
+\begin{itemize}
+  \item \textbf{Sin validación con el \dfn{backend} real.} Todas las pruebas se han ejecutado
+        contra la simulación, que procede del mismo análisis que el código; un error de
+        interpretación se reproduciría en ambas (\cref{SEC:TEST-REAL}).
+  \item \textbf{Sin validación con usuarios.} No se ha evaluado la usabilidad con docentes
+        ni estudiantes; las decisiones de interacción se apoyan en el análisis de requisitos
+        y en el estado del arte, no en observación.
+  \item \textbf{Huecos del contrato abiertos.} Algunos impiden flujos completos: el
+        estudiante no puede solicitar revisión si no recibe el identificador del problema
+        (gap-2), y el reconocimiento de la nota sobre la tinta de la página devuelve
+        siempre un resultado vacío (gap-9). Su resolución corresponde al \dfn{backend}.
+  \item \textbf{Medidas de alcance, no de calidad.} La cobertura del contrato cuenta
+        operaciones con código que las invoca y las pruebas son recuentos de casos; no hay
+        medición de cobertura de líneas ni de ramas.
+  \item \textbf{Un solo caso de estudio.} La clasificación y la propuesta del
+        \cref{CAP:GENERALIZATION} se extraen de un único \dfn{backend} y de un único
+        proceso, y no se han contrastado con otros.
+\end{itemize}
+
+\pendiente{Valoración personal del autor sobre el trabajo (dificultades, aprendizaje,
+competencias adquiridas), que la rúbrica del art. 5.3.4 tiene en cuenta y que no puede
+redactarse a partir de los artefactos del repositorio.}

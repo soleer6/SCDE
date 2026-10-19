@@ -1,8 +1,38 @@
-\pendiente{Redactar.}
+Las líneas de trabajo siguientes se derivan directamente de las limitaciones anteriores y de
+los huecos registrados. Se ordenan por su efecto sobre la validez de los resultados.
 
-\begin{itemize}
-  \item Completar las operaciones sin interfaz (\cref{SEC:TEST-COVERAGE}).
-  \item Validación con el \dfn{backend} real y pruebas con usuarios (docentes y estudiantes).
-  \item Tipos generados desde OpenAPI (migración a TypeScript).
-  \item Prototipo del sistema agéntico de \cref{CAP:GENERALIZATION}.
-\end{itemize}
+\paragraph{Validación con el \dfn{backend} real.} Es la tarea más urgente, porque condiciona
+la lectura de todas las demás pruebas. El procedimiento está descrito en
+\cref{SEC:TEST-REAL}: levantar el servicio con Docker Compose, crear los datos de partida con
+las propias operaciones del contrato y repetir los recorridos de las pruebas de flujo con la
+simulación desactivada, clasificando cada diferencia según esté en la interfaz, en la
+simulación o en el \dfn{backend}. El paso natural siguiente es automatizarlo, ejecutando un
+subconjunto de las pruebas de flujo contra una instancia efímera del servicio.
+
+\paragraph{Resolución de los huecos con el equipo de \dfn{backend}.} Cada hueco de
+\cref{TAB:AN-GAPS} incluye una propuesta concreta. Las más valiosas para la interfaz son
+exponer al profesorado las notas por problema (gap-1), devolver al estudiante el
+identificador de los problemas (gap-2), aceptar en el renderizador de \acs{ocr} el formato de
+trazos que guarda la interfaz (gap-9) y declarar en el esquema las respuestas que dependen
+del rol (gap-10). Cuando se resuelvan, la prueba de contrato de la simulación lo señalará,
+porque falla si una forma alternativa deja de usarse.
+
+\paragraph{Operaciones sin interfaz.} Completar las operaciones que quedaron fuera
+(\cref{SEC:TEST-COVERAGE}): el alta, modificación y baja de asignaturas por parte de los
+gestores, y la creación de organizaciones, que requiere el rol de superusuario.
+
+\paragraph{Pruebas con usuarios y accesibilidad.} Evaluar los flujos de corrección y de
+revisión con docentes y estudiantes, y realizar una auditoría de conformidad con \acs{wcag}
+2.2 que incluya herramientas automáticas y lectores de pantalla.
+
+\paragraph{Tipos generados desde el contrato.} Migrar el código a TypeScript con tipos
+generados del documento OpenAPI, de modo que una discrepancia de forma se detecte al
+compilar y no solo en la prueba de contrato. Requiere que el \dfn{backend} declare antes las
+formas polimórficas (gap-10); de lo contrario, los tipos generados afirmarían campos que no
+siempre llegan.
+
+\paragraph{Prototipo del sistema agéntico.} Implementar las etapas deterministas de la
+propuesta de \cref{SEC:GEN-PROPOSAL} (inventario del contrato, medición de cobertura,
+oráculo de verificación e integrador) como herramientas independientes, y aplicarlas a un
+segundo \dfn{backend} para contrastar la clasificación de \cref{SEC:GEN-CLASSIFICATION} con
+un caso distinto del que la originó.
