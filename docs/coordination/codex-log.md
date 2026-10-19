@@ -1169,3 +1169,11 @@
 - Check local 105/105 en ocho ficheros, propiedad npm y lint/build/estilo correctos; composición 158/158 en diecinueve ficheros, contrato GET y mutaciones incluidos. Avisos previos de estilo/jsdom; sin backend real ni revisión visual/manual.
 - §5.4: listos chapters/06-testing/admin.tex y bibliography/codex.bib externos; INTEGRACION-admin.md sincronizado con publicación y 158 conjuntos, separados de 105 locales/102 propios. Primera escritura por canalización perdió tildes y no aplicó reemplazos; detectado al leer, corregido mediante script UTF-8 antes del cierre. docs/memoria intacto.
 - Progreso actualizado; mensaje docs(coordinacion) para el lanzador tras controles, sin escribir en .git. Siguiente: verificar commit documental y continuar §5.3 con pendientes de gestión o solicitudes del auditor.
+
+## Misión v2 · iteración 35/40 · 2026-10-19 13:51 +02:00
+- Verificado 3071431 y revisados cinco commits de ambas ramas y REQUESTS de Claude 76e4841, sin petición funcional nueva. Aplicada skill scde-frontend; archivo privado setup-remote-ssh.local.ps1 preservado.
+- §5.3: notificaciones enfoca resultados tras paginar o actualizar la lista vacía, esperando un objeto de datos nuevo; la misma espera se aplica al marcado. Primera carga sin mover foco; error descarta el destino pendiente y conserva foco en el error y recuperación mediante Reintentar.
+- Dos casos nuevos: segunda página con GET retenido, Tab a la acción individual, error al volver y recuperación con teclado sin cambiar estados; actualización vacía con GET retenido y Tab a Actualizar. Check correcto: 107/107 en ocho ficheros (104 propios), lint/build/estilo OK con dos avisos previos de auth; propiedad OK (45 rutas), diff sin errores.
+- Sin publicación, backend real ni revisión visual/manual; sin cambios de contrato, mocks ni base compartida. Ajuste inicial de bitácora mediante parche con contexto inexistente rechazado, corregido con contexto real. Progreso actualizado y mensaje fix(notificaciones) delegado al lanzador tras controles, sin escribir en .git.
+- Siguiente: verificar commit, publicar ambas ramas y sincronizar borradores con navegación de notificaciones y 107 locales/104 propios.
+- Cierre: repetición de propiedad bloqueada por spawnSync cmd.exe EPERM; reintento aislado correcto (45 rutas). Diff correcto; mensaje de commit preparado para el lanzador.
