@@ -2,7 +2,6 @@ import { mockError, paginate, reply } from '../../lib/mock/router.js';
 import { DEFAULT_PERMISSIONS, PERMISSION_KEYS } from '../../lib/permissions.js';
 import { requireRecord, requireStaff } from '../admin/mocks.js';
 import { subjectImportMocks } from './subject-import.mocks.js';
-import { subjectCrudMocks } from './subject-crud.mocks.js';
 
 function permit(db, user, subject, permission) {
   requireRecord(db.subjects.find((s) => s.id === subject));
@@ -27,6 +26,87 @@ const permissionTarget = (db, user, id, editing) => {
   if (editing || m.user_id !== user?.id) permit(db, user, m.subject_id, 'can_delegate_perms');
   return m;
 };
+const shape = (s, db) => ({
+  id: s.id, name: s.name, code: s.code, semester: s.semester, course_id: s.course_id,
+  coordinator_id: s.coordinator_id, coordinator_email: db.users.find((u) => u.id === s.coordinator_id)?.email ?? '',
+  created_at: s.created_at ?? '2026-09-01T00:00:00Z', updated_at: s.updated_at ?? '2026-09-01T00:00:00Z',
+});
+function validate(body, db, user, subject) {
+  const values = {};
+  for (const [key, max] of [['name', 255], ['code', 50], ['semester', 100]]) {
+    if (!Object.hasOwn(body, key) && (subject || key === 'semester')) continue;
+    if (typeof body[key] !== 'string' || body[key].length > max || (!body[key].trim() && (key !== 'semester' || !subject))) {
+      throw mockError(400, 'VALIDATION_ERROR', { [key]: ['INVALID'] });
+    }
+    values[key] = body[key].trim();
+  }
+  if (!subject || Object.hasOwn(body, 'coordinator_id')) {
+    if (typeof body.coordinator_id !== 'string' || !body.coordinator_id.trim()) throw mockError(400, 'VALIDATION_ERROR', { coordinator_id: ['FIELD_REQUIRED'] });
+    const coordinator = db.users.find((u) => u.id === body.coordinator_id && u.organization_id === user.organization_id);
+    if (!coordinator) throw mockError(409, 'COORDINATOR_NOT_FOUND', subject ? undefined : { coordinator_id: ['COORDINATOR_NOT_FOUND'] });
+    if (!subject && !coordinator.is_active) throw mockError(409, 'COORDINATOR_INACTIVE', { coordinator_id: ['COORDINATOR_INACTIVE'] });
+    values.coordinator_id = coordinator.id;
+  }
+  return values;
+}
+function coordinatorMembership(db, subject) {
+  let member = db.memberships.find((m) => m.subject_id === subject.id && m.user_id === subject.coordinator_id && m.is_active);
+  if (!member) {
+    member = { id: crypto.randomUUID(), subject_id: subject.id, user_id: subject.coordinator_id, group_id: null, is_active: true };
+    db.memberships.push(member);
+  }
+  Object.assign(member, { role: 'COORDINATOR', permission_overrides: {} });
+}
+function target(db, user, id) {
+  const s = requireRecord(db.subjects.find((s) => s.id === id));
+  requireRecord(db.users.find((u) => u.id === s.coordinator_id && u.organization_id === user.organization_id));
+  return s;
+}
+function active(db, s) {
+  if (!db.courses.some((c) => c.id === s.course_id && c.is_active)) throw mockError(403, 'COURSE_ARCHIVED');
+}
+function unique(db, values, course, id, creating) {
+  if (values.code && db.subjects.some((s) => s.id !== id && s.course_id === course && s.code === values.code)) throw mockError(409, 'CODE_ALREADY_EXISTS', creating ? { code: ['CODE_ALREADY_EXISTS'] } : undefined);
+}
+export const subjectCrudMocks = [
+  { method: 'POST', path: '/subjects/', handler: ({ db, user, body }) => {
+    requireStaff(user);
+    const values = validate(body, db, user);
+    const course = db.courses.find((c) => c.is_active && (!c.organization_id || c.organization_id === user.organization_id));
+    if (!course) throw mockError(409, 'NO_ACTIVE_COURSE');
+    unique(db, values, course.id, null, true);
+    const now = new Date().toISOString();
+    const s = { ...values, semester: values.semester ?? '', id: crypto.randomUUID(), course_id: course.id, created_at: now, updated_at: now };
+    db.subjects.push(s); coordinatorMembership(db, s);
+    return reply(201, shape(s, db));
+  } },
+  { method: 'PATCH', path: '/subjects/:subject/', handler: ({ db, user, params, body }) => {
+    if (!user?.is_active) throw mockError(403, 'PERMISSION_DENIED');
+    const s = target(db, user, params.subject);
+    if (!(user.is_staff || user.is_superadmin || db.memberships.some((m) => m.subject_id === s.id && m.user_id === user.id && m.is_active && m.role === 'COORDINATOR'))) throw mockError(403, 'PERMISSION_DENIED');
+    active(db, s);
+    const values = validate(body, db, user, s);
+    unique(db, values, s.course_id, s.id, false);
+    if (values.coordinator_id && values.coordinator_id !== s.coordinator_id) {
+      const old = db.memberships.find((m) => m.subject_id === s.id && m.user_id === s.coordinator_id && m.is_active && m.role === 'COORDINATOR');
+      if (old) Object.assign(old, { role: 'TEACHER', permission_overrides: {} });
+      s.coordinator_id = values.coordinator_id; coordinatorMembership(db, s);
+    }
+    Object.assign(s, values, { updated_at: new Date().toISOString() });
+    return shape(s, db);
+  } },
+  { method: 'DELETE', path: '/subjects/:subject/', handler: ({ db, user, params }) => {
+    requireStaff(user);
+    const s = target(db, user, params.subject);
+    active(db, s);
+    if (db.exams.some((e) => e.subject_id === s.id)) throw mockError(409, 'HAS_EXAMS');
+    db.subjects = db.subjects.filter((row) => row.id !== s.id);
+    db.memberships = db.memberships.filter((m) => m.subject_id !== s.id);
+    db.groups = db.groups.filter((g) => g.subject_id !== s.id);
+    return reply(204);
+  } },
+];
+
 export const mocks = [
   ...subjectCrudMocks,
   ...subjectImportMocks,
