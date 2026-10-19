@@ -174,6 +174,19 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
 - Auditoría de Codex `3358890`: incluye el fichero que faltaba en `983c61c`; integración
   `802d77a` = claude `b143bee` + codex `8105edf`, 147/147, lint/build/estilo OK.
 
+## Iteración 2026-10-19 · bandeja de revisiones: estado, foco y concurrencia
+- Integración en `preview/integration` (`d9b2be2`, claude `0cd2a06` + codex `76d242b`): 151/151,
+  lint/build/estilo OK. Codex `b52bb00` (foco tras marcar notificaciones) solo toca sus rutas: sin hallazgos.
+- Fallo encontrado en `ReviewsPage`: al resolver una solicitud, la recarga sustituía la lista por el
+  cargador y se perdían las respuestas escritas en las demás. Ahora el cargador solo aparece en la
+  primera carga (la lista sigue montada, con `aria-busy`).
+- Accesibilidad: cada solicitud es un `li` etiquetado por su título; «Resolver» y «Abrir examen» llevan
+  el problema y el estudiante en el nombre accesible (empiezan por el texto visible, WCAG 2.5.3);
+  tras resolver, el foco pasa a la solicitud siguiente o a la región de la lista.
+- Concurrencia: si otra persona ya la resolvió, el backend responde `ALREADY_RESOLVED`
+  (`apps/reviews/services/reviews.py`); se muestra un mensaje propio y se recarga la lista.
+- `src/features/reviews/reviews.test.jsx`: 3 pruebas nuevas → 53 propias.
+
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.
 - 2 tests con timeout bajo carga → ampliados localmente; entrada de texto con `change`.
