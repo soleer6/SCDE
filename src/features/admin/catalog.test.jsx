@@ -209,13 +209,48 @@ it('filters audit events before pagination and clears all filters', async () => 
   db.audit_logs = Array.from({ length: 30 }, (_, i) => ({ id: `audit-${i}`, event_type: i === 29 ? 'TARGET' : 'OTHER', actor: 'u-admin', actor_email: 'admin@uam.es', entity_type: 'user', entity_id: 'u-javier', ip_address: '127.0.0.1', timestamp: '2026-10-17T10:00:00Z', payload: {} }));
   const user = userEvent.setup(); renderPage(<AuditPage />);
   await screen.findAllByText('OTHER');
+  const results = screen.getByRole('region', { name: 'Registro de auditoría' });
+  expect(results).not.toHaveFocus();
+  await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+  await screen.findByText(/Página 2 de 2/);
+  await waitFor(() => expect(results).toHaveFocus());
+  await user.tab();
+  expect(within(results).getAllByRole('row')[1]).toHaveFocus();
   fireEvent.change(screen.getByLabelText('Evento'), { target: { value: 'TARGET' } });
+  const originalGet = api.get.bind(api);
+  let releaseFilter;
+  const filterGate = new Promise((resolve) => { releaseFilter = resolve; });
+  const get = vi.spyOn(api, 'get').mockImplementationOnce(async (...args) => {
+    await filterGate;
+    return originalGet(...args);
+  });
   await user.click(screen.getByRole('button', { name: 'Aplicar filtros' }));
+  await waitFor(() => expect(get).toHaveBeenCalledWith('/audit-logs/', { page: 1, page_size: '25', event_type: 'TARGET' }));
+  expect(results).not.toHaveFocus();
+  expect(within(results).queryByRole('table')).not.toBeInTheDocument();
+  await act(async () => { releaseFilter(); });
   await screen.findByText('TARGET');
+  await waitFor(() => expect(results).toHaveFocus());
   expect(screen.queryByText('OTHER')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+  await user.tab();
+  expect(within(results).getAllByRole('row')[1]).toHaveFocus();
+  await user.keyboard('{Enter}');
+  expect(await screen.findByRole('dialog')).toHaveFocus();
+  await user.keyboard('{Escape}');
+  expect(within(results).getAllByRole('row')[1]).toHaveFocus();
+  fireEvent.change(screen.getByLabelText('Evento'), { target: { value: 'MISSING' } });
+  await user.click(screen.getByRole('button', { name: 'Aplicar filtros' }));
+  await within(results).findByText('No hay registros');
+  await waitFor(() => expect(results).toHaveFocus());
+  await user.tab();
+  expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled();
   expect(screen.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
   await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
   await screen.findAllByText('OTHER');
+  await waitFor(() => expect(results).toHaveFocus());
+  expect(screen.getByLabelText('Evento')).toHaveValue('');
+  expect(screen.getByText(/Página 1 de 2/)).toBeInTheDocument();
 });
 
 it('combines every documented audit filter, including dates', async () => {
