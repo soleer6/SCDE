@@ -143,8 +143,8 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
   *propiedades* llamadas `description` (lo trataba como prosa) → falsos positivos en
   `rubric_criteria`. Corregido antes del commit.
 - Comprobación de que el test detecta fallos: añadir un campo a `problemOut` lo hace fallar.
-- Fuera de alcance (futuro): validar también cuerpos de petición y respuestas de
-  operaciones de escritura.
+- Fuera de alcance (futuro): validar también cuerpos de petición (las respuestas de
+  escritura se validan desde la iteración siguiente).
 
 ## Iteración 2026-10-19 · integración en preview y prueba lenta de ingestion
 - `preview/integration` (`0c1f9e5`) = claude `9c0183c` + codex `e884cae`: 136/136 pruebas,
@@ -156,6 +156,23 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
 - Se separó la comprobación del enlace desde la página del examen en su propia prueba, de modo
   que cada prueba monta una única ruta perezosa. Se probó también precargar los chunks en
   `beforeAll` y se descartó: no produjo mejora medible (3 ejecuciones de la batería).
+
+## Iteración 2026-10-19 · test de contrato de las mutaciones
+- Motivo: el test de contrato solo cubría GET (los cuerpos de escritura solo tienen sentido
+  dentro de un flujo). Codex había añadido `POST/PATCH/DELETE /subjects/` sin validar.
+- Diseño: en vez de inventar peticiones, las pruebas de flujo son las muestras. El router de
+  mocks expone `observeMockResponses`; `src/test/setup.js` registra cada respuesta a
+  POST/PUT/PATCH/DELETE y, al cerrar cada fichero de prueba, falla si alguna se sale de la
+  operación declarada (`src/test/contract/mutations.js`, 4 pruebas propias del verificador).
+- Primera pasada en la rama: 18 discrepancias distintas. Una era un fallo del mock
+  (`page_dimensions: null` al crear un modelo; el backend usa `default=list`) → corregido. El
+  resto, comprobadas en el código Django: errores de servicio con códigos y estados no
+  declarados, fechas anulables y una lista declarada como objeto → **gap-11**. Los errores se
+  validan contra el sobre real del backend; las formas 2xx reales, en `MUTATION_SHAPES`.
+- Integración con los mocks de Codex (preview, sin commitear allí): 2 discrepancias (fechas
+  nulas de `POST /courses/`, mismo hueco); con ellas declaradas, 151/151.
+- Auditoría de Codex `3358890`: incluye el fichero que faltaba en `983c61c`; integración
+  `802d77a` = claude `b143bee` + codex `8105edf`, 147/147, lint/build/estilo OK.
 
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.

@@ -118,6 +118,34 @@ Detectado por el test de contrato del mock (`src/test/contract/`), contrastado c
   (`PolymorphicProxySerializer` de drf-spectacular) y tipar `models_problems` con un
   serializer propio.
 
+## gap-11 · Errores de servicio y campos nulos que el OpenAPI no declara
+Detectado al extender el test de contrato a las mutaciones (`src/test/contract/mutations.js`):
+cada POST/PUT/PATCH/DELETE que las pruebas de flujo envían al mock se valida contra la
+instantánea del OpenAPI. Las 18 discrepancias distintas de la rama claude y las 2 de la integración
+(admin de Codex) se contrastaron con el código Django:
+- **Errores**: las vistas capturan los `*ServiceError` y responden `{"error_code": exc.code}`
+  con estados y códigos que el esquema no declara: 409 en `POST/DELETE /exams/...`,
+  `POST /models/{id}/page-profiles/`, `PATCH /instances/{id}/`; 409 `VERSION_CONFLICT` y
+  `SCORE_EXCEEDS_MAX` en la calificación (`apps/grading/services/grading.py`); 400
+  `INVALID_TRANSITION`, `INVALID_PDF`, `ZONE_EXCEEDS_PAGE_WIDTH` sin `errors`; 404
+  `TARGET_NOT_FOUND`/`PAGE_NOT_ORPHAN` (`apps/instances/views/instances.py`). El esquema
+  solo enumera el código genérico de cada estado (`CONFLICT`, `VALIDATION_ERROR` con
+  `errors` obligatorio, `NOT_FOUND`).
+- **Campos nulos**: `Exam.date` y `AcademicCourse.start_date/end_date` son `null=True`,
+  pero sus serializers de salida los declaran no anulables (`POST /subjects/{id}/exams/`,
+  `POST /courses/`, `PATCH /courses/{id}/`).
+- **Lista por objeto**: `POST /page-profiles/{id}/zones/` declara un `ZoneResponse` y
+  responde `ZoneResponseSerializer(zones, many=True)`.
+- **Fallo real del mock** (corregido): `POST /exams/{id}/models/` devolvía
+  `page_dimensions: null`; el modelo usa `default=list`, así que es `[]`.
+- **Mitigación**: los errores se validan contra el sobre que construyen
+  `apps/core/utils/exceptions.py` y las vistas (`error_code` en mayúsculas, `errors`
+  opcional de listas de cadenas, nada más); las respuestas 2xx deben tener estado
+  declarado y validar contra el esquema o contra la forma real (`MUTATION_SHAPES`).
+- **Propuesta**: declarar en cada vista los códigos de servicio que puede devolver
+  (`OpenApiResponse` con el enum de `apps/core/openapi/errors.py`, que ya los lista) y
+  `allow_null=True` en los campos de salida anulables.
+
 ## Otras observaciones
 - `CreateReviewSerializer.notify_students` tiene `default=False`, pero la vista usa
   `get(..., True)`: el valor efectivo depende de si el cliente envía el campo. El frontend

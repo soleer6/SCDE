@@ -60,7 +60,7 @@ function modelOut(m) {
     blank_pdf_ref: m.blank_pdf_ref ?? (m.blank_pdf_pages ? `models/${m.id}/blank.pdf` : ''),
     blank_pdf_pages: m.blank_pdf_pages ?? 0,
     blank_pdf_size: m.blank_pdf_size ?? 0,
-    page_dimensions: m.page_dimensions ?? null,
+    page_dimensions: m.page_dimensions ?? [],
     created_at: m.created_at ?? now(),
     updated_at: m.updated_at ?? now(),
     page_profiles: profilesOf(m.id).map(profileOut),

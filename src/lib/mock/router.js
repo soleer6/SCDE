@@ -16,6 +16,7 @@ import { db } from './db.js';
 import { decodeMockToken } from './auth.js';
 
 const routes = [];
+const observers = new Set();
 const LATENCY_MS = Number(import.meta.env.VITE_MOCK_LATENCY ?? 180);
 
 function compile(path) {
@@ -146,15 +147,23 @@ export async function mockFetch(input, init = {}) {
   const user = claims ? db.users.find((u) => u.id === claims.user_id) ?? null : null;
   const { body, form } = await readBody(init);
 
+  let response;
   try {
     const result = await route.handler({ params, query: url.searchParams, body, form, user, db });
     db.persist();
-    return await toResponse(result);
+    response = await toResponse(result);
   } catch (err) {
-    if (err.__mock) return toResponse(err.__mock);
-    console.error('[mock] handler error', err);
-    return toResponse(reply(500, { error_code: 'INTERNAL_ERROR' }));
+    if (!err.__mock) console.error('[mock] handler error', err);
+    response = await toResponse(err.__mock ?? reply(500, { error_code: 'INTERNAL_ERROR' }));
   }
+  observers.forEach((fn) => fn({ method, route: route.path, path, response: response.clone() }));
+  return response;
+}
+
+/** Test hook: `fn` sees every answer a handler produces (the contract recorder uses it). */
+export function observeMockResponses(fn) {
+  observers.add(fn);
+  return () => observers.delete(fn);
 }
 
 /** Debug helper: list registered mock routes (used by tests and docs). */

@@ -98,3 +98,24 @@ export const BACKEND_SHAPES = {
   // apps/instances/views/instances.py · InstanceDetailView: the student branch.
   'GET /instances/{instance_pk}/': StudentVariants,
 };
+
+/* Same idea for the answers to mutations (src/test/contract/mutations.js). */
+const nullable = (schema, keys) => ({
+  ...schema,
+  properties: { ...schema.properties, ...Object.fromEntries(keys.map((k) => [k, { ...schema.properties[k], nullable: true }])) },
+});
+const CourseNullableDates = [
+  { name: 'Course (dates nullable)', schema: nullable(spec.schemas.Course, ['start_date', 'end_date']) },
+];
+
+export const MUTATION_SHAPES = {
+  // apps/exams/models/exams.py · Exam.date is null=True; the serializer declares it non-nullable.
+  'POST /subjects/{subject_pk}/exams/': [{ name: 'ExamFull (date nullable)', schema: nullable(ExamFullReal, ['date']) }],
+  // apps/exams/views/exams.py · ZoneCreateView answers ZoneResponseSerializer(zones, many=True).
+  'POST /page-profiles/{profile_pk}/zones/': [
+    { name: '[ZoneResponse]', schema: { type: 'array', items: { $ref: '#/components/schemas/ZoneResponse' } } },
+  ],
+  // apps/courses/models/courses.py · start_date/end_date are null=True (CreateCourseSerializer defaults them to None).
+  'POST /courses/': CourseNullableDates,
+  'PATCH /courses/{id}/': CourseNullableDates,
+};
