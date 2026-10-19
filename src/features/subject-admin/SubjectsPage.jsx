@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, ButtonLink, Dialog, ErrorState, Field, Input, PageHeader } from '../../ui';
 import { useApi } from '../../lib/hooks.js';
-import { Pagination, Records } from '../admin/components.jsx';
-import { SubjectEditor, SubjectRemoval } from './SubjectDialogs.jsx';
+import { Pagination, RecordForm, Records } from '../admin/components.jsx';
 import { getCurrentCourse, searchCatalog } from '../admin/api.js';
-import { exportSubjects, importSubjects } from './api.js';
+import { createSubject, deleteSubject, exportSubjects, importSubjects, updateSubject } from './api.js';
 import ImportForm from '../admin/ImportForm.jsx';
 import { downloadBlob } from '../admin/download.js';
 
@@ -68,4 +67,47 @@ export default function SubjectsPage() {
       {importing && <ImportForm hint={t('importHint')} onImport={importSubjects} onComplete={state.reload} onPendingChange={(value) => { importPendingRef.current = value; }} />}
     </Dialog>
   </>;
+}
+
+function SubjectEditor({ subject, onClose, onSaved }) {
+  const { t } = useTranslation('subject-admin');
+  const saving = useRef(false);
+  const close = useCallback(() => { if (!saving.current) onClose(); }, [onClose]);
+  return <Dialog open title={t(subject.id ? 'editSubject' : 'createSubject')} onClose={close}>
+    <RecordForm initial={{ name: subject.name ?? '', code: subject.code ?? '', semester: subject.semester ?? '', coordinator_id: subject.coordinator_id ?? '' }} fields={[
+      { name: 'name', label: t('name'), required: true, maxLength: 255 },
+      { name: 'code', label: t('code'), required: true, maxLength: 50 },
+      { name: 'semester', label: t('semester'), maxLength: 100 },
+      { name: 'coordinator_id', label: t('coordinator_id'), required: true },
+    ]} onSave={async (values) => {
+      saving.current = true;
+      try {
+        const body = { name: values.name.trim(), code: values.code.trim(), coordinator_id: values.coordinator_id.trim() };
+        // Creation applies the backend default when the optional semester is blank.
+        if (subject.id || values.semester.trim()) body.semester = values.semester.trim();
+        if (subject.id) await updateSubject(subject.id, body); else await createSubject(body);
+        onSaved(!subject.id);
+      } finally { saving.current = false; }
+    }}><p>{t(subject.id ? 'coordinatorHint' : 'createSubjectHint')}</p></RecordForm>
+  </Dialog>;
+}
+
+function SubjectRemoval({ subject, onClose, onDeleted }) {
+  const { t } = useTranslation('subject-admin');
+  const saving = useRef(false);
+  const errorRef = useRef(null);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState(null);
+  const close = useCallback(() => { if (!saving.current) onClose(); }, [onClose]);
+  useEffect(() => { if (error && !pending) errorRef.current?.focus(); }, [error, pending]);
+  return <Dialog open title={t('deleteSubject')} onClose={close} footer={<Button variant="danger" loading={pending} onClick={async () => {
+    if (saving.current) return;
+    saving.current = true; setPending(true); setError(null);
+    try { await deleteSubject(subject.id); onDeleted(); }
+    catch (err) { setError(err); }
+    finally { saving.current = false; setPending(false); }
+  }}>{t('common:confirm')}</Button>}>
+    <p>{t('deleteSubjectConfirm')}</p><p>{subject.code} · {subject.name}</p>
+    {error && <div ref={errorRef} tabIndex={-1}><ErrorState error={error} title={t(`subjectErrors.${error.code}`, { defaultValue: t('deleteSubjectError') })} /></div>}
+  </Dialog>;
 }

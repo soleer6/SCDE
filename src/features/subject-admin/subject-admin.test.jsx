@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { api } from '../../lib/api/client.js';
@@ -7,6 +7,8 @@ import { db } from '../../lib/mock/db.js';
 import { loginAs, renderPage, resetDemo } from '../admin/test-utils.jsx';
 import ManagePage from './ManagePage.jsx';
 import SubjectsPage from './SubjectsPage.jsx';
+import { createSubject, deleteSubject, updateSubject } from './api.js';
+import { subjectCrudMocks } from './mocks.js';
 
 beforeEach(async () => { await resetDemo(); await loginAs('maria.perez@uam.es', 'prof123'); });
 const manage = () => renderPage(<ManagePage />, '/subjects/s-mat101/manage', '/subjects/:subjectId/manage');
@@ -444,4 +446,181 @@ it('offers management links through hierarchical search, independent of the expo
   expect(exported[0]).not.toHaveProperty('id');
   expect(exported[0]).toMatchObject({ code: 'MAT101', coordinator_email: 'maria.perez@uam.es', groups: ['Grupo 611', 'Grupo 612'] });
   expect(exported[0].teachers).toContain('javier.ruiz@uam.es');
+});
+
+describe('subject creation, editing and deletion', () => {
+beforeEach(async () => { await resetDemo(); await loginAs(); });
+afterEach(() => vi.restoreAllMocks());
+const body = { name: 'Sistemas digitales', code: 'SD100', coordinator_id: 'u-maria' };
+const fill = (scope, values = body) => {
+  for (const [label, key] of [['Nombre', 'name'], ['Código', 'code'], ['Identificador del coordinador', 'coordinator_id']]) {
+    fireEvent.change(scope.getByLabelText(label), { target: { value: values[key] } });
+  }
+};
+
+it('creates in the active course from a historical filter, edits the coordinator and deletes with confirmation', async () => {
+  const user = userEvent.setup(); renderPage(<SubjectsPage />);
+  await screen.findByText('MAT101');
+  fireEvent.change(screen.getByLabelText('Curso'), { target: { value: 'c-2526' } });
+  await screen.findByText('No hay registros');
+  await user.click(screen.getAllByRole('button', { name: 'Crear asignatura' })[0]);
+  fill(within(screen.getByRole('dialog')));
+  const post = vi.spyOn(api, 'post');
+  await user.click(screen.getByRole('button', { name: 'Guardar' }));
+  const row = (await screen.findByText('SD100')).closest('tr');
+  expect(post).toHaveBeenCalledWith('/subjects/', body);
+  const created = db.subjects.find((s) => s.code === body.code);
+  expect(created).toMatchObject({ course_id: 'c-2627', semester: '' });
+  expect(db.memberships.find((m) => m.subject_id === created.id)).toMatchObject({ user_id: 'u-maria', role: 'COORDINATOR' });
+  await user.click(within(row).getByRole('button', { name: 'Editar asignatura' }));
+  const dialog = within(screen.getByRole('dialog'));
+  fill(dialog, { ...body, name: 'Sistemas digitales II', coordinator_id: 'u-javier' });
+  fireEvent.change(dialog.getByLabelText('Semestre (opcional)'), { target: { value: '2' } });
+  await user.click(dialog.getByRole('button', { name: 'Guardar' }));
+  const edited = (await screen.findByText('Sistemas digitales II')).closest('tr');
+  expect(created).toMatchObject({ coordinator_id: 'u-javier', semester: '2' });
+  expect(db.memberships.find((m) => m.subject_id === created.id && m.user_id === 'u-maria').role).toBe('TEACHER');
+  expect(db.memberships.find((m) => m.subject_id === created.id && m.user_id === 'u-javier').role).toBe('COORDINATOR');
+  const remove = within(edited).getByRole('button', { name: 'Eliminar asignatura' });
+  await user.click(remove);
+  await user.keyboard('{Escape}');
+  expect(remove).toHaveFocus();
+  expect(db.subjects).toContain(created);
+  await user.click(remove);
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar' }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  expect(db.subjects).not.toContain(created);
+  expect(db.memberships.filter((m) => m.subject_id === created.id)).toEqual([]);
+}, 15000);
+
+it('preserves input and focuses a field error on duplicate creation, then recovers', async () => {
+  const user = userEvent.setup(); renderPage(<SubjectsPage />);
+  await screen.findByText('MAT101');
+  await user.click(screen.getByRole('button', { name: 'Crear asignatura' }));
+  const dialog = within(screen.getByRole('dialog'));
+  fill(dialog, { ...body, code: 'MAT101' });
+  await user.click(dialog.getByRole('button', { name: 'Guardar' }));
+  const code = dialog.getByLabelText('Código');
+  await waitFor(() => expect(code).toHaveAttribute('aria-invalid', 'true'));
+  expect(code).toHaveFocus();
+  expect(code).toHaveAccessibleDescription();
+  expect(dialog.getByLabelText('Nombre')).toHaveValue(body.name);
+  expect(db.subjects).toHaveLength(3);
+  fireEvent.change(code, { target: { value: body.code } });
+  await user.click(dialog.getByRole('button', { name: 'Guardar' }));
+  expect(await screen.findByText(body.code)).toBeInTheDocument();
+});
+
+it.each(['create', 'edit', 'delete'])('guards duplicate %s submissions and closing until failure, then allows retry', async (mode) => {
+  const user = userEvent.setup(); renderPage(<SubjectsPage />);
+  const row = (await screen.findByText('MAT101')).closest('tr');
+  if (mode === 'create') await user.click(screen.getByRole('button', { name: 'Crear asignatura' }));
+  else await user.click(within(row).getByRole('button', { name: mode === 'edit' ? 'Editar asignatura' : 'Eliminar asignatura' }));
+  const element = screen.getByRole('dialog');
+  const dialog = within(element);
+  if (mode === 'create') fill(dialog);
+  const original = structuredClone(db.subjects);
+  let reject;
+  const operation = vi.spyOn(api, { create: 'post', edit: 'patch', delete: 'del' }[mode]).mockImplementationOnce(() => new Promise((_, fail) => { reject = fail; }));
+  const submit = dialog.getByRole('button', { name: mode === 'delete' ? 'Confirmar' : 'Guardar' });
+  act(() => {
+    if (mode === 'delete') { fireEvent.click(submit); fireEvent.click(submit); }
+    else { fireEvent.submit(submit.closest('form')); fireEvent.submit(submit.closest('form')); }
+    fireEvent.keyDown(window, { key: 'Escape' });
+  });
+  await user.click(dialog.getByRole('button', { name: /^(Close|Cerrar)$/ }));
+  fireEvent.mouseDown(element.parentElement);
+  expect(screen.getByRole('dialog')).toBe(element);
+  expect(operation).toHaveBeenCalledOnce();
+  expect(db.subjects).toEqual(original);
+  await act(async () => { reject(new ApiError('PERMISSION_DENIED', 403)); });
+  expect((await dialog.findByRole('alert')).parentElement).toHaveFocus();
+  expect(submit).toBeEnabled();
+  if (mode === 'delete') {
+    // Existing exams still prevent deletion when the network recovers.
+    await user.click(submit);
+    expect(await dialog.findByText('La asignatura tiene exámenes. Elimínalos antes de borrar la asignatura.')).toBeInTheDocument();
+    expect(db.subjects).toEqual(original);
+    await user.keyboard('{Escape}');
+  } else {
+    await user.click(submit);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  }
+  expect(operation).toHaveBeenCalledTimes(2);
+});
+
+it('returns exactly SubjectResponse and 201/204 status wrappers, with no detail-only fields', () => {
+  const user = db.users.find((u) => u.email === 'admin@uam.es');
+  const result = subjectCrudMocks.find((h) => h.method === 'POST').handler({ db, user, body });
+  expect(result.status).toBe(201);
+  expect(Object.keys(result.body).sort()).toEqual(['id', 'name', 'code', 'semester', 'course_id', 'coordinator_id', 'coordinator_email', 'created_at', 'updated_at'].sort());
+  expect(result.body.coordinator_email).toBe('maria.perez@uam.es');
+  expect(result.body.id).toMatch(/^[0-9a-f-]{36}$/);
+  expect(Number.isNaN(Date.parse(result.body.created_at))).toBe(false);
+  db.groups.push({ id: 'created-group', subject_id: result.body.id, label: 'Grupo' });
+  const deleted = subjectCrudMocks.find((h) => h.method === 'DELETE').handler({ db, user, params: { subject: result.body.id } });
+  expect(deleted).toMatchObject({ status: 204, body: null });
+  expect(db.groups.some((g) => g.subject_id === result.body.id)).toBe(false);
+});
+
+it('permits coordinator patches, rejects teacher writes and prevents cross-organization access', async () => {
+  await loginAs('javier.ruiz@uam.es', 'prof123');
+  await expect(createSubject(body)).rejects.toMatchObject({ status: 403 });
+  await expect(updateSubject('s-mat101', { name: 'Denied' })).rejects.toMatchObject({ status: 403 });
+  await expect(deleteSubject('s-fis101')).rejects.toMatchObject({ status: 403 });
+  expect(await updateSubject('s-fis101', { name: 'Física avanzada' })).toMatchObject({ name: 'Física avanzada', code: 'FIS101' });
+  await loginAs();
+  const other = { ...db.users[0], id: 'external-user', organization_id: 'other-org' };
+  db.users.push(other);
+  db.subjects.push({ ...db.subjects[0], id: 'external-subject', coordinator_id: other.id });
+  await expect(updateSubject('external-subject', { name: 'Denied' })).rejects.toMatchObject({ status: 404 });
+  await expect(deleteSubject('external-subject')).rejects.toMatchObject({ status: 404 });
+  await expect(createSubject({ ...body, coordinator_id: other.id })).rejects.toMatchObject({ status: 409 });
+});
+
+it('validates before mutating roles and blocks archived courses, exams and missing active courses', async () => {
+  const snapshot = structuredClone(db.memberships);
+  await expect(updateSubject('s-mat101', { code: 'FIS101', coordinator_id: 'u-javier' })).rejects.toMatchObject({ code: 'CODE_ALREADY_EXISTS' });
+  expect(db.memberships).toEqual(snapshot);
+  await expect(updateSubject('s-mat101', { coordinator_id: 'missing', name: 'Changed' })).rejects.toMatchObject({ status: 409 });
+  expect(db.subjects[0].name).toBe('Cálculo I');
+  await expect(createSubject({ ...body, name: 'x'.repeat(256) })).rejects.toMatchObject({ status: 400 });
+  await expect(deleteSubject('s-mat101')).rejects.toMatchObject({ code: 'HAS_EXAMS', status: 409 });
+  db.courses.find((c) => c.is_active).is_active = false;
+  await expect(createSubject(body)).rejects.toMatchObject({ code: 'NO_ACTIVE_COURSE' });
+  await expect(updateSubject('s-mat101', { name: 'Denied' })).rejects.toMatchObject({ code: 'COURSE_ARCHIVED', status: 403 });
+  await expect(deleteSubject('s-mat101')).rejects.toMatchObject({ code: 'COURSE_ARCHIVED', status: 403 });
+  expect(db.memberships).toEqual(snapshot);
+});
+
+it('returns to the previous page after deleting its final subject without resetting the search', async () => {
+  db.subjects = Array.from({ length: 26 }, (_, i) => ({ ...db.subjects[0], id: `extra-${i}`, code: `TEST${i}`, name: `Subject ${i}` }));
+  const user = userEvent.setup(); renderPage(<SubjectsPage />);
+  await screen.findByText('TEST0');
+  fireEvent.change(screen.getByLabelText('Buscar asignaturas'), { target: { value: 'TEST' } });
+  await user.click(screen.getByRole('button', { name: 'Buscar' }));
+  await screen.findByText('TEST0');
+  await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+  const row = (await screen.findByText('TEST25')).closest('tr');
+  await user.click(within(row).getByRole('button', { name: 'Eliminar asignatura' }));
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar' }));
+  await screen.findByText('TEST0');
+  expect(screen.getByText(/Página 1 de 1/)).toBeInTheDocument();
+  expect(screen.getByLabelText('Buscar asignaturas')).toHaveValue('TEST');
+  expect(screen.getByRole('button', { name: 'Crear asignatura' })).toHaveFocus();
+});
+
+it('disables editing and deleting historical subjects while allowing creation in the active course', async () => {
+  db.subjects.push({ ...db.subjects[0], id: 'historical', code: 'OLD100', course_id: 'c-2526' });
+  const user = userEvent.setup(); renderPage(<SubjectsPage />);
+  await screen.findByText('MAT101');
+  fireEvent.change(screen.getByLabelText('Curso'), { target: { value: 'c-2526' } });
+  const row = (await screen.findByText('OLD100')).closest('tr');
+  expect(within(row).getByRole('button', { name: 'Editar asignatura' })).toBeDisabled();
+  expect(within(row).getByRole('button', { name: 'Eliminar asignatura' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Crear asignatura' })).toBeEnabled();
+  await user.click(screen.getByRole('button', { name: 'Crear asignatura' }));
+  expect(within(screen.getByRole('dialog')).getByText(/La asignatura se crea en el curso activo/)).toBeInTheDocument();
+});
+
 });
