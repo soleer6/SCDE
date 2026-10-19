@@ -1,1 +1,233 @@
-\pendiente{Generar tabla desde docs/frontend/API_INVENTORY.md y la salida de scripts/analyze/coverage.py.}
+% Apéndice A. Generado a partir de docs/frontend/API_INVENTORY.md (OpenAPI del
+% backend, rama backend @ a8eb9f43) y de una variante por fichero de
+% scripts/analyze/coverage.py, ejecutada sobre preview/integration e867456
+% (claude/core-flows d32554e + codex/admin-ops 983c61c), 19/10/2026.
+
+Este apéndice recoge, operación por operación, qué parte del contrato del
+\dfn{backend} se usa desde la interfaz y desde qué módulo. Complementa la
+\cref{TAB:TEST-COVERAGE}, que da los totales por etiqueta, y permite comprobar
+cualquier afirmación de cobertura de la memoria contra el código.
+
+\section*{Procedencia de los datos}
+El inventario se obtiene del documento OpenAPI que publica el propio
+\dfn{backend} (\texttt{docs/files/spectacular/SCDEE API.yaml}, generado con
+drf-spectacular) mediante los guiones \texttt{scripts/analyze/endpoints.py} y
+\texttt{scripts/analyze/schemas.py}, que vuelcan en
+\texttt{docs/frontend/API\_INVENTORY.md} cada operación con su método, ruta,
+etiqueta, esquemas de petición y respuesta y la descripción de permisos. Ese
+fichero es la única lista de operaciones que el \dfn{frontend} puede usar
+(\cref{SEC:AN-BACKEND}). Se excluye la comprobación de salud del servicio, de
+modo que el denominador es de 94 operaciones.
+
+La columna «Módulo» indica qué directorio de \texttt{src/features} (o de la capa
+común \texttt{src/lib}) contiene una llamada del cliente con el mismo método y
+la misma ruta. Se ha calculado con la misma heurística de
+\texttt{scripts/analyze/coverage.py} (\cref{SEC:TEST-COVERAGE}), aplicada
+fichero a fichero y sobre todo \texttt{src}, excluidas simulaciones y pruebas.
+Los módulos \texttt{auth}, \texttt{workspace}, \texttt{exams},
+\texttt{grading}, \texttt{results}, \texttt{reviews} e \texttt{ingestion}
+pertenecen al núcleo docente; \texttt{admin}, \texttt{subject-admin},
+\texttt{notifications} y \texttt{profile}, a la línea de gestión
+(\cref{SEC:IMP-PARALLEL}). La medición corresponde a la rama de integración
+del 19 de octubre de 2026 (\textit{commits} \texttt{d32554e} del núcleo y
+\texttt{983c61c} de la gestión).
+
+Dos correcciones manuales sobre la salida de la heurística: el inicio de sesión
+aparecía también en \texttt{admin} porque un fichero auxiliar de pruebas
+(\texttt{test-utils.jsx}) no sigue la convención de nombres que el filtro
+excluye, y se ha eliminado esa atribución; y la renovación del \acs{jwt}
+(marcada con \textsuperscript{a}) la hace el cliente \acs{http} común
+(\texttt{src/lib/api/client.js}) con una llamada directa a \texttt{fetch} que
+el patrón no reconoce, por lo que la herramienta la da por no cubierta aunque
+se ejecuta en cada respuesta 401.
+
+\section*{Núcleo docente}
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \begin{tabular}{llp{3.6cm}}
+    \toprule
+    \textbf{Método} & \textbf{Ruta} & \textbf{Módulo} \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Exams}} \\
+    \texttt{DELETE} & \texttt{/exams/\{exam\_pk\}/} & \texttt{exams} \\
+    \texttt{GET} & \texttt{/exams/\{exam\_pk\}/} & \texttt{exams} \\
+    \texttt{PATCH} & \texttt{/exams/\{exam\_pk\}/} & \texttt{exams} \\
+    \texttt{PUT} & \texttt{/exams/\{exam\_pk\}/convocation/} & \texttt{exams} \\
+    \texttt{GET} & \texttt{/exams/\{exam\_pk\}/export/} & \texttt{exams} \\
+    \texttt{POST} & \texttt{/exams/\{exam\_pk\}/models/} & \texttt{exams} \\
+    \texttt{GET} & \texttt{/models/\{model\_pk\}/} & \texttt{exams} \\
+    \texttt{PUT} & \texttt{/models/\{model\_pk\}/blank-pdf/} & \texttt{exams} \\
+    \texttt{GET} & \texttt{/models/\{model\_pk\}/page-profiles/} & \texttt{exams} \\
+    \texttt{POST} & \texttt{/models/\{model\_pk\}/page-profiles/} & \texttt{exams} \\
+    \texttt{POST} & \texttt{/models/\{model\_pk\}/problems/} & \texttt{exams} \\
+    \texttt{POST} & \texttt{/models/\{model\_pk\}/qr-pdf/} & \texttt{exams} \\
+    \texttt{GET} & \texttt{/my-exams/} & \texttt{workspace} \\
+    \texttt{POST} & \texttt{/page-profiles/\{profile\_pk\}/zones/} & \texttt{exams} \\
+    \texttt{POST} & \texttt{/problems/\{problem\_pk\}/rubric/} & \texttt{exams} \\
+    \texttt{GET} & \texttt{/subjects/\{subject\_pk\}/exams/} & \texttt{workspace} \\
+    \texttt{POST} & \texttt{/subjects/\{subject\_pk\}/exams/} & \texttt{exams} \\
+    \texttt{DELETE} & \texttt{/zones/\{zone\_pk\}/} & \texttt{exams} \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Grading}} \\
+    \texttt{DELETE} & \texttt{/assignment-rules/\{rule\_pk\}/} & \texttt{exams} \\
+    \texttt{GET} & \texttt{/exams/\{exam\_pk\}/assignment-rules/} & \texttt{exams} \\
+    \texttt{POST} & \texttt{/exams/\{exam\_pk\}/assignment-rules/} & \texttt{exams} \\
+    \texttt{GET} & \texttt{/exams/\{exam\_pk\}/coverage/} & \texttt{exams} \\
+    \texttt{PUT} & \texttt{/instances/\{instance\_pk\}/problems/\{problem\_pk\}/grade/} & \texttt{grading} \\
+    \texttt{PUT} & \texttt{/instances/\{instance\_pk\}/problems/\{problem\_pk\}/rubric/} & \texttt{grading} \\
+    \texttt{GET} & \texttt{/my-tasks/} & \texttt{workspace} \\
+    \bottomrule
+  \end{tabular}
+  \caption{Operaciones de exámenes y corrección (etiquetas \textit{Exams} y
+    \textit{Grading}).\label{TAB:API-EXAMS}}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \begin{tabular}{llp{3.6cm}}
+    \toprule
+    \textbf{Método} & \textbf{Ruta} & \textbf{Módulo} \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Instances}} \\
+    \texttt{GET} & \texttt{/exams/\{exam\_pk\}/instances/} & \texttt{exams} \\
+    \texttt{POST} & \texttt{/exams/\{exam\_pk\}/instances/create/} & \texttt{ingestion} \\
+    \texttt{POST} & \texttt{/exams/\{exam\_pk\}/publish/} & \texttt{exams} \\
+    \texttt{DELETE} & \texttt{/instances/\{instance\_pk\}/} & \texttt{ingestion} \\
+    \texttt{GET} & \texttt{/instances/\{instance\_pk\}/} & \texttt{grading} \\
+    \texttt{PATCH} & \texttt{/instances/\{instance\_pk\}/} & \texttt{ingestion} \\
+    \texttt{GET} & \texttt{/instances/\{instance\_pk\}/download/} & \texttt{grading} \\
+    \texttt{PATCH} & \texttt{/instances/\{instance\_pk\}/transition/} & \texttt{grading} \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Pages}} \\
+    \texttt{GET} & \texttt{/instances/\{instance\_pk\}/pages/} & \texttt{ingestion} \\
+    \texttt{POST} & \texttt{/instances/\{instance\_pk\}/pages/attach/} & \texttt{ingestion} \\
+    \texttt{PATCH} & \texttt{/instances/\{instance\_pk\}/pages/reorder/} & \texttt{ingestion} \\
+    \texttt{DELETE} & \texttt{/instances/\{instance\_pk\}/pages/\{page\_pk\}/} & \texttt{ingestion} \\
+    \texttt{PATCH} & \texttt{/instances/\{instance\_pk\}/pages/\{page\_pk\}/accept/} & \texttt{ingestion} \\
+    \texttt{POST} & \texttt{/instances/\{instance\_pk\}/pages/\{page\_pk\}/move/} & \texttt{ingestion} \\
+    \texttt{GET} & \texttt{/orphan-pages/} & \texttt{ingestion} \\
+    \texttt{POST} & \texttt{/orphan-pages/\{page\_pk\}/attach/} & --- \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Ingestion}} \\
+    \texttt{GET} & \texttt{/recognition/engines/} & \texttt{ingestion} \\
+    \texttt{POST} & \texttt{/recognition/ingest/} & \texttt{ingestion} \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Annotations}} \\
+    \texttt{DELETE} & \texttt{/annotations/\{annotation\_pk\}/} & \texttt{grading} \\
+    \texttt{PUT} & \texttt{/annotations/\{annotation\_pk\}/} & \texttt{grading} \\
+    \texttt{POST} & \texttt{/annotations/\{annotation\_pk\}/ocr-grade/} & \texttt{grading} \\
+    \texttt{POST} & \texttt{/annotations/\{annotation\_pk\}/ocr/} & \texttt{grading} \\
+    \texttt{GET} & \texttt{/instances/\{instance\_pk\}/annotations/} & \texttt{grading} \\
+    \texttt{POST} & \texttt{/instances/\{instance\_pk\}/annotations/} & \texttt{grading} \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Reviews}} \\
+    \texttt{GET} & \texttt{/exams/\{exam\_pk\}/review/} & \texttt{exams} \\
+    \texttt{POST} & \texttt{/exams/\{exam\_pk\}/review/} & \texttt{exams} \\
+    \texttt{GET} & \texttt{/instances/\{instance\_pk\}/review-requests/} & \texttt{results} \\
+    \texttt{POST} & \texttt{/instances/\{instance\_pk\}/review-requests/} & \texttt{results} \\
+    \texttt{PATCH} & \texttt{/review-requests/\{request\_pk\}/resolve/} & \texttt{reviews} \\
+    \bottomrule
+  \end{tabular}
+  \caption{Operaciones de instancias, digitalización, anotaciones y revisión
+    (etiquetas \textit{Instances}, \textit{Pages}, \textit{Ingestion},
+    \textit{Annotations} y \textit{Reviews}).\label{TAB:API-INSTANCES}}
+\end{table}
+
+\section*{Gestión de la organización y servicios comunes}
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \begin{tabular}{llp{3.6cm}}
+    \toprule
+    \textbf{Método} & \textbf{Ruta} & \textbf{Módulo} \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Authentication}} \\
+    \texttt{POST} & \texttt{/auth/login/} & \texttt{lib/auth} \\
+    \texttt{POST} & \texttt{/auth/logout/} & \texttt{lib/auth} \\
+    \texttt{POST} & \texttt{/auth/refresh/} & \texttt{lib/api}\textsuperscript{a} \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Audit}} \\
+    \texttt{GET} & \texttt{/audit-logs/} & \texttt{admin} \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Courses}} \\
+    \texttt{POST} & \texttt{/courses/} & \texttt{admin} \\
+    \texttt{GET} & \texttt{/courses/current/} & \texttt{admin} \\
+    \texttt{GET} & \texttt{/courses/\{id\}/} & \texttt{admin} \\
+    \texttt{PATCH} & \texttt{/courses/\{id\}/} & \texttt{admin} \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Notifications}} \\
+    \texttt{GET} & \texttt{/notifications/} & \texttt{notifications} \\
+    \texttt{GET} & \texttt{/notifications/count/} & \texttt{notifications} \\
+    \texttt{PATCH} & \texttt{/notifications/read/} & \texttt{notifications} \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Organizations}} \\
+    \texttt{GET} & \texttt{/config/} & \texttt{admin} \\
+    \texttt{PATCH} & \texttt{/config/} & \texttt{admin} \\
+    \texttt{POST} & \texttt{/organizations/} & --- \\
+    \texttt{GET} & \texttt{/search/} & \texttt{admin} \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Subjects}} \\
+    \texttt{GET} & \texttt{/memberships/\{membership\_pk\}/permissions/} & \texttt{subject-admin} \\
+    \texttt{PATCH} & \texttt{/memberships/\{membership\_pk\}/permissions/} & \texttt{subject-admin} \\
+    \texttt{GET} & \texttt{/my-subjects/} & \texttt{workspace} \\
+    \texttt{POST} & \texttt{/subjects/} & \texttt{subject-admin} \\
+    \texttt{GET} & \texttt{/subjects/export/} & \texttt{subject-admin} \\
+    \texttt{POST} & \texttt{/subjects/import/} & \texttt{subject-admin} \\
+    \texttt{DELETE} & \texttt{/subjects/\{id\}/} & \texttt{subject-admin} \\
+    \texttt{GET} & \texttt{/subjects/\{id\}/} & \texttt{subject-admin}, \texttt{workspace} \\
+    \texttt{PATCH} & \texttt{/subjects/\{id\}/} & \texttt{subject-admin} \\
+    \texttt{GET} & \texttt{/subjects/\{subject\_pk\}/groups/} & \texttt{subject-admin} \\
+    \texttt{POST} & \texttt{/subjects/\{subject\_pk\}/groups/} & \texttt{subject-admin} \\
+    \texttt{DELETE} & \texttt{/subjects/\{subject\_pk\}/groups/\{group\_pk\}/} & \texttt{subject-admin} \\
+    \texttt{PATCH} & \texttt{/subjects/\{subject\_pk\}/groups/\{group\_pk\}/} & \texttt{subject-admin} \\
+    \texttt{GET} & \texttt{/subjects/\{subject\_pk\}/members/} & \texttt{exams}, \texttt{subject-admin} \\
+    \texttt{POST} & \texttt{/subjects/\{subject\_pk\}/members/} & \texttt{subject-admin} \\
+    \texttt{DELETE} & \texttt{/subjects/\{subject\_pk\}/members/\{membership\_pk\}/} & \texttt{subject-admin} \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Users}} \\
+    \texttt{GET} & \texttt{/profile/} & \texttt{profile} \\
+    \texttt{PATCH} & \texttt{/profile/} & \texttt{profile} \\
+    \texttt{GET} & \texttt{/users/} & \texttt{admin} \\
+    \texttt{POST} & \texttt{/users/} & \texttt{admin} \\
+    \texttt{GET} & \texttt{/users/export/} & \texttt{admin} \\
+    \texttt{POST} & \texttt{/users/import/} & \texttt{admin} \\
+    \texttt{GET} & \texttt{/users/\{id\}/} & \texttt{admin} \\
+    \texttt{PATCH} & \texttt{/users/\{id\}/} & \texttt{admin} \\
+    \texttt{POST} & \texttt{/users/\{id\}/reset-password/} & \texttt{admin} \\
+    \bottomrule
+  \end{tabular}
+  \caption{Operaciones de sesión, organización, asignaturas, usuarios y
+    notificaciones.\label{TAB:API-ADMIN}}
+\end{table}
+
+\section*{Lectura de las tablas}
+Con la corrección de la renovación de sesión, 92 de las 94 operaciones tienen
+un camino desde la interfaz. Las dos restantes quedan fuera por motivos
+distintos. \texttt{POST /organizations/} crea una organización y el contrato la
+reserva al superusuario del sistema, un actor que esta interfaz no contempla
+(\cref{SEC:AN-ACTORS}); su alta corresponde a la administración del
+\dfn{backend}. \texttt{POST /orphan-pages/\{page\_pk\}/attach/} falla siempre en
+el servidor por un desajuste entre la vista y su serializador (gap-5,
+\cref{TAB:AN-GAPS}), y la interfaz adjunta las páginas huérfanas con la
+operación equivalente sobre la instancia
+(\texttt{POST /instances/\{instance\_pk\}/pages/attach/}).
+
+Respecto a la \cref{TAB:TEST-COVERAGE}, medida sobre \textit{commits}
+anteriores, la novedad es el alta, la modificación y la baja de asignaturas
+(\texttt{POST /subjects/}, \texttt{PATCH} y \texttt{DELETE /subjects/\{id\}/}),
+que la línea de gestión incorporó en \texttt{983c61c}. En la fecha de la
+medición ese \textit{commit} importaba un fichero de simulación que no incluía,
+de modo que sus pruebas no se pudieron ejecutar en la rama de integración: el
+código que invoca las tres operaciones existe, pero su verificación queda
+pendiente de la siguiente integración.
+
+Que una operación figure en estas tablas significa que la interfaz la invoca
+con la forma declarada en el contrato, no que se haya probado contra el
+servidor real. Las respuestas de la simulación sí se contrastan con los
+esquemas del OpenAPI mediante la prueba de contrato de
+\texttt{src/test/contract/}, que se ejecuta en la batería
+(\cref{SEC:TEST-REAL}).

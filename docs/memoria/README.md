@@ -53,6 +53,7 @@ pdflatex main ; bibtex main ; makeglossaries main ; makeindex -s main.ist main ;
 | 5 Implementación | `docs/tfg/05-parallel-workflow.md`, historial Git, `docs/coordination/*` |
 | 6 Pruebas | `src/test/flows.test.jsx`, `scripts/audit/*`, `scripts/analyze/coverage.py` |
 | 7 Generalización | `docs/tfg/agentic-generalization-notes.md` |
+| Apéndice A | `docs/frontend/API_INVENTORY.md`, `scripts/analyze/coverage.py` (por fichero, sobre preview/integration) |
 | Apéndice C | `docs/tfg/04-iterations.md` |
 
 Listar lo pendiente: `grep -rn "pendiente" docs/memoria`.
