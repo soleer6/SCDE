@@ -188,17 +188,20 @@ export default function TeacherExamView({ exam, role }) {
         </aside>
       </div>
 
-      <ReviewDialog
-        open={reviewOpen}
-        onClose={() => setReviewOpen(false)}
-        examId={exam.id}
-        onCreated={() => {
-          setReviewOpen(false);
-          review.reload();
-          instances.reload();
-          toast.success(t('review.created'));
-        }}
-      />
+      {/* Mounted only while open, so a refused attempt and its dates do not survive closing. */}
+      {reviewOpen && (
+        <ReviewDialog
+          open
+          onClose={() => setReviewOpen(false)}
+          examId={exam.id}
+          onCreated={() => {
+            setReviewOpen(false);
+            review.reload();
+            instances.reload();
+            toast.success(t('review.created'));
+          }}
+        />
+      )}
     </>
   );
 }
