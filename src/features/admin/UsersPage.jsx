@@ -29,6 +29,8 @@ export default function UsersPage() {
   }, [confirm, error, pending]);
   const users = useApi(() => getUsers({ page, page_size: pageSize }), [page, pageSize]);
   const searchRef = useRef(null);
+  const resultsRef = useRef(null);
+  const focusAfterAction = useRef(null);
   const recovering = useRef(false);
   useEffect(() => {
     if (users.loading) return;
@@ -39,6 +41,14 @@ export default function UsersPage() {
       searchRef.current?.focus();
     }
   }, [users.loading, users.error, users.data]);
+  useEffect(() => {
+    const target = focusAfterAction.current;
+    if (!target || editing || confirm || users.loading || users.error) return;
+    // A reload first renders the old data; wait for its replacement before focusing.
+    if (target.reload && target.data === users.data) return;
+    focusAfterAction.current = null;
+    resultsRef.current?.focus();
+  }, [editing, confirm, users.loading, users.error, users.data, notice]);
   const filtered = users.data && { ...users.data, results: users.data.results.filter((u) => `${u.email} ${u.first_name} ${u.last_name} ${u.nia}`.toLowerCase().includes(query.toLowerCase())) };
   async function act(fn) {
     if (actingRef.current) return;
@@ -59,11 +69,13 @@ export default function UsersPage() {
       })}>{t('export')}</Button>
     </form>
     {error && !confirm && <ErrorState error={error} />}{notice && <p role="status">{notice}</p>}
+    <section ref={resultsRef} tabIndex={-1} aria-label={t('users')}>
     <Records focusError state={{ ...users, data: filtered }} action={<Button onClick={create}>{t('create')}</Button>} columns={[
       { key: 'email', header: t('email') }, { key: 'id', header: t('id'), render: (u) => <code className="admin-identifier">{u.id}</code> }, { key: 'first_name', header: t('first_name'), render: (u) => `${u.first_name} ${u.last_name}` }, { key: 'nia', header: t('nia'), render: (u) => <code className="admin-identifier">{u.nia}</code> },
       { key: 'is_active', header: t('status'), render: (u) => <Badge tone={u.is_active ? 'accent' : undefined}>{t(u.is_active ? 'active' : 'inactive')}</Badge> },
       { key: 'actions', header: t('actions'), render: (u) => <div className="admin-actions"><Button size="sm" onClick={() => setEditing(u)}>{t('edit')}</Button><Button size="sm" variant="danger" onClick={() => { setError(null); setConfirm({ user: u, type: 'toggle' }); }}>{t('toggle')}</Button><Button size="sm" variant="danger" onClick={() => { setError(null); setConfirm({ user: u, type: 'reset' }); }}>{t('reset')}</Button></div> },
     ]} />
+    </section>
     <Pagination data={users.data} page={page} onChange={setPage} />
     <Dialog open={importing} title={t('importUsers')} onClose={() => !importPendingRef.current && setImporting(false)}>
       {importing && <ImportForm hint={t('userImportHint')} onImport={importUsers} onComplete={users.reload} onPendingChange={(value) => { importPendingRef.current = value; }} />}
@@ -74,13 +86,14 @@ export default function UsersPage() {
         try {
           const body = Object.fromEntries(fields.map(({ name }) => [name, values[name]]));
           if (editing.id) await updateUser(editing.id, body); else await createUser(body);
+          focusAfterAction.current = { reload: true, data: users.data };
           setEditing(null); users.reload(); setNotice(t('saved'));
         } finally { savingRef.current = false; }
       }} />}
     </Dialog>
     <Dialog open={Boolean(confirm)} title={t(confirm?.type === 'reset' ? 'reset' : 'toggle')} onClose={() => !actingRef.current && setConfirm(null)} footer={<Button variant="danger" loading={pending} onClick={() => act(async () => {
-      if (confirm.type === 'reset') { await resetPassword(confirm.user.id); setNotice(t('resetDone')); }
-      else { await updateUser(confirm.user.id, { is_active: !confirm.user.is_active }); users.reload(); setNotice(t('saved')); }
+      if (confirm.type === 'reset') { await resetPassword(confirm.user.id); focusAfterAction.current = { reload: false }; setNotice(t('resetDone')); }
+      else { await updateUser(confirm.user.id, { is_active: !confirm.user.is_active }); focusAfterAction.current = { reload: true, data: users.data }; users.reload(); setNotice(t('saved')); }
       setConfirm(null);
     })}>{t('common:confirm')}</Button>}>
       <p>{t(confirm?.type === 'reset' ? 'resetConfirm' : 'toggleConfirm')}</p><p>{confirm?.user.email}</p>{error && <div ref={confirmationErrorRef} tabIndex={-1}><ErrorState error={error} /></div>}

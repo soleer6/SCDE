@@ -16,6 +16,7 @@ describe('organization administration in mock mode', () => {
   it.each(['create', 'edit'])('keeps the user %s dialog open during saving and releases it after failure', async (mode) => {
     const user = userEvent.setup(); renderPage(<UsersPage />);
     const row = (await screen.findByText('javier.ruiz@uam.es')).closest('tr');
+    expect(screen.getByRole('region', { name: 'Usuarios' })).not.toHaveFocus();
     const originalUsers = structuredClone(db.users);
     const open = () => mode === 'create'
       ? user.click(screen.getByRole('button', { name: 'Crear usuario' }))
@@ -62,6 +63,10 @@ describe('organization administration in mock mode', () => {
       expect(await screen.findByText(body.email)).toBeInTheDocument();
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       expect(operation.mock.calls).toEqual([[path, body], [path, body]]);
+      const results = screen.getByRole('region', { name: 'Usuarios' });
+      await waitFor(() => expect(results).toHaveFocus());
+      await user.tab();
+      expect(screen.getAllByRole('button', { name: 'Editar usuario' })[0]).toHaveFocus();
       expect(db.users).toHaveLength(originalUsers.length + (mode === 'create' ? 1 : 0));
       const saved = db.users.find((u) => u.email === body.email);
       expect(saved).toMatchObject({ ...body, is_active: true });
@@ -210,6 +215,7 @@ describe('organization administration in mock mode', () => {
       expect(operation).toHaveBeenCalledTimes(2);
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       expect(db.users.find((u) => u.id === 'u-javier').is_active).toBe(action !== 'Cambiar estado');
+      await waitFor(() => expect(screen.getByRole('region', { name: 'Usuarios' })).toHaveFocus());
     } finally { operation.mockRestore(); }
   });
 
@@ -242,6 +248,7 @@ describe('organization administration in mock mode', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(db.users.find((u) => u.id === 'u-javier').is_active).toBe(action !== 'Cambiar estado');
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Usuarios' })).toHaveFocus());
   }, 15000);
 
   it('searches users and renders a useful empty state', async () => {
