@@ -28,16 +28,20 @@ export function Pagination({ data, page, onChange }) {
 }
 
 // Remount with a record key when switching records. Values remain intact after validation errors.
-export function RecordForm({ initial, fields, onSave, submitLabel, children }) {
+export function RecordForm({ initial, fields, onSave, submitLabel, children, focusOnSaved = false }) {
   const { t } = useTranslation('admin');
   const formId = useId();
   const formRef = useRef(null);
   const errorRef = useRef(null);
+  const savedRef = useRef(null);
   const savingRef = useRef(false);
   const [values, setValues] = useState(initial);
   const [error, setError] = useState(null);
   const [pending, setPending] = useState(false);
   const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    if (focusOnSaved && saved && !pending) savedRef.current?.focus();
+  }, [focusOnSaved, saved, pending]);
   useEffect(() => {
     if (error && !pending) {
       const target = formRef.current?.querySelector('[aria-invalid="true"]') ?? errorRef.current;
@@ -71,7 +75,7 @@ export function RecordForm({ initial, fields, onSave, submitLabel, children }) {
     })}
     {children}
     {error && <div ref={errorRef} tabIndex={-1}><ErrorState error={error} /></div>}
-    {saved && <p role="status">{t('saved')}</p>}
+    {saved && <p ref={savedRef} role="status" tabIndex={focusOnSaved ? -1 : undefined}>{t('saved')}</p>}
     <Button type="submit" variant="solid" loading={pending}>{submitLabel ?? t('common:save')}</Button>
   </form>;
 }

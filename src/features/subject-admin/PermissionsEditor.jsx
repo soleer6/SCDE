@@ -38,7 +38,7 @@ export default function PermissionsEditor({ member }) {
   return <div ref={editorRef}><Panel title={member.user_name ?? member.id}>
     <p>{t('common:roles.' + data.role)}</p><p>{t('permissionHint')}</p>
     {data.is_staff_bypass && <p role="status" tabIndex={-1} data-permission-summary>{t('bypass')}</p>}
-    <RecordForm initial={initial} fields={PERMISSION_KEYS.map((key) => ({
+    <RecordForm focusOnSaved initial={initial} fields={PERMISSION_KEYS.map((key) => ({
       name: key,
       label: `${t('permissionNames.' + key)} · ${t('default')}: ${t(defaults[key] ? 'yes' : 'no')} · ${t('effective')}: ${t(data.permissions[key] ? 'yes' : 'no')}`,
       type: 'select', disabled: data.is_staff_bypass,

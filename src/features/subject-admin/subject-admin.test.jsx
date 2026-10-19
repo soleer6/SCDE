@@ -109,6 +109,7 @@ it('preserves permission edits after a pending save fails and retries the exact 
   const save = screen.getByRole('button', { name: 'Guardar' });
   const form = save.closest('form');
   const body = { permissions: { can_create_rubric: false, can_manage_groups: true } };
+  const patch = api.patch.bind(api);
   let rejectRequest;
   const request = new Promise((_, reject) => { rejectRequest = reject; });
   const operation = vi.spyOn(api, 'patch').mockImplementationOnce(() => request);
@@ -131,8 +132,20 @@ it('preserves permission edits after a pending save fails and retries the exact 
     expect(groups).toHaveValue('true');
     expect(rubric).toHaveValue('false');
     expect(db.memberships.find((m) => m.id === 'm-2')).toEqual(before);
-    await user.click(save);
+    let finishSave;
+    operation.mockImplementationOnce((...args) => new Promise((resolve) => {
+      finishSave = async () => resolve(await patch(...args));
+    }));
+    await user.tab();
+    expect(save).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(db.memberships.find((m) => m.id === 'm-2')).toEqual(before);
+    await act(async () => { await finishSave(); });
     await screen.findByText('Cambios guardados');
+    await waitFor(() => expect(screen.getByRole('status')).toHaveFocus());
+    await user.tab();
+    expect(save).toHaveFocus();
     expect(operation).toHaveBeenCalledTimes(2);
     expect(operation.mock.calls[1]).toEqual(['/memberships/m-2/permissions/', body]);
     expect(db.memberships.find((m) => m.id === 'm-2').permission_overrides).toEqual(body.permissions);
@@ -358,10 +371,13 @@ it('displays effective permissions and saves overrides separately from defaults'
   await user.click(screen.getByRole('button', { name: 'Guardar' }));
   expect(await screen.findByLabelText(/Gestionar grupos · Por defecto: No · Efectivo: Sí/)).toBeInTheDocument();
   expect(db.memberships.find((m) => m.id === 'm-2').permission_overrides).toEqual({ can_manage_groups: true });
+  await waitFor(() => expect(screen.getByRole('status')).toHaveFocus());
   await user.selectOptions(screen.getByLabelText(/Gestionar grupos · Por defecto: No · Efectivo: Sí/), 'inherit');
+  expect(screen.queryByRole('status')).not.toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Guardar' }));
   await screen.findByLabelText(/Gestionar grupos · Por defecto: No · Efectivo: No/);
   expect(db.memberships.find((m) => m.id === 'm-2').permission_overrides).toEqual({});
+  await waitFor(() => expect(screen.getByRole('status')).toHaveFocus());
 });
 it('lets a delegate open a known membership and save permissions with the keyboard', async () => {
   db.memberships.find((m) => m.id === 'm-2').permission_overrides = { can_delegate_perms: true };
@@ -385,6 +401,9 @@ it('lets a delegate open a known membership and save permissions with the keyboa
   expect(save).toHaveFocus();
   await user.keyboard('{Enter}');
   await screen.findByText('Cambios guardados');
+  await waitFor(() => expect(screen.getByRole('status')).toHaveFocus());
+  await user.tab();
+  expect(save).toHaveFocus();
   expect(db.memberships.find((m) => m.id === 'm-3').permission_overrides).toEqual({ can_manage_groups: true });
   expect(screen.getByRole('combobox', { name: /Gestionar grupos · Por defecto: Sí · Efectivo: Sí/ })).toHaveValue('true');
   expect(first).not.toHaveFocus();
