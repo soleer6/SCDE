@@ -1,4 +1,4 @@
-La verificación del \dfn{frontend} se apoya en tres niveles complementarios, todos
+La verificación del \dfn{frontend} se apoya en cuatro niveles complementarios, todos
 automáticos y reproducibles con una sola orden sobre cualquier \textit{commit}:
 \begin{enumerate}
   \item \textbf{Pruebas de flujo}, que montan pantallas reales con su enrutador, su
@@ -10,6 +10,10 @@ automáticos y reproducibles con una sola orden sobre cualquier \textit{commit}:
         \acs{http} (nombres de campos del contrato, traducción de errores, renovación de la
         sesión), el enrutador de la simulación, la conversión de coordenadas de las zonas o
         el formato de los paneles de escritura.
+  \item \textbf{Pruebas de contrato}, que validan las respuestas de la simulación contra
+        una instantánea del documento OpenAPI del \dfn{backend}: todas sus lecturas, pedidas
+        como distintos actores, y cada escritura que envían las pruebas de flujo
+        (\cref{SEC:TEST-REAL}).
   \item \textbf{Verificaciones deterministas} que no ejecutan la aplicación: análisis
         estático, compilación de producción, auditoría de estilo y auditoría de propiedad de
         ficheros (\cref{SEC:TEST-AUDITS}).

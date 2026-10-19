@@ -18,14 +18,16 @@ asignatura, tal como los define el \dfn{backend}, y no como un rol global
 (\cref{SEC:DES-ARCH}).
 
 \paragraph{O2. Fidelidad al contrato.} Cumplido, con las salvedades que el propio objetivo
-prevé. De las 94 operaciones del contrato, 87 se invocan desde los módulos funcionales y 89
-desde el conjunto de la aplicación (\cref{SEC:TEST-COVERAGE}); las cinco restantes quedaron
-fuera por decisión de alcance o porque fallan en el servicio (gap-5). No se ha inventado
+prevé. De las 94 operaciones del contrato, 89 se invocan desde los módulos funcionales y 92
+desde el conjunto de la aplicación (\cref{SEC:TEST-COVERAGE}); las dos restantes quedaron
+fuera por decisión de alcance (la creación de organizaciones, reservada al superusuario) o
+porque fallan en el servicio (gap-5). No se ha inventado
 ninguna operación: cuando la interfaz necesitaba algo que el contrato no ofrece, se
 registró como hueco con su evidencia y una propuesta (\cref{SEC:AN-GAPS}). El objetivo se
 reforzó al final del desarrollo con una prueba que valida cada respuesta de la simulación
 contra los esquemas del documento OpenAPI; esa prueba descubrió que varias operaciones
-devuelven formas distintas según el rol sin declararlo (gap-10), lo que confirma que la
+devuelven formas distintas según el rol sin declararlo (gap-10) y que las vistas responden
+errores de servicio y campos nulos que el esquema no recoge (gap-11), lo que confirma que la
 fidelidad al contrato no basta cuando el contrato es incompleto.
 
 \paragraph{O3. Desarrollo independiente del servidor.} Cumplido en lo que depende del
@@ -36,10 +38,11 @@ Lo que no se ha podido demostrar es la segunda mitad del objetivo, que el mismo 
 \emph{funcione} contra el servidor real, porque esa ejecución no se ha realizado
 (\cref{SEC:TEST-REAL}).
 
-\paragraph{O4. Calidad verificable.} Cumplido. La rama del núcleo tiene 45 casos de prueba
-en nueve ficheros, la de gestión 94, y su unión ejecuta 136 casos que terminan
+\paragraph{O4. Calidad verificable.} Cumplido. La rama del núcleo tiene 50 casos de prueba
+en diez ficheros, la de gestión 104, y su unión ejecuta 151 casos que terminan
 correctamente, junto con el análisis estático, la compilación de producción y las
-auditorías de estilo y de propiedad (\cref{SEC:TEST-FLOWS,SEC:TEST-AUDITS}). Todas estas
+auditorías de estilo y de propiedad (\cref{SEC:TEST-FLOWS,SEC:TEST-AUDITS}); las respuestas
+de la simulación se validan además contra el contrato (\cref{SEC:TEST-REAL}). Todas estas
 comprobaciones se exigen antes de cada \textit{commit}. Su valor quedó demostrado en el
 propio proceso: varias pruebas nacieron de defectos reales y la integración periódica de las
 dos ramas detectó fallos que ninguna veía por separado (\cref{SEC:IMP-PARALLEL}).

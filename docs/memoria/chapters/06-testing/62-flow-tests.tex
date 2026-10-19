@@ -1,11 +1,11 @@
 Esta sección describe las baterías de las dos líneas de trabajo. Las cifras corresponden a
 ejecuciones de \texttt{npm run check} sobre \textit{commits} concretos: la línea del núcleo
-sobre \texttt{bf6e673} y la de gestión sobre \texttt{93f4bb2}. Son recuentos de casos que
+sobre \texttt{18574e0} y la de gestión sobre \texttt{b52bb00}. Son recuentos de casos que
 terminan correctamente, no medidas de cobertura de líneas, de ramas ni de requisitos.
 
 \subsection{Núcleo docente}
 
-La rama del núcleo contiene 41 casos en siete ficheros (\cref{TAB:TEST-CORE}). Los casos de
+La rama del núcleo contiene 50 casos en diez ficheros (\cref{TAB:TEST-CORE}). Los casos de
 flujo montan la aplicación con su enrutador y su proveedor de sesión, inician sesión con uno
 de los usuarios de la simulación y recorren el caso de uso hasta comprobar tanto la pantalla
 como el estado de los datos simulados.
@@ -24,9 +24,10 @@ como el estado de los datos simulados.
       publicados del estudiante; bandeja de revisiones; creación de exámenes, modelos,
       problemas y \dfnpl{rubrica}, validación del \acs{pdf} en blanco y de la
       convocatoria, reglas de correctores y su cobertura. \\
-    \texttt{ingestion/ingestion.test.jsx} & 8 & Reglas de las operaciones de páginas
+    \texttt{ingestion/ingestion.test.jsx} & 9 & Reglas de las operaciones de páginas
       (mover solo dentro del mismo examen, reordenar, aceptar, descartar, huérfanas solo
-      para gestores, estudiante duplicado) y pantallas de incidencias y de escaneos. \\
+      para gestores, estudiante duplicado), pantallas de incidencias y de escaneos y
+      enlace a las incidencias desde la página del examen. \\
     \texttt{grading/ocr.test.jsx} & 8 & Formato de los paneles de escritura; nota
       reconocida aplicada o propuesta según la confianza; texto reconocido añadido al
       comentario y borrado de la anotación temporal; la tinta de página ignora los
@@ -40,12 +41,18 @@ como el estado de los datos simulados.
       errores y renovación transparente de un \textit{token} caducado. \\
     \texttt{lib/mock/router.test.js} & 2 & Selección de la ruta más específica y
       respuestas binarias. \\
+    \texttt{test/contract/mock-contract.test.js} & 1 & Todas las lecturas de la
+      simulación, como cuatro actores, contra el contrato (\cref{SEC:TEST-REAL}). \\
+    \texttt{test/contract/mutations.test.js} & 4 & Verificador de las escrituras: estados
+      no declarados, campos inventados, sobre de errores y rutas inexistentes. \\
+    \texttt{test/contract/validate.test.js} & 3 & Validador del subconjunto de OpenAPI
+      (referencias, composición, campos no declarados). \\
     \midrule
-    \textbf{Total} & \textbf{41} & \\
+    \textbf{Total} & \textbf{50} & \\
     \bottomrule
   \end{tabular}
   \caption{Pruebas de la línea del núcleo docente (\textit{commit}
-    \texttt{bf6e673}).\label{TAB:TEST-CORE}}
+    \texttt{18574e0}).\label{TAB:TEST-CORE}}
 \end{table}
 
 Dos ejemplos muestran el tipo de aserción. La prueba del contrato de calificación guarda
@@ -61,11 +68,13 @@ segundo defecto descrito en \cref{SEC:IMP-CRITICAL}.
 \subsection{Gestión}
 
 La batería de la línea de gestión, redactada en detalle en un borrador de Codex y resumida
-aquí, contenía en el \textit{commit} \texttt{93f4bb2} 94 casos en ocho ficheros: 91 de sus
-módulos y los tres del cliente compartido (\cref{TAB:TEST-ADMIN}). Los recuentos son los
-registrados por esa línea en su bitácora; son coherentes con la ejecución conjunta de la
-composición publicada, que sumó 132 casos en catorce ficheros ($41 + 91$, con el fichero
-del cliente común contado una vez).
+aquí, contenía en el \textit{commit} \texttt{b52bb00} 104 casos en ocho ficheros: 101 de
+sus módulos y los tres del cliente compartido (\cref{TAB:TEST-ADMIN}). Los recuentos son los
+registrados por esa línea en su bitácora; son coherentes con la ejecución conjunta en la
+rama de integración (\textit{commit} \texttt{7c229d1}), que sumó 151 casos en diecisiete
+ficheros ($50 + 101$, con el fichero del cliente común contado una vez). En esa ejecución
+conjunta, las escrituras de la línea de gestión pasan también por el verificador de
+contrato del núcleo.
 
 \begin{table}[htbp]
   \centering
@@ -81,7 +90,8 @@ del cliente común contado una vez).
     Importación y exportación de usuarios & 11 & Resultados parciales, \acs{csv} con
       marca de orden de bytes y finales de línea de Windows, errores, reintento con un
       fichero corregido, exportación sin secretos. \\
-    Gestión de asignaturas & 22 & Miembros, grupos, permisos efectivos y excepciones,
+    Gestión de asignaturas & 32 & Alta, edición y baja de asignaturas con validación,
+      confirmación y permisos; miembros, grupos, permisos efectivos y excepciones,
       separación de permisos entre pestañas. \\
     Importación de asignaturas & 5 & Relaciones en \acs{json}, errores por fila, acceso
       restringido. \\
@@ -89,10 +99,10 @@ del cliente común contado una vez).
       orden de respuestas, cambio de sesión, visibilidad de la pestaña y desmontaje. \\
     Perfil & 3 & Campos editables, corrección del correo y recuperación de la carga. \\
     \midrule
-    \textbf{Total propio} & \textbf{91} & Más 3 del cliente compartido: 94. \\
+    \textbf{Total propio} & \textbf{101} & Más 3 del cliente compartido: 104. \\
     \bottomrule
   \end{tabular}
-  \caption{Pruebas de la línea de gestión (\textit{commit} \texttt{93f4bb2}), según su
+  \caption{Pruebas de la línea de gestión (\textit{commit} \texttt{b52bb00}), según su
     registro.\label{TAB:TEST-ADMIN}}
 \end{table}
 
@@ -123,5 +133,11 @@ de tiempos de espera ya descrito (\cref{SEC:TEST-STRATEGY}), en la redacción de
 capítulo la prueba de identificación de estudiante en la pantalla de incidencias superó una
 vez el límite de 8 segundos dentro de la batería completa (9,4 segundos) y terminó en
 alrededor de un segundo en tres ejecuciones aisladas consecutivas. El comportamiento apunta
-a la carga de la máquina, compartida con la otra línea, y no a un defecto funcional, pero la
-prueba es la más lenta de la rama y se ha anotado como trabajo pendiente reducir su coste.
+a la carga de la máquina, compartida con la otra línea, y no a un defecto funcional. Se
+comprobó después instrumentando la prueba paso a paso: aislada tarda unos 0,8 segundos
+(0,37 el primer pintado y alrededor de 0,1 cada interacción, con latencia nula en la
+simulación), de modo que los 9 segundos procedían de la contención de procesador con otras
+sesiones. Aun así se separó en su propia prueba la comprobación del enlace desde la página
+del examen, para que cada caso monte una sola ruta de carga diferida; precargar esas rutas
+antes de la batería se probó y se descartó por no producir mejora medible
+(\textit{commit} \texttt{d32554e}).

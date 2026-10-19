@@ -45,17 +45,34 @@ servicio analizada (commit \texttt{a8eb9f43}).
             izquierda. &
             El cliente acepta ambas formas y el editor convierte entre porcentajes y puntos
             con una función probada en ambos sentidos. \\
+    gap-9 & El reconocimiento de escritura sobre una anotación solo dibuja trazos en
+            coordenadas 0-100 sobre un lienzo fijo, formato que el contrato no describe;
+            sus errores 400 usan códigos no declarados. &
+            La tinta de página (coordenadas 0-1) se reconoce como una imagen en blanco. La
+            interfaz reconoce desde un panel propio que envía en el formato del
+            renderizador. \\
+    gap-10 & Varias lecturas de exámenes e instancias devuelven un serializador distinto
+            según el rol, aunque el contrato declara uno solo. &
+            Un cliente generado del esquema daría por presentes campos que faltan. La
+            interfaz ya trataba las tres formas; la prueba de contrato las acepta
+            transcritas de los serializadores. \\
+    gap-11 & Las vistas responden errores de servicio (409, 400, 404 con códigos propios),
+            fechas nulas y una lista donde el contrato declara otra cosa. &
+            Sin efecto en la interfaz, que ya los traducía; la prueba de contrato valida los
+            errores contra el sobre real del servicio. \\
     \hline
   \end{tabular}
 \end{table}
 
 Los cuatro primeros se detectaron al diseñar los flujos principales (gap-3 y gap-4 desde la
-línea de administración); los cuatro últimos, al implementar la resolución de incidencias
-y la configuración de exámenes, cuando el contrato se contrastó con el código de las vistas.
-Esta segunda serie muestra un límite del contrato generado: drf-spectacular describe lo que
-las anotaciones de la vista declaran, y una discrepancia entre esa declaración y el código
----como en gap-5 o gap-8--- solo aparece al leer el código o al ejecutarlo contra el servicio
-real.
+línea de administración); los cinco siguientes, al implementar la resolución de incidencias,
+la configuración de exámenes y el reconocimiento de escritura, cuando el contrato se
+contrastó con el código de las vistas; y los dos últimos, con la prueba que valida las
+respuestas de la simulación contra el documento OpenAPI (\cref{SEC:TEST-REAL}), confirmados
+después en el código del servicio. Las dos últimas series muestran un límite del contrato
+generado: drf-spectacular describe lo que las anotaciones de la vista declaran, y una
+discrepancia entre esa declaración y el código ---como en gap-5, gap-8 o gap-10--- solo
+aparece al leer el código o al ejecutarlo contra el servicio real.
 
 Se registraron además observaciones menores que no impiden ningún flujo: un valor por
 defecto de \texttt{notify\_students} que difiere entre el serializador y la vista (el
