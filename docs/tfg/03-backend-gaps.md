@@ -107,7 +107,8 @@ Detectado por el test de contrato del mock (`src/test/contract/`), contrastado c
   presentes campos que faltan.
 - `ExamFull.models_problems` se tipa como `[{string: string}]` (`extend_schema_field` con
   `DictField(child=CharField())`, comentado como "Simplificado"), pero `problems` es una
-  lista de `ProblemResponse`.
+  lista de `ProblemResponse`. Afecta también a `PATCH /exams/{id}/`, que responde con
+  `ExamFullSerializer` (lo destapó la primera prueba de interfaz que guarda los datos del examen).
 - `GET /exams/{id}/instances/` declara `PaginatedInstanceResponseList`, pero un alumno
   recibe una lista sin paginar de `StudentInstanceSerializer` (`InstanceListView`), y
   `GET /instances/{id}/` le devuelve también `StudentInstanceSerializer`, no `InstanceResponse`.
@@ -145,6 +146,14 @@ instantánea del OpenAPI. Las 18 discrepancias distintas de la rama claude y las
 - **Propuesta**: declarar en cada vista los códigos de servicio que puede devolver
   (`OpenApiResponse` con el enum de `apps/core/openapi/errors.py`, que ya los lista) y
   `allow_null=True` en los campos de salida anulables.
+
+## gap-12 · Filtro `role` de los miembros de una asignatura sin declarar
+- `GET /subjects/{id}/members/` filtra por `?role=` (`MemberListCreateView.get`,
+  `apps/subjects/views/subjects_components.py`), pero el OpenAPI solo declara `page` y
+  `page_size`. Un cliente fiel al contrato no puede saber que existe.
+- **Mitigación**: `listSubjectMembers` (`src/features/exams/api.js`) recorre todas las páginas y
+  filtra el rol en el cliente; no depende del parámetro.
+- **Propuesta**: `OpenApiParameter("role", enum=Role.choices)` en el `extend_schema` de la vista.
 
 ## Otras observaciones
 - `CreateReviewSerializer.notify_students` tiene `default=False`, pero la vista usa

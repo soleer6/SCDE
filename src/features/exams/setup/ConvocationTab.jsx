@@ -10,7 +10,7 @@ export default function ConvocationTab({ exam, onSaved }) {
   const { t } = useTranslation('exams');
   const { t: tc } = useTranslation();
   const toast = useToast();
-  const students = useApi(() => listSubjectMembers(exam.subject_id, { role: 'STUDENT' }), [exam.subject_id]);
+  const students = useApi(() => listSubjectMembers(exam.subject_id, ['STUDENT']), [exam.subject_id]);
   const [selected, setSelected] = useState(() => new Set((exam.convocation ?? []).map((s) => s.id)));
   const [filter, setFilter] = useState('');
   const [result, setResult] = useState(null);

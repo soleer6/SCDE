@@ -111,6 +111,8 @@ const CourseNullableDates = [
 export const MUTATION_SHAPES = {
   // apps/exams/models/exams.py · Exam.date is null=True; the serializer declares it non-nullable.
   'POST /subjects/{subject_pk}/exams/': [{ name: 'ExamFull (date nullable)', schema: nullable(ExamFullReal, ['date']) }],
+  // apps/exams/views/exams.py · ExamDetailView.patch answers ExamFullSerializer: same models_problems gap as GET.
+  'PATCH /exams/{exam_pk}/': [{ name: 'ExamFull (date nullable)', schema: nullable(ExamFullReal, ['date']) }],
   // apps/exams/views/exams.py · ZoneCreateView answers ZoneResponseSerializer(zones, many=True).
   'POST /page-profiles/{profile_pk}/zones/': [
     { name: '[ZoneResponse]', schema: { type: 'array', items: { $ref: '#/components/schemas/ZoneResponse' } } },

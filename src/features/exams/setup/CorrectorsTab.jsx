@@ -12,13 +12,10 @@ export default function CorrectorsTab({ exam }) {
   const toast = useToast();
   const rules = useApi(() => listAssignmentRules(exam.id), [exam.id]);
   const coverage = useApi(() => getCoverage(exam.id), [exam.id]);
-  const teachers = useApi(async () => {
-    const [a, b] = await Promise.all([
-      listSubjectMembers(exam.subject_id, { role: 'TEACHER' }),
-      listSubjectMembers(exam.subject_id, { role: 'COORDINATOR' }),
-    ]);
-    return [...b, ...a];
-  }, [exam.subject_id]);
+  const teachers = useApi(
+    async () => (await listSubjectMembers(exam.subject_id, ['COORDINATOR', 'TEACHER'])).sort((a, b) => (a.role === b.role ? 0 : a.role === 'COORDINATOR' ? -1 : 1)),
+    [exam.subject_id],
+  );
   const del = useAction((id) => deleteAssignmentRule(id));
 
   const problems = (exam.models_problems ?? []).flatMap((m) => m.problems.map((p) => ({ ...p, model: m.label })));

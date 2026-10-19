@@ -246,6 +246,26 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
   error; falla si se rompe la descarga.
 - Tests propios: 64 (63 + 1).
 
+## Iteración 2026-10-19 · integración y pruebas de la configuración del examen
+- `preview/integration` (`e0d2a37`) = claude `105b388` + codex `18f04b2`: 168/168, lint/build/estilo
+  OK. Codex `6f2dcbd`/`18f04b2` solo tocan `codex-log.md`: sin hallazgos.
+- Las cuatro pestañas de `/exams/:id/setup` no tenían pruebas de interfaz (solo de contrato).
+  Nuevo `src/features/exams/setup.test.jsx` (7 casos) y tres defectos encontrados al escribirlo:
+  1. `ExamSetupPage` mostraba el cargador de página en cada recarga tras guardar: desmontaba la
+     pestaña activa (se perdía la lista de estudiantes rechazados de la convocatoria y el estado
+     del editor de zonas). Ahora solo en la primera carga; dos pruebas fallan sin el arreglo.
+  2. `listSubjectMembers` leía una sola página de 100 miembros: en una asignatura grande la
+     convocatoria omitía estudiantes en silencio. Recorre todas las páginas y filtra el rol en el
+     cliente, porque el `?role=` de `MemberListCreateView` no está en el OpenAPI (gap-12); los
+     correctores pasan de dos peticiones a una.
+  3. Primera mutación `PATCH /exams/{id}/` en las pruebas: el test de contrato la marcó por el
+     mismo `models_problems` mal tipado de gap-10 (responde `ExamFullSerializer`); añadida a
+     `MUTATION_SHAPES` tras leer la vista.
+- El mock de `GET /subjects/:id/members/` es de Codex (subject-admin) e ignora `?role=`; con el
+  filtro en el cliente ya no afecta. Las tres pruebas que lo necesitan se saltan en la rama claude
+  sola (`it.skipIf`) y corren en la integración.
+- Tests propios: 68 ejecutados en la rama (64 + 4) y 71 en la integración (+3).
+
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.
 - 2 tests con timeout bajo carga → ampliados localmente; entrada de texto con `change`.

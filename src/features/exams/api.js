@@ -76,8 +76,16 @@ export const listAssignmentRules = (examId) => api.get(`/exams/${examId}/assignm
 export const createAssignmentRule = (examId, body) => api.post(`/exams/${examId}/assignment-rules/`, body);
 export const deleteAssignmentRule = (ruleId) => api.del(`/assignment-rules/${ruleId}/`);
 
-/* Subject members (endpoint owned by the subject-admin feature; read-only use here). */
-export const listSubjectMembers = (subjectId, query) =>
-  api.get(`/subjects/${subjectId}/members/`, { page_size: 100, ...query }).then(asList);
+/** Active members of a subject with one of `roles` (endpoint owned by the
+ *  subject-admin feature; read-only use here). Walks every page: one page of
+ *  100 silently dropped the rest of a large subject. Filters by role here
+ *  because the view's `?role=` is not in the OpenAPI (gap-12). */
+export async function listSubjectMembers(subjectId, roles) {
+  const get = (page) => api.get(`/subjects/${subjectId}/members/`, { page_size: 100, page }).then(asPage);
+  const first = await get(1);
+  let items = first.items;
+  for (let p = 2; p <= first.totalPages; p++) items = items.concat((await get(p)).items);
+  return items.filter((m) => roles.includes(m.role));
+}
 
 export { asList };
