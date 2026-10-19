@@ -33,7 +33,11 @@ export default function NotificationsPage() {
     marking.current = true;
     attemptedIds.current = [...ids];
     setPending(true); setError(null);
-    try { await markRead(ids); state.reload(); } catch (err) { setError(err); } finally { marking.current = false; setPending(false); }
+    try {
+      await markRead(ids);
+      recovering.current = true;
+      state.reload();
+    } catch (err) { setError(err); } finally { marking.current = false; setPending(false); }
   }
   return <>
     <PageHeader eyebrow={t('account')} title={t('title')} actions={<Button variant="primary" loading={pending} disabled={!unread.length || state.loading} onClick={() => mark(unread)}>{t('markPage')}</Button>} />
