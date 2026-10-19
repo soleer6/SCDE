@@ -154,6 +154,7 @@ it.each([
     act(() => { retry.click(); retry.click(); other.click(); });
     await screen.findByRole('link', { name: count });
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Notificaciones' })).toHaveFocus());
     expect(patch).toHaveBeenCalledTimes(2);
     expect(patch).toHaveBeenLastCalledWith('/notifications/read/', { notification_ids: ids });
     for (const notification of original) {
@@ -196,6 +197,7 @@ it.each([
   await user.keyboard('{Enter}');
   await screen.findByRole('link', { name: count });
   await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole('region', { name: 'Notificaciones' })).toHaveFocus());
   for (const notification of original) {
     expect(db.notifications.find((n) => n.id === notification.id)).toEqual({
       ...notification, status: ids.includes(notification.id) ? 'READ' : notification.status,
@@ -244,11 +246,15 @@ it.each(['unread', 'read', 'empty'])('restores focus after repeated notification
 it('identifies individual read actions by title and activates only the selected notification with the keyboard', async () => {
   const user = userEvent.setup(); renderPage(<><NotificationsBell /><NotificationsPage /></>);
   const grades = await screen.findByRole('button', { name: 'Marcar como leída: Notas publicadas' });
+  expect(screen.getByRole('region', { name: 'Notificaciones' })).not.toHaveFocus();
   expect(screen.getByRole('button', { name: 'Marcar como leída: Revisión abierta' })).toBeEnabled();
   grades.focus();
   await user.keyboard('{Enter}');
   await screen.findByRole('link', { name: '1 notificación sin leer' });
   await waitFor(() => expect(screen.queryByRole('button', { name: 'Marcar como leída: Notas publicadas' })).not.toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole('region', { name: 'Notificaciones' })).toHaveFocus());
+  await user.tab();
+  expect(screen.getByRole('button', { name: 'Marcar como leída: Revisión abierta' })).toHaveFocus();
   expect(screen.getByRole('button', { name: 'Marcar como leída: Revisión abierta' })).toBeEnabled();
   expect(db.notifications.find((n) => n.id === 'n-1').status).toBe('READ');
   expect(db.notifications.find((n) => n.id === 'n-2').status).toBe('UNREAD');
