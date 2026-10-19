@@ -461,6 +461,8 @@ const fill = (scope, values = body) => {
 it('creates in the active course from a historical filter, edits the coordinator and deletes with confirmation', async () => {
   const user = userEvent.setup(); renderPage(<SubjectsPage />);
   await screen.findByText('MAT101');
+  const results = screen.getByRole('region', { name: 'Asignaturas' });
+  expect(results).not.toHaveFocus();
   fireEvent.change(screen.getByLabelText('Curso'), { target: { value: 'c-2526' } });
   await screen.findByText('No hay registros');
   await user.click(screen.getAllByRole('button', { name: 'Crear asignatura' })[0]);
@@ -468,6 +470,7 @@ it('creates in the active course from a historical filter, edits the coordinator
   const post = vi.spyOn(api, 'post');
   await user.click(screen.getByRole('button', { name: 'Guardar' }));
   const row = (await screen.findByText('SD100')).closest('tr');
+  await waitFor(() => expect(results).toHaveFocus());
   expect(post).toHaveBeenCalledWith('/subjects/', body);
   const created = db.subjects.find((s) => s.code === body.code);
   expect(created).toMatchObject({ course_id: 'c-2627', semester: '' });
@@ -478,6 +481,7 @@ it('creates in the active course from a historical filter, edits the coordinator
   fireEvent.change(dialog.getByLabelText('Semestre (opcional)'), { target: { value: '2' } });
   await user.click(dialog.getByRole('button', { name: 'Guardar' }));
   const edited = (await screen.findByText('Sistemas digitales II')).closest('tr');
+  await waitFor(() => expect(results).toHaveFocus());
   expect(created).toMatchObject({ coordinator_id: 'u-javier', semester: '2' });
   expect(db.memberships.find((m) => m.subject_id === created.id && m.user_id === 'u-maria').role).toBe('TEACHER');
   expect(db.memberships.find((m) => m.subject_id === created.id && m.user_id === 'u-javier').role).toBe('COORDINATOR');
@@ -491,6 +495,9 @@ it('creates in the active course from a historical filter, edits the coordinator
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   expect(db.subjects).not.toContain(created);
   expect(db.memberships.filter((m) => m.subject_id === created.id)).toEqual([]);
+  await waitFor(() => expect(results).toHaveFocus());
+  await user.tab();
+  expect(screen.getAllByRole('link', { name: 'Administrar' })[0]).toHaveFocus();
 }, 15000);
 
 it('preserves input and focuses a field error on duplicate creation, then recovers', async () => {
@@ -543,8 +550,28 @@ it.each(['create', 'edit', 'delete'])('guards duplicate %s submissions and closi
     expect(db.subjects).toEqual(original);
     await user.keyboard('{Escape}');
   } else {
+    const results = screen.getByRole('region', { name: 'Asignaturas' });
+    let failReload;
+    const originalGet = api.get.bind(api);
+    const get = vi.spyOn(api, 'get').mockImplementationOnce(() => new Promise((_, fail) => { failReload = fail; }));
     await user.click(submit);
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(get).toHaveBeenCalledOnce());
+    expect(results).not.toHaveFocus();
+    await act(async () => { failReload(new Error('Temporary network failure')); });
+    expect((await screen.findByRole('alert')).parentElement).toHaveFocus();
+    expect(results).not.toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Reintentar' })).toHaveFocus();
+    let finishReload;
+    get.mockImplementationOnce((...args) => new Promise((resolve) => { finishReload = () => resolve(originalGet(...args)); }));
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(finishReload).toBeTypeOf('function'));
+    expect(results).not.toHaveFocus();
+    await act(async () => { finishReload(); });
+    await waitFor(() => expect(results).toHaveFocus());
+    await user.tab();
+    expect(screen.getAllByRole('link', { name: 'Administrar' })[0]).toHaveFocus();
   }
   expect(operation).toHaveBeenCalledTimes(2);
 });
@@ -603,11 +630,20 @@ it('returns to the previous page after deleting its final subject without resett
   await user.click(screen.getByRole('button', { name: 'Siguiente' }));
   const row = (await screen.findByText('TEST25')).closest('tr');
   await user.click(within(row).getByRole('button', { name: 'Eliminar asignatura' }));
+  const originalGet = api.get.bind(api);
+  let finishReload;
+  vi.spyOn(api, 'get').mockImplementationOnce((...args) => new Promise((resolve) => { finishReload = () => resolve(originalGet(...args)); }));
   await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar' }));
+  await waitFor(() => expect(finishReload).toBeTypeOf('function'));
+  const results = screen.getByRole('region', { name: 'Asignaturas' });
+  expect(results).not.toHaveFocus();
+  await act(async () => { finishReload(); });
   await screen.findByText('TEST0');
   expect(screen.getByText(/Página 1 de 1/)).toBeInTheDocument();
   expect(screen.getByLabelText('Buscar asignaturas')).toHaveValue('TEST');
-  expect(screen.getByRole('button', { name: 'Crear asignatura' })).toHaveFocus();
+  await waitFor(() => expect(results).toHaveFocus());
+  await user.tab();
+  expect(screen.getAllByRole('link', { name: 'Administrar' })[0]).toHaveFocus();
 });
 
 it('disables editing and deleting historical subjects while allowing creation in the active course', async () => {
