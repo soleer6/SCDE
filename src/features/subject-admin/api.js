@@ -1,5 +1,8 @@
 import { api } from '../../lib/api/client.js';
 const root = (id) => `/subjects/${encodeURIComponent(id)}`;
+export const createSubject = (body) => api.post('/subjects/', body);
+export const updateSubject = (id, body) => api.patch(`${root(id)}/`, body);
+export const deleteSubject = (id) => api.del(`${root(id)}/`);
 export const getMembers = (id, page = 1) => api.get(`${root(id)}/members/`, { page });
 export const assignMember = (id, body) => api.post(`${root(id)}/members/`, body);
 export const removeMember = (id, membership) => api.del(`${root(id)}/members/${membership}/`);
