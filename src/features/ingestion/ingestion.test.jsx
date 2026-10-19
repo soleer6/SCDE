@@ -95,10 +95,14 @@ describe('scan incidents page', () => {
     expect(await screen.findByRole('heading', { name: 'Incidencias de escaneo' })).toBeInTheDocument();
 
     const user = userEvent.setup();
+    const table = await screen.findByRole('table', { name: 'Exámenes escaneados' });
     await user.click(await rowOf('Faltan páginas'));
     await user.selectOptions(await screen.findByLabelText('Estudiante'), 'u-hugo');
     await user.click(screen.getByRole('button', { name: 'Guardar datos' }));
     await waitFor(() => expect(inst('i-e-fis-p1-6').student_id).toBe('u-hugo'));
+    // The refresh after saving updates the same table instead of unmounting it.
+    expect(await within(table).findByText('Hugo Navarro')).toBeInTheDocument();
+    expect(table).toBeInTheDocument();
 
     await user.click(await rowOf('Páginas por revisar'));
     await user.click(await screen.findByRole('button', { name: 'Aceptar' }));

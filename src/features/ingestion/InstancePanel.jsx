@@ -50,7 +50,7 @@ export default function InstancePanel({ exam, instance, instances, orphans, canD
       </Panel>
 
       <Panel title={t('pages.title')} flush>
-        {pages.loading ? (
+        {pages.loading && !pages.data ? (
           <Loader />
         ) : pages.error ? (
           <ErrorState error={pages.error} onRetry={pages.reload} />

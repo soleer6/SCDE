@@ -187,6 +187,20 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
   (`apps/reviews/services/reviews.py`); se muestra un mensaje propio y se recarga la lista.
 - `src/features/reviews/reviews.test.jsx`: 3 pruebas nuevas → 53 propias.
 
+## Iteración 2026-10-19 · integración y causa real de la prueba intermitente de ingestion
+- `preview/integration` (`6686c6d`) = claude `8e2e2e6` + codex `13bfa5c`: 154/154 en las
+  ejecuciones repetidas, lint/build/estilo OK. Codex `13bfa5c` (foco tras gestionar usuarios)
+  y `2d70f5d` (borradores) solo tocan sus rutas: sin hallazgos de propiedad, contrato ni estilo.
+- Una ejecución de `npm run check` falló en «identify the student» (11 s). La causa no era solo
+  la contención de CPU señalada antes: tras cada acción, `refresh()` vuelve a pedir la lista y la
+  página sustituía la tabla por el cargador; la prueba podía pulsar una fila ya desmontada y
+  quedarse esperando un botón que no llegaba. Para el usuario suponía perder la tabla, el foco y
+  el desplazamiento en cada acción.
+- Arreglo: en incidencias, páginas del examen y páginas sin examen el cargador solo aparece en la
+  carga inicial; los refrescos actualizan la tabla montada (`aria-busy` en la sección mientras
+  dura). Prueba de regresión: la misma tabla recibe el estudiante identificado (falla con el
+  código anterior).
+
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.
 - 2 tests con timeout bajo carga → ampliados localmente; entrada de texto con `change`.
