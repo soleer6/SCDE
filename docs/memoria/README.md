@@ -56,5 +56,6 @@ pdflatex main ; bibtex main ; makeglossaries main ; makeindex -s main.ist main ;
 | Apéndice A | `docs/frontend/API_INVENTORY.md`, `scripts/analyze/coverage.py` (por fichero, sobre preview/integration) |
 | Apéndice C | `docs/tfg/04-iterations.md` |
 | Apéndice D | `AGENTS.md`, `CLAUDE.md`, `docs/coordination/*`, `.claude/`, historial Git (autoría y líneas de coautoría) |
+| Apéndice E | `docs/frontend/STYLE_GUIDE.md`, `src/styles/tokens.css`, `src/ui/*`, `scripts/audit/style-audit.mjs` |
 
 Listar lo pendiente: `grep -rn "pendiente" docs/memoria`.

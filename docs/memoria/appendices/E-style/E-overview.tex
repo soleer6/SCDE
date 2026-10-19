@@ -1,1 +1,210 @@
-\pendiente{Resumir docs/frontend/STYLE\_GUIDE.md (v2) con capturas.}
+% Apéndice E. Fuente: docs/frontend/STYLE_GUIDE.md (v2, commit 15b20df),
+% src/styles/tokens.css, src/ui/index.jsx, src/ui/ui.css,
+% src/features/workspace/domain.jsx y scripts/audit/style-audit.mjs.
+% Los valores se han copiado de los ficheros, no de memoria.
+
+Este apéndice recoge la guía de estilo vigente (v2) que siguen todas las pantallas
+del \dfn{frontend}. La justificación de la dirección visual y su relación con la
+arquitectura se exponen en la \cref{SEC:DES-VISUAL}; aquí se detallan los valores
+concretos y las reglas de uso. La guía es normativa para las dos líneas de trabajo:
+el documento \texttt{docs/frontend/STYLE\_GUIDE.md} se cita en las instrucciones de
+ambos agentes y sus reglas mecánicas se comprueban de forma automática
+(\cref{TAB:TEST-STYLE}).
+
+\section*{Principio general}
+
+La aplicación debe parecer un entorno de estudio tranquilo y claro, no un panel
+técnico. La jerarquía se construye con espacio, líneas finas y pocos elementos; el
+color se reserva para comunicar significado (acción, aprobado, suspenso, pendiente,
+en proceso) y nunca se usa como decoración. De la referencia visual que aportó el
+autor solo se conserva el minimalismo: su paleta oscura, su acento dorado y sus
+etiquetas monoespaciadas en mayúsculas quedaron descartados al rechazarse la v1
+(\cref{SEC:DES-VISUAL}).
+
+\section*{Variables de diseño}
+
+Todos los valores visuales se definen una sola vez como variables \acs{css} en
+\texttt{src/styles/tokens.css}. Ningún componente puede escribir un color, una
+tipografía, un radio o una sombra literales; debe referirse a la variable
+correspondiente. La \cref{TAB:STYLE-COLOURS} recoge la paleta.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{llp{0.45\textwidth}}
+    \toprule
+    \textbf{Variable} & \textbf{Valor} & \textbf{Uso} \\
+    \midrule
+    \texttt{--bg} & \texttt{\#f6f7f9} & Fondo de página (papel frío) \\
+    \texttt{--bg-2} & \texttt{\#ffffff} & Paneles, tablas, campos y tarjetas \\
+    \texttt{--bg-3} & \texttt{\#eef1f5} & Fila al pasar el puntero o seleccionada \\
+    \texttt{--desk} & \texttt{\#e9ecf1} & Mesa sobre la que se muestra la hoja del examen \\
+    \texttt{--line}, \texttt{--line-2}, \texttt{--line-3} & \texttt{\#e4e7ec} \dots{} \texttt{\#b9c0ca} &
+      Bordes de un píxel, de menor a mayor contraste \\
+    \texttt{--fg} & \texttt{\#1b2230} & Texto principal (tinta) \\
+    \texttt{--muted} & \texttt{\#5a6372} & Texto secundario; mínimo para cualquier texto real \\
+    \texttt{--dim} & \texttt{\#8a93a1} & Solo marcadores de posición, elementos
+      desactivados y decoración \\
+    \midrule
+    \texttt{--accent} & \texttt{\#2d4fa3} & Azul tinta: acciones, enlaces, paso actual y foco \\
+    \texttt{--green} & \texttt{\#2e7d4f} & Aprobado, terminado, publicado \\
+    \texttt{--amber} & \texttt{\#9a6410} & Pendiente, por corregir, en revisión \\
+    \texttt{--rust} & \texttt{\#b83a2e} & Rojo de corregir: suspenso, error, acción destructiva \\
+    \texttt{--steel} & \texttt{\#5e6b7e} & Estados de procesamiento e información neutra \\
+    \midrule
+    \texttt{--ink-red}, \texttt{--ink-blue}, & \texttt{\#d6342c}, \texttt{\#2357c9}, &
+      Tintas de anotación sobre la hoja blanca \\
+    \texttt{--ink-green}, \texttt{--ink-black} & \texttt{\#1f8a4c}, \texttt{\#111111} & \\
+    \bottomrule
+  \end{tabular}
+  \caption{Paleta de la versión v2 (\texttt{src/styles/tokens.css}). Cada color de
+    señal tiene además variantes \texttt{-strong}, \texttt{-line}/\texttt{-dim} y
+    \texttt{-wash} para bordes y fondos suaves.\label{TAB:STYLE-COLOURS}}
+\end{table}
+
+Los nombres de la v1 (\texttt{--gold}, \texttt{--gold-dim}, \texttt{--gold-wash}) se
+mantienen como alias de las variables de acento para que el \acs{css} escrito antes del
+cambio siguiera funcionando; el auditor avisa cuando un fichero nuevo los usa. Por la
+misma razón, la variante de insignia llamada \texttt{gold} pinta hoy en ámbar
+(\texttt{src/ui/ui.css}).
+
+El resto de variables sigue el mismo criterio de escala cerrada:
+\begin{itemize}
+  \item \textbf{Tipografía.} \texttt{--sans} (Atkinson Hyperlegible
+        \cite{atkinson_hyperlegible}) para todo el texto de la interfaz;
+        \texttt{--serif} (Source Serif 4) para títulos de página y cifras
+        importantes; \texttt{--mono} (JetBrains Mono) solo para códigos de
+        asignatura, NIA e identificadores. Tamaños de 12 a 34 píxeles
+        (\texttt{--fs-micro} a \texttt{--fs-h1}), con 15 píxeles para el texto
+        base; por debajo de 720 píxeles de ancho los títulos se reducen.
+  \item \textbf{Espacio.} Escala de base 4 píxeles, de \texttt{--s-1} (4) a
+        \texttt{--s-9} (96).
+  \item \textbf{Forma.} \texttt{--radius} (10 píxeles) para paneles, tarjetas y
+        diálogos; \texttt{--radius-sm} (6) para botones y campos;
+        \texttt{--radius-pill} para insignias.
+  \item \textbf{Profundidad.} Una única sombra, \texttt{--shadow-sheet}, reservada
+        a la hoja del examen, los diálogos y los avisos.
+  \item \textbf{Movimiento.} Tres duraciones (0,15, 0,25 y 0,4\,s) con una curva
+        común; las tres pasan a cero cuando el sistema operativo indica que se
+        prefiere reducir el movimiento.
+\end{itemize}
+
+\section*{Estados y tonos}
+
+Las instancias de examen recorren un ciclo de vida definido por el \dfn{backend}. Cada
+estado se muestra como una insignia cuyo tono es fijo en toda la aplicación
+(\cref{TAB:STYLE-STATUS}); la correspondencia está codificada una sola vez en
+\texttt{src/features/workspace/domain.jsx}.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{lll}
+    \toprule
+    \textbf{Estado} & \textbf{Etiqueta (es)} & \textbf{Tono} \\
+    \midrule
+    \texttt{ASSEMBLING}, \texttt{RECEIVED}, \texttt{QUEUED} & Ensamblando, Recibido, En cola & Gris azulado \\
+    \texttt{PENDING\_GRADING} & Por corregir & Ámbar \\
+    \texttt{GRADED}, \texttt{PUBLISHED} & Corregido, Publicado & Verde \\
+    \texttt{IN\_REVIEW}, \texttt{PENDING\_REVIEW} & En revisión, Revisión pendiente & Ámbar \\
+    \texttt{FINALIZED}, \texttt{ARCHIVED} & Cerrado, Archivado & Sin tono \\
+    \bottomrule
+  \end{tabular}
+  \caption{Tono de la insignia de cada estado de la instancia. Las etiquetas son las
+    de \texttt{src/app/locales/es.json}.\label{TAB:STYLE-STATUS}}
+\end{table}
+
+\section*{Primitivas de interfaz}
+
+Las pantallas se componen con las primitivas exportadas por \texttt{src/ui}
+(\cref{TAB:STYLE-PRIMITIVES}). Son las únicas piezas que definen clases
+\texttt{.ui-*}; los módulos funcionales no pueden redefinirlas y, si necesitan
+\acs{css} propio, lo limitan a la maquetación con un prefijo propio.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{p{0.30\textwidth}p{0.60\textwidth}}
+    \toprule
+    \textbf{Primitiva} & \textbf{Uso y regla asociada} \\
+    \midrule
+    \texttt{PageHeader}, \texttt{Crumbs}, \texttt{Eyebrow} &
+      Cabecera obligatoria de cada página: migas, contexto breve (asignatura, fecha),
+      título, entradilla y acciones \\
+    \texttt{Button}, \texttt{ButtonLink}, \texttt{TextLink} &
+      Variantes \texttt{default}, \texttt{primary} (contorno azul), \texttt{solid}
+      (azul relleno, una por vista), \texttt{danger} y \texttt{ghost}; estado de
+      carga con \texttt{aria-busy} \\
+    \texttt{Field}, \texttt{Input}, \texttt{Select}, \texttt{Textarea},
+      \texttt{Checkbox} & Campos con etiqueta, ayuda y error asociados \\
+    \texttt{Panel}, \texttt{KeyValue}, \texttt{Stats} &
+      Agrupación de contenido, pares clave--valor y cifras destacadas \\
+    \texttt{DataTable} &
+      Registros en tabla blanca con marco redondeado, título accesible, estado vacío y
+      navegación por teclado en filas pulsables \\
+    \texttt{Badge} & Estados, con los tonos \texttt{accent}, \texttt{gold} (ámbar),
+      \texttt{green}, \texttt{rust} y \texttt{steel} \\
+    \texttt{StatusRail}, \texttt{Tabs} &
+      Secuencias reales (ciclo de vida de la instancia, pasos) y pestañas \\
+    \texttt{Loader}, \texttt{Skeleton}, \texttt{EmptyState}, \texttt{ErrorState} &
+      Estados de carga, vacío y error, este último con reintento \\
+    \texttt{Dialog}, \texttt{ToastProvider}/\texttt{useToast} &
+      Confirmaciones (obligatorias en acciones destructivas) y avisos \\
+    \bottomrule
+  \end{tabular}
+  \caption{Primitivas de \texttt{src/ui/index.jsx}.\label{TAB:STYLE-PRIMITIVES}}
+\end{table}
+
+\section*{Reglas de composición y de redacción}
+
+Además de las reglas mecánicas, la guía fija criterios que no puede comprobar un
+programa y que se revisan en la auditoría de cada integración:
+\begin{itemize}
+  \item Los registros se presentan en tablas; solo los objetos distintos entre sí
+        (por ejemplo, las asignaturas) pueden mostrarse como tarjetas. Se evitan los
+        paneles formados por tarjetas idénticas.
+  \item Las cifras clave (la nota, los totales) van en la tipografía con remates y
+        en tamaño grande, con color solo cuando significa algo: verde para notas
+        iguales o superiores a 5 y rojo para las inferiores.
+  \item Un único botón relleno por vista; las acciones destructivas usan la
+        variante \texttt{danger} y piden confirmación con un diálogo.
+  \item Los estados vacíos dicen qué ocurrirá a continuación; los errores usan
+        \texttt{ErrorState} y las cargas, \texttt{Loader}.
+  \item El movimiento solo aparece como respuesta a una acción del usuario.
+  \item Todo el texto visible pasa por el sistema de traducción (español e
+        inglés). Se escribe en minúscula inicial, con verbos activos y tuteando, y
+        se repite el mismo verbo del botón al aviso («Publicar notas» → «Notas
+        publicadas»).
+  \item Los estilos en línea solo se admiten para geometría dinámica (por ejemplo,
+        la posición de una anotación o el ancho de una barra de progreso).
+\end{itemize}
+
+\section*{Accesibilidad y diseño adaptable}
+
+El mínimo de accesibilidad está incorporado en las primitivas, de modo que ninguna
+pantalla puede omitirlo: anillo de foco azul de dos píxeles, etiqueta en cada
+control, navegación por teclado en las filas de las tablas, \texttt{--muted} como
+color mínimo para texto real y respeto de la preferencia de movimiento reducido. A
+partir de 900 píxeles de ancho se muestran la barra superior, la navegación lateral
+blanca y el contenido; por debajo, la navegación pasa a ser una franja horizontal.
+Las tablas se desplazan dentro de su marco y ningún otro elemento puede desbordar
+la pantalla. No se ha realizado una auditoría formal de conformidad con
+\acs{wcag} 2.2 (\cref{SEC:CONC-FUTURE}).
+
+\section*{Cumplimiento}
+
+El auditor \texttt{scripts/audit/style-audit.mjs} aplica las reglas mecánicas
+(\cref{TAB:TEST-STYLE}) a \texttt{src/features} antes de cada \textit{commit}. En el
+estado de la rama del núcleo a 19 de octubre de 2026 (\textit{commit}
+\texttt{76e4841}) revisa 59 ficheros sin errores y con siete avisos, revisados uno a
+uno: cinco estilos en línea de geometría dinámica (proporción de la hoja y posición de
+las zonas al configurar el examen, ancho de la hoja y grosor del trazo al corregir, y
+ancho de la barra de progreso), uno que asigna a la muestra de cada tinta su variable de
+color (sin valor literal) y un tamaño de 72 píxeles para la nota en grande, mayor que
+cualquier tamaño de la escala, en \texttt{workspace/domain.css}. Las
+primitivas de \texttt{src/ui} quedan fuera del auditor por definición, porque son el
+único lugar donde se permite definir las clases \texttt{.ui-*} que la regla
+\texttt{ui-restyle} prohíbe en los módulos.
+
+\pendiente{Añadir capturas de la v2 (cabecera de página, tabla con insignias,
+  corrección sobre la hoja y estado vacío) tomadas de la demostración publicada.}
