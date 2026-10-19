@@ -184,6 +184,10 @@ para las pantallas que solo tenían pruebas de contrato o de piezas sueltas. La
       (\texttt{9c820f1}) \\
     40 & Guardar una nota desmonta el visor y los problemas & Prueba nueva & El indicador
       de carga salía en cada recarga & Solo en la carga inicial (\texttt{9c820f1}) \\
+    41 & \textbf{«Siguiente por corregir» conserva las notas del estudiante anterior} &
+      Revisión del código al cambiar el gancho de datos & Cada problema se reutilizaba
+      con la misma clave entre instancias & Clave por instancia; carga inicial
+      distinguida en \texttt{useApi} (\texttt{2ebd2cb}) \\
     \bottomrule
   \end{tabular}
   \caption{Problemas encontrados al probar las pantallas, al final de la segunda
@@ -200,7 +204,7 @@ revisión y se corrigió con una prueba.
 
 \section*{Lectura del registro}
 
-Agrupando los 40 casos por el mecanismo que los hizo visibles, la mayoría los
+Agrupando los 41 casos por el mecanismo que los hizo visibles, la mayoría los
 detectó una herramienta sin intervención: Git, el \textit{linter}, Vitest o los
 auditores propios. La ejecución de la batería en la rama de integración merece
 mención aparte: los casos 14, 26 y 27 solo se manifestaban al unir las dos
@@ -214,14 +218,15 @@ investigación encontró el defecto de la interfaz. Los casos 23 y 25 muestran q
 las herramientas de verificación propias también fallan y deben verificarse a su
 vez; el 24, que una afirmación documentada no equivale a un cambio hecho.
 
-Los casos 32 a 40 añaden una lección distinta: estaban en pantallas que ya pasaban
+Los casos 32 a 41 añaden una lección distinta: estaban en pantallas que ya pasaban
 todas las comprobaciones existentes, y la mayoría apareció al escribir la primera
 prueba que montaba cada pantalla completa. El 39 es el más llamativo, porque la página de
 corrección, la central del sistema, no llegaba a pintarse desde su incorporación. El
 35 pasaba desapercibido porque el síntoma solo era un aviso en la salida de errores
 con todas las pruebas en verde. Y 29, 30, 36 y 40 son el mismo error de diseño
-repetido en varias pantallas, lo que apunta a resolverlo en el código compartido
-(\cref{SEC:CONC-FUTURE}).
+repetido en varias pantallas; se resolvió finalmente en el código compartido, y al
+hacerlo apareció el caso 41, que habría podido asignar a un estudiante las notas del
+anterior (\cref{SEC:TEST-FLOWS}).
 
 Solo dos casos requirieron a una persona: el rechazo de la dirección visual (16)
 y la detección de sesiones duplicadas del orquestador (31). Junto con el error

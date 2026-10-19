@@ -22,13 +22,6 @@ porque falla si una forma alternativa deja de usarse.
 superusuario, y la asignación directa de páginas huérfanas, una vez el \dfn{backend}
 corrija su vista (gap-5).
 
-\paragraph{Recargas sin desmontar en el gancho de datos.} Seis pantallas (incidencias,
-escaneos, panel del examen, bandeja de revisiones, configuración del examen y corrección)
-mostraban el indicador de carga en cada recarga y perdían con ello el estado local; se
-corrigieron una a una (\cref{SEC:TEST-FLOWS}). Distinguir en el gancho compartido
-\texttt{useApi} la carga inicial de las recargas evitaría que el defecto reaparezca en
-pantallas nuevas.
-
 \paragraph{Pruebas con usuarios y accesibilidad.} Evaluar los flujos de corrección y de
 revisión con docentes y estudiantes, y realizar una auditoría de conformidad con \acs{wcag}
 2.2 que incluya herramientas automáticas y lectores de pantalla.

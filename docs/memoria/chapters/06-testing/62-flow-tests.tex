@@ -1,16 +1,16 @@
 Esta sección describe las baterías de las dos líneas de trabajo. Las cifras corresponden a
 ejecuciones de \texttt{npm run check} sobre \textit{commits} concretos: la línea del núcleo
-sobre \texttt{9c820f1} y la de gestión sobre \texttt{18f04b2}, integradas en
-\texttt{a77c955}. Son recuentos de casos que
+sobre \texttt{2ebd2cb} y la de gestión sobre \texttt{18f04b2}, integradas en
+\texttt{9357888}. Son recuentos de casos que
 terminan correctamente, no medidas de cobertura de líneas, de ramas ni de requisitos.
 
 \subsection{Núcleo docente}
 
-La rama del núcleo contiene 75 casos en quince ficheros (\cref{TAB:TEST-CORE}). Tres de
+La rama del núcleo contiene 79 casos en dieciséis ficheros (\cref{TAB:TEST-CORE}). Tres de
 ellos, los de la configuración que leen los miembros de la asignatura, dependen de los
 manejadores de simulación de la línea de gestión y se omiten de forma explícita
-(\texttt{it.skipIf}) cuando la rama se ejecuta sola, que entonces cuenta 72; en la rama de
-integración se ejecutan los 75. Los casos de
+(\texttt{it.skipIf}) cuando la rama se ejecuta sola, que entonces cuenta 76; en la rama de
+integración se ejecutan los 79. Los casos de
 flujo montan la aplicación con su enrutador y su proveedor de sesión, inician sesión con uno
 de los usuarios de la simulación y recorren el caso de uso hasta comprobar tanto la pantalla
 como el estado de los datos simulados.
@@ -45,8 +45,9 @@ como el estado de los datos simulados.
       reconocida aplicada o propuesta según la confianza; texto reconocido añadido al
       comentario y borrado de la anotación temporal; la tinta de página ignora los
       paneles. \\
-    \texttt{grading/grading.test.jsx} & 4 & Página de corrección montada mientras se
+    \texttt{grading/grading.test.jsx} & 5 & Página de corrección montada mientras se
       guardan las notas (zoom, campo y foco conservados) y cierre de la corrección;
+      paso a la siguiente instancia con las notas vacías y el nombre de su estudiante;
       puntuación por encima del máximo rechazada sin llamar a la \acs{api}; nombre
       accesible del comentario; aviso de un modelo sin problemas, que no se puede dar por
       corregido. \\
@@ -62,6 +63,8 @@ como el estado de los datos simulados.
       general al salir. \\
     \texttt{lib/api/client.test.js} & 3 & Nombres de campo del contrato, traducción de
       errores y renovación transparente de un \textit{token} caducado. \\
+    \texttt{lib/hooks.test.js} & 3 & Gancho de datos: la recarga no cuenta como carga
+      inicial; el cambio de recurso y el reintento tras un error, sí. \\
     \texttt{lib/mock/router.test.js} & 2 & Selección de la ruta más específica y
       respuestas binarias. \\
     \texttt{test/contract/mock-contract.test.js} & 1 & Todas las lecturas de la
@@ -71,11 +74,11 @@ como el estado de los datos simulados.
     \texttt{test/contract/validate.test.js} & 3 & Validador del subconjunto de OpenAPI
       (referencias, composición, campos no declarados). \\
     \midrule
-    \textbf{Total} & \textbf{75} & 72 cuando la rama se ejecuta sola. \\
+    \textbf{Total} & \textbf{79} & 76 cuando la rama se ejecuta sola. \\
     \bottomrule
   \end{tabular}
   \caption{Pruebas de la línea del núcleo docente (\textit{commit}
-    \texttt{9c820f1}).\label{TAB:TEST-CORE}}
+    \texttt{2ebd2cb}).\label{TAB:TEST-CORE}}
 \end{table}
 
 Dos ejemplos muestran el tipo de aserción. La prueba del contrato de calificación guarda
@@ -94,8 +97,8 @@ La batería de la línea de gestión, redactada en detalle en un borrador de Cod
 aquí, contiene en el \textit{commit} \texttt{5d929ef} 107 casos en ocho ficheros: 104 de
 sus módulos y los tres del cliente compartido (\cref{TAB:TEST-ADMIN}). Los recuentos por
 fichero se obtuvieron con \texttt{vitest list} en la rama de integración
-(\textit{commit} \texttt{a77c955}), cuya ejecución sumó 179 casos correctos en veintidós
-ficheros ($75 + 104$, con el fichero del cliente común contado una vez). Los \textit{commits}
+(\textit{commit} \texttt{9357888}), cuya ejecución sumó 183 casos correctos en veintitrés
+ficheros ($79 + 104$, con el fichero del cliente común contado una vez). Los \textit{commits}
 de gestión posteriores a \texttt{5d929ef} solo modifican documentos de coordinación. En esa ejecución
 conjunta, las escrituras de la línea de gestión pasan también por el verificador de
 contrato del núcleo.
@@ -129,7 +132,7 @@ contrato del núcleo.
     \bottomrule
   \end{tabular}
   \caption{Pruebas de la línea de gestión (\textit{commit} \texttt{5d929ef}), contadas en
-    la integración \texttt{a77c955}.\label{TAB:TEST-ADMIN}}
+    la integración \texttt{9357888}.\label{TAB:TEST-ADMIN}}
 \end{table}
 
 Tres técnicas caracterizan esta batería. La primera es el \textbf{reloj controlado}: la
@@ -231,6 +234,19 @@ no en un navegador, porque la máquina no dispone de uno sin interfaz. La misma 
 repetía además el patrón de las pantallas anteriores: cada nota guardada recargaba la
 instancia y desmontaba el visor y las filas de problemas, con la pérdida del zoom, del
 borrador y del foco (\texttt{9c820f1}). Que el mismo error de diseño, mostrar el indicador
-de carga en cada recarga, apareciera en seis pantallas sugiere que habría convenido
-resolverlo una vez en el gancho de datos compartido; queda como mejora en el trabajo
-futuro (\cref{SEC:CONC-FUTURE}).
+de carga en cada recarga, apareciera en seis pantallas indicaba que convenía resolverlo una
+vez en el gancho de datos compartido, y así se hizo a continuación.
+
+El gancho \texttt{useApi} distingue ahora la carga inicial de la recarga: además de
+\texttt{loading}, cierto durante cualquier petición, expone \texttt{initialLoading}, cierto
+solo mientras no hay datos para las dependencias actuales (primera carga, reintento tras un
+error o cambio de recurso). Nueve pantallas del núcleo sustituyeron la condición «cargando
+y sin datos» por la nueva marca, y tres pruebas del propio gancho fijan su semántica. Al
+revisar los casos en que cambian las dependencias apareció un último defecto de la página
+de corrección: al pulsar «Siguiente por corregir», los campos conservaban las notas del
+estudiante anterior, porque el componente de cada problema se reutilizaba con la misma
+clave, y la cabecera seguía mostrando su nombre hasta llegar la instancia nueva. Como el
+campo de nota se guarda al perder el foco, bastaba con entrar y salir de él para asignar al
+estudiante siguiente la nota del anterior (consecuencia deducida del código del componente,
+no reproducida en una prueba). La corrección asigna la clave por instancia y muestra el indicador de carga al
+cambiar de instancia; la prueba que lo comprueba falla sin ella (\texttt{2ebd2cb}).
