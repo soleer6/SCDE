@@ -257,6 +257,12 @@ describe('organization administration in mock mode', () => {
     fireEvent.change(screen.getByLabelText('Buscar usuarios'), { target: { value: 'nobody@example.com' } });
     await user.click(screen.getByRole('button', { name: 'Buscar' }));
     expect(await screen.findByText('No hay registros')).toBeInTheDocument();
+    const results = screen.getByRole('region', { name: 'Usuarios' });
+    expect(results).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: 'Buscar' }));
+    expect(results).toHaveFocus();
+    await user.tab();
+    expect(within(results).getByRole('button', { name: 'Crear usuario' })).toHaveFocus();
   });
 
   it('describes page-local search and keeps its filter when paging with the keyboard', async () => {
@@ -264,20 +270,48 @@ describe('organization administration in mock mode', () => {
     db.users = [template, ...Array.from({ length: 25 }, (_, i) => ({ ...template, id: `user-${i + 1}`, email: `user-${i + 1}@uam.es`, first_name: `Persona ${i + 1}`, is_superadmin: false }))];
     const user = userEvent.setup(); renderPage(<UsersPage />);
     await screen.findByText('user-1@uam.es');
+    const results = screen.getByRole('region', { name: 'Usuarios' });
+    expect(results).not.toHaveFocus();
     const search = screen.getByRole('textbox', { name: 'Buscar usuarios' });
     expect(search).toHaveAccessibleDescription('Filtra por nombre, email o NIA solo en esta página. El total corresponde a todos los usuarios.');
     await user.click(search);
     await user.type(search, 'user-25@uam.es{Enter}');
     expect(await screen.findByText('No hay registros')).toBeInTheDocument();
+    expect(results).toHaveFocus();
     expect(screen.getByText('Página 1 de 2 · 26 registros')).toBeInTheDocument();
     const next = screen.getByRole('button', { name: 'Siguiente' });
+    const get = api.get;
+    let finishPage;
+    const request = vi.spyOn(api, 'get').mockImplementationOnce((...args) => new Promise((resolve) => {
+      finishPage = async () => resolve(await get(...args));
+    }));
     next.focus();
     await user.keyboard('{Enter}');
+    expect(request).toHaveBeenCalledWith('/users/', { page: 2, page_size: '25' });
+    expect(results).not.toHaveFocus();
+    await act(async () => { await finishPage(); });
+    request.mockRestore();
     expect(await screen.findByText('user-25@uam.es')).toBeInTheDocument();
+    expect(results).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Editar usuario' })).toHaveFocus();
     expect(screen.getByText('Página 2 de 2 · 26 registros')).toBeInTheDocument();
     expect(search).toHaveValue('user-25@uam.es');
     expect(search).toHaveAccessibleDescription('Filtra por nombre, email o NIA solo en esta página. El total corresponde a todos los usuarios.');
     expect(next).toBeDisabled();
+    let finishSize;
+    const resize = vi.spyOn(api, 'get').mockImplementationOnce((...args) => new Promise((resolve) => {
+      finishSize = async () => resolve(await get(...args));
+    }));
+    await user.selectOptions(screen.getByLabelText('Registros por página'), '50');
+    expect(resize).toHaveBeenCalledWith('/users/', { page: 1, page_size: '50' });
+    expect(results).not.toHaveFocus();
+    await act(async () => { await finishSize(); });
+    resize.mockRestore();
+    await screen.findByText('user-25@uam.es');
+    expect(results).toHaveFocus();
+    expect(screen.getByText('Página 1 de 1 · 26 registros')).toBeInTheDocument();
+    expect(search).toHaveValue('user-25@uam.es');
   }, 15000);
 
   it('recovers a failed user query with keyboard retry and keeps the page filter', async () => {

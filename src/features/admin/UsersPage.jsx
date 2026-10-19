@@ -12,7 +12,7 @@ export default function UsersPage() {
   const searchHintId = useId();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState({ text: '' });
   const [pageSize, setPageSize] = useState('25');
   const [editing, setEditing] = useState(null);
   const [importing, setImporting] = useState(false);
@@ -32,16 +32,26 @@ export default function UsersPage() {
   const searchRef = useRef(null);
   const resultsRef = useRef(null);
   const focusAfterAction = useRef(null);
+  const focusAfterQuery = useRef(null);
   const recovering = useRef(false);
   useEffect(() => {
     if (users.loading) return;
     if (users.error) {
+      focusAfterQuery.current = null;
       recovering.current = true;
     } else if (recovering.current && users.data) {
       recovering.current = false;
       searchRef.current?.focus();
     }
   }, [users.loading, users.error, users.data]);
+  useEffect(() => {
+    const target = focusAfterQuery.current;
+    if (users.error) { focusAfterQuery.current = null; return; }
+    if (!target || users.loading || users.error) return;
+    if (target.reload && target.data === users.data) return;
+    focusAfterQuery.current = null;
+    resultsRef.current?.focus();
+  }, [query, users.loading, users.error, users.data]);
   useEffect(() => {
     const target = focusAfterAction.current;
     if (!target || editing || confirm || users.loading || users.error) return;
@@ -50,7 +60,7 @@ export default function UsersPage() {
     focusAfterAction.current = null;
     resultsRef.current?.focus();
   }, [editing, confirm, users.loading, users.error, users.data, notice]);
-  const filtered = users.data && { ...users.data, results: users.data.results.filter((u) => `${u.email} ${u.first_name} ${u.last_name} ${u.nia}`.toLowerCase().includes(query.toLowerCase())) };
+  const filtered = users.data && { ...users.data, results: users.data.results.filter((u) => `${u.email} ${u.first_name} ${u.last_name} ${u.nia}`.toLowerCase().includes(query.text.toLowerCase())) };
   async function act(fn) {
     if (actingRef.current) return;
     actingRef.current = true;
@@ -61,10 +71,10 @@ export default function UsersPage() {
   const fields = ['email', 'first_name', 'last_name', 'nia', ...(!editing?.id ? ['dni'] : []), 'is_staff'].map((name) => ({ name, label: t(name), type: name === 'email' ? 'email' : name === 'is_staff' ? 'checkbox' : 'text', required: ['email', 'first_name', 'last_name'].includes(name) }));
   return <>
     <PageHeader eyebrow={t('management')} title={t('users')} actions={<><Button variant="primary" onClick={create}>{t('create')}</Button><Button onClick={() => setImporting(true)}>{t('importUsers')}</Button></>} />
-    <form className="admin-actions" onSubmit={(e) => { e.preventDefault(); setQuery(search); }}>
+    <form className="admin-actions" onSubmit={(e) => { e.preventDefault(); focusAfterQuery.current = { reload: false }; setQuery({ text: search }); }}>
       <Field label={t('search')} hint={<span id={searchHintId}>{t('searchHint')}</span>}>{(id) => <Input ref={searchRef} id={id} aria-describedby={searchHintId} value={search} onChange={(e) => setSearch(e.target.value)} />}</Field>
       <Button type="submit">{t('common:search')}</Button>
-      <Field label={t('pageSize')}>{(id) => <Select id={id} value={pageSize} onChange={(e) => { setPageSize(e.target.value); setPage(1); }} options={['25', '50', '100'].map((value) => ({ value, label: value }))} />}</Field>
+      <Field label={t('pageSize')}>{(id) => <Select id={id} value={pageSize} onChange={(e) => { focusAfterQuery.current = { reload: true, data: users.data }; setPageSize(e.target.value); setPage(1); }} options={['25', '50', '100'].map((value) => ({ value, label: value }))} />}</Field>
       <Button disabled={pending} onClick={() => act(async () => {
         const blob = await exportUsers(); downloadBlob(blob, blob.type.includes('json') ? 'users.json' : 'users.csv');
       })}>{t('export')}</Button>
@@ -77,7 +87,7 @@ export default function UsersPage() {
       { key: 'actions', header: t('actions'), render: (u) => <div className="admin-actions"><Button size="sm" onClick={() => setEditing(u)}>{t('edit')}</Button><Button size="sm" variant="danger" onClick={() => { setError(null); setConfirm({ user: u, type: 'toggle' }); }}>{t('toggle')}</Button><Button size="sm" variant="danger" onClick={() => { setError(null); setConfirm({ user: u, type: 'reset' }); }}>{t('reset')}</Button></div> },
     ]} />
     </section>
-    <Pagination data={users.data} page={page} onChange={setPage} />
+    <Pagination data={users.data} page={page} onChange={(value) => { focusAfterQuery.current = { reload: true, data: users.data }; setPage(value); }} />
     <Dialog open={importing} title={t('importUsers')} onClose={closeImport}>
       {importing && <ImportForm hint={t('userImportHint')} onImport={importUsers} onComplete={users.reload} onPendingChange={(value) => { importPendingRef.current = value; }} />}
     </Dialog>
