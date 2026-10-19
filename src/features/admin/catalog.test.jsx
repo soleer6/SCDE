@@ -16,6 +16,8 @@ it.each(['create', 'edit'])('keeps the course %s dialog open until saving settle
   const user = userEvent.setup(); renderPage(<CoursesPage />);
   const originalCourses = structuredClone(db.courses);
   const row = (await screen.findByText('2025-2026')).closest('tr');
+  const results = screen.getByRole('region', { name: 'Cursos' });
+  expect(results).not.toHaveFocus();
   const open = () => mode === 'create'
     ? user.click(screen.getByRole('button', { name: 'Crear curso' }))
     : user.click(within(row).getByRole('button', { name: 'Editar curso' }));
@@ -61,8 +63,22 @@ it.each(['create', 'edit'])('keeps the course %s dialog open until saving settle
   await open();
   const retryDialog = within(screen.getByRole('dialog'));
   fill(retryDialog);
+  const originalGet = api.get.bind(api);
+  let releaseReload;
+  const reloadGate = new Promise((resolve) => { releaseReload = resolve; });
+  const get = vi.spyOn(api, 'get').mockImplementationOnce(async (...args) => {
+    await reloadGate;
+    return originalGet(...args);
+  });
   await user.click(retryDialog.getByRole('button', { name: 'Guardar' }));
+  await waitFor(() => expect(get).toHaveBeenCalledWith('/search/', { page: 1, search: '' }));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(results).not.toHaveFocus();
+  await act(async () => { releaseReload(); });
   expect(await screen.findByText(label)).toBeInTheDocument();
+  await waitFor(() => expect(results).toHaveFocus());
+  await user.tab();
+  expect(within(results).getAllByRole('button', { name: 'Editar curso' })[0]).toHaveFocus();
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   expect(operation.mock.calls).toEqual([[path, body], [path, body]]);
   expect(db.courses).toHaveLength(originalCourses.length + (mode === 'create' ? 1 : 0));

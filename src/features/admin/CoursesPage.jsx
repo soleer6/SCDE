@@ -14,6 +14,8 @@ export default function CoursesPage() {
   const savingRef = useRef(false);
   const courses = useApi(() => searchCatalog({ page, search: query }), [page, query]);
   const searchRef = useRef(null);
+  const resultsRef = useRef(null);
+  const focusAfterSave = useRef(null);
   const recovering = useRef(false);
   useEffect(() => {
     if (courses.loading) return;
@@ -24,6 +26,12 @@ export default function CoursesPage() {
       searchRef.current?.focus();
     }
   }, [courses.loading, courses.error, courses.data]);
+  useEffect(() => {
+    const target = focusAfterSave.current;
+    if (!target || editing || courses.loading || courses.error || target.data === courses.data) return;
+    focusAfterSave.current = null;
+    resultsRef.current?.focus();
+  }, [editing, courses.loading, courses.error, courses.data]);
   return <>
     <PageHeader eyebrow={t('management')} title={t('courses')} lede={t('courseListHint')} actions={<Button variant="primary" onClick={() => setEditing({ label: '', start_date: '', end_date: '' })}>{t('newCourse')}</Button>} />
     <form className="admin-actions" onSubmit={(e) => {
@@ -34,13 +42,13 @@ export default function CoursesPage() {
       <Field label={t('searchCourses')}>{(id) => <Input ref={searchRef} id={id} value={search} onChange={(e) => setSearch(e.target.value)} />}</Field>
       <Button type="submit">{t('common:search')}</Button>
     </form>
-    <div><Records focusError state={courses} action={<Button onClick={() => setEditing({ label: '', start_date: '', end_date: '' })}>{t('newCourse')}</Button>} columns={[
+    <section ref={resultsRef} tabIndex={-1} aria-label={t('courses')}><Records focusError state={courses} action={<Button onClick={() => setEditing({ label: '', start_date: '', end_date: '' })}>{t('newCourse')}</Button>} columns={[
       { key: 'label', header: t('label') },
       { key: 'is_active', header: t('status'), render: (c) => <Badge tone={c.is_active ? 'accent' : undefined}>{t(c.is_active ? 'current' : 'inactive')}</Badge> },
       { key: 'start_date', header: t('start_date') }, { key: 'end_date', header: t('end_date') },
       { key: 'subject_count', header: t('subjectCount'), align: 'num' },
       { key: 'actions', header: t('actions'), render: (c) => <Button size="sm" onClick={() => setEditing(c)}>{t('editCourse')}</Button> },
-    ]} /></div>
+    ]} /></section>
     <Pagination data={courses.data} page={page} onChange={setPage} />
     <Dialog open={Boolean(editing)} title={t(editing?.id ? 'editCourse' : 'newCourse')} onClose={() => !savingRef.current && setEditing(null)}>
       {editing && <RecordForm key={editing.id ?? 'new'} initial={editing} fields={['label', 'start_date', 'end_date'].map((name) => ({ name, label: t(name), type: name === 'label' ? 'text' : 'date', required: name === 'label' }))} onSave={async (v) => {
@@ -48,6 +56,7 @@ export default function CoursesPage() {
         try {
           const body = { label: v.label, start_date: v.start_date || null, end_date: v.end_date || null };
           if (editing.id) await updateCourse(editing.id, body); else await createCourse(body);
+          focusAfterSave.current = { data: courses.data };
           setEditing(null); setQuery(''); setSearch(''); setPage(1); courses.reload();
         } finally { savingRef.current = false; }
       }} />}
