@@ -137,17 +137,20 @@ export default function InstancePanel({ exam, instance, instances, orphans, canD
         </Button>
       )}
 
-      <MoveDialog
-        page={moving}
-        instance={instance}
-        targets={instances.filter((i) => i.id !== instance.id)}
-        onClose={() => setMoving(null)}
-        onMove={(targetId) => {
-          const p = moving;
-          setMoving(null);
-          act(() => movePage(instance.id, p.id, targetId), t('pages.moved'));
-        }}
-      />
+      {/* Mounted only while open, so each page starts without a target. */}
+      {moving && (
+        <MoveDialog
+          page={moving}
+          instance={instance}
+          targets={instances.filter((i) => i.id !== instance.id)}
+          onClose={() => setMoving(null)}
+          onMove={(targetId) => {
+            const p = moving;
+            setMoving(null);
+            act(() => movePage(instance.id, p.id, targetId), t('pages.moved'));
+          }}
+        />
+      )}
 
       <ConfirmDialog
         open={Boolean(confirm)}

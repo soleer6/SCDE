@@ -157,7 +157,8 @@ function IssuesView({ exam, role }) {
         </aside>
       </div>
 
-      {isManager && (
+      {/* Mounted only while open: a refused attempt and its choices do not come back. */}
+      {isManager && createOpen && (
         <CreateInstanceDialog
           open={createOpen}
           exam={exam}

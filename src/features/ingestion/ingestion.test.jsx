@@ -115,9 +115,18 @@ describe('scan incidents page', () => {
     const user = userEvent.setup();
     await user.click(await rowOf('Páginas por revisar'));
     const pages = await screen.findByRole('table', { name: 'Páginas escaneadas del examen' });
+    // Regression: the dialog stayed mounted and offered the target picked for
+    // another page (or cancelled), one click away from moving the wrong page.
+    const second = within(pages).getAllByRole('row')[2];
+    await user.click(within(second).getByRole('button', { name: 'Mover' }));
+    let dialog = await screen.findByRole('dialog', { name: 'Mover la página 2' });
+    await user.selectOptions(within(dialog).getByLabelText('Examen de destino'), 'i-e-fis-p1-6');
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
     const third = within(pages).getAllByRole('row')[3];
     await user.click(within(third).getByRole('button', { name: 'Mover' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Mover la página 3' });
+    dialog = await screen.findByRole('dialog', { name: 'Mover la página 3' });
+    expect(within(dialog).getByLabelText('Examen de destino')).toHaveValue('');
+    expect(within(dialog).getByRole('button', { name: 'Mover' })).toBeDisabled();
     await user.selectOptions(within(dialog).getByLabelText('Examen de destino'), 'i-e-fis-p1-6');
     await user.click(within(dialog).getByRole('button', { name: 'Mover' }));
     await waitFor(() => expect(inst('i-e-fis-p1-6').status).toBe('RECEIVED'));

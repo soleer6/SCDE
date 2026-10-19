@@ -17,6 +17,7 @@ export default function NewExamDialog({ subjectId, open, onClose }) {
 
   const submit = async (e) => {
     e?.preventDefault();
+    if (!name.trim() || create.pending) return;
     try {
       const exam = await create.run();
       toast.success(t('create.created'));
