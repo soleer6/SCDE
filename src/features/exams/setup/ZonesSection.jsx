@@ -17,7 +17,7 @@ export default function ZonesSection({ modelId, pages, onError }) {
   const profiles = useApi(() => listPageProfiles(modelId), [modelId]);
   const [page, setPage] = useState(1);
 
-  if (profiles.loading && !profiles.data) return <Loader label={t('setup.zones.loading')} />;
+  if (profiles.initialLoading) return <Loader label={t('setup.zones.loading')} />;
   if (profiles.error) return <ErrorState error={profiles.error} onRetry={profiles.reload} />;
 
   const byPage = new Map(profiles.data.map((p) => [p.page_number, p]));

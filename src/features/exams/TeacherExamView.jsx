@@ -116,7 +116,7 @@ export default function TeacherExamView({ exam, role }) {
             onChange={setFilter}
             tabs={Object.keys(FILTERS).map((k) => ({ value: k, label: t(`filters.${k}`), count: counts[k] }))}
           />
-          {instances.loading ? (
+          {instances.initialLoading ? (
             <Loader />
           ) : instances.error ? (
             <ErrorState error={instances.error} onRetry={instances.reload} />
@@ -170,7 +170,7 @@ export default function TeacherExamView({ exam, role }) {
             </ul>
           </Panel>
           <Panel title={t('review.title')}>
-            {review.loading ? (
+            {review.initialLoading ? (
               <Loader />
             ) : review.data ? (
               <KeyValue

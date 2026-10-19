@@ -28,7 +28,7 @@ export default function IssuesPage() {
   const exam = useApi(() => getExam(examId), [examId]);
   const { roleOf, loading } = useMySubjects();
 
-  if (exam.loading || loading) return <Loader page />;
+  if (exam.initialLoading || loading) return <Loader page />;
   if (exam.error) return <ErrorState error={exam.error} onRetry={exam.reload} />;
   const e = exam.data;
   const role = roleOf(e.subject_id);
@@ -96,7 +96,7 @@ function IssuesView({ exam, role }) {
             ]}
           />
           {/* Refreshes after an action keep the table mounted (rows, focus, scroll). */}
-          {instances.loading && !instances.data ? (
+          {instances.initialLoading ? (
             <Loader />
           ) : instances.error ? (
             <ErrorState error={instances.error} onRetry={instances.reload} />
@@ -145,7 +145,7 @@ function IssuesView({ exam, role }) {
           )}
           {isManager && !selected && (
             <Panel title={t('orphans.title')}>
-              {orphans.loading && !orphans.data ? (
+              {orphans.initialLoading ? (
                 <Loader />
               ) : orphans.error ? (
                 <ErrorState error={orphans.error} onRetry={orphans.reload} />

@@ -50,7 +50,7 @@ export default function StudentResultView({ exam }) {
   );
 
   // Reloads keep the page mounted (and the focus target alive).
-  if (instances.loading && !instances.data) return <>{header}<Loader page /></>;
+  if (instances.initialLoading) return <>{header}<Loader page /></>;
   if (instances.error) return <>{header}<ErrorState error={instances.error} onRetry={instances.reload} /></>;
   if (!inst) {
     return (

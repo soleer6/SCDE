@@ -41,7 +41,7 @@ export default function SubjectPage() {
     );
   }, [subjectId, teaching, rolesLoading]);
 
-  if (subject.loading || rolesLoading) return <Loader page />;
+  if (subject.initialLoading || rolesLoading) return <Loader page />;
   if (subject.error) return <ErrorState error={subject.error} onRetry={subject.reload} />;
   const s = subject.data;
   const canManage = can(session, role, 'can_manage_members') || can(session, role, 'can_manage_groups');
@@ -84,7 +84,7 @@ export default function SubjectPage() {
       <div className="dm-split">
         <section className="dm-section">
           <h2 className="ui-h3">{t('subject.exams')}</h2>
-          {exams.loading || (!exams.data && !exams.error) ? (
+          {exams.initialLoading || (!exams.data && !exams.error) ? (
             <Loader />
           ) : exams.error ? (
             <ErrorState error={exams.error} onRetry={exams.reload} />

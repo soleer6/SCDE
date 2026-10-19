@@ -37,10 +37,10 @@ export default function GradingPage() {
     return model?.problems ?? [];
   }, [exam.data, inst.data]);
 
-  // Only the first load shows the loader: reloading after each grade must not unmount the PDF and the problem rows.
+  // Only the first load (or a new instance) shows the loader: reloading after each grade must not unmount the PDF and the problem rows.
   if (inst.error) return <ErrorState error={inst.error} onRetry={inst.reload} />;
   if (exam.error) return <ErrorState error={exam.error} onRetry={exam.reload} />;
-  if (!inst.data || !exam.data) return <Loader page />;
+  if (inst.initialLoading || exam.initialLoading || !inst.data || !exam.data) return <Loader page />;
 
   const i = inst.data;
   const e = exam.data;
@@ -112,7 +112,7 @@ export default function GradingPage() {
             {!problems.length && <p className="gr-empty u-muted">{t('side.noProblems')}</p>}
             {problems.map((p) => (
               <ProblemGrader
-                key={p.id}
+                key={`${i.id}:${p.id}`}
                 instanceId={i.id}
                 problem={p}
                 known={known}

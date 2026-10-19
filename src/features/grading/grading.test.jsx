@@ -95,6 +95,21 @@ describe('grading', () => {
     expect(db.instances.find((i) => i.id === INSTANCE).status).toBe('PENDING_GRADING');
   });
 
+  it('starts the next instance with empty scores and its own student', async () => {
+    const user = userEvent.setup();
+    renderGrading();
+    const header = await screen.findByRole('heading', { level: 1 });
+    const first = header.textContent;
+    await user.type(screen.getByLabelText('Nota de Series'), '3,5');
+    await user.tab();
+    await waitFor(() => expect(screen.getByText('1/3 problemas')).toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: 'Siguiente por corregir' }));
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).not.toBe(first));
+    expect(screen.getByLabelText('Nota de Series')).toHaveValue('');
+    expect(screen.getByText('0/3 problemas')).toBeInTheDocument();
+  });
+
   it('refuses a score above the maximum without calling the API', async () => {
     const user = userEvent.setup();
     renderGrading();

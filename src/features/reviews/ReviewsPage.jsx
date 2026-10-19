@@ -36,7 +36,7 @@ export default function ReviewsPage() {
     <>
       <PageHeader eyebrow={t('eyebrow')} title={t('title')} lede={t('lede')} />
       {/* Loader only on first load: reloading keeps the list mounted so replies typed in other requests survive. */}
-      {tasks.loading && !tasks.data ? (
+      {tasks.initialLoading ? (
         <Loader page />
       ) : tasks.error ? (
         <ErrorState error={tasks.error} onRetry={tasks.reload} />

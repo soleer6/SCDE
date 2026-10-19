@@ -59,7 +59,7 @@ export default function CorrectorsTab({ exam }) {
       )}
 
       <Panel title={t('setup.correctors.listTitle')} flush>
-        {rules.loading || teachers.loading ? (
+        {rules.initialLoading || teachers.initialLoading ? (
           <Loader />
         ) : rules.error ? (
           <ErrorState error={rules.error} onRetry={rules.reload} />
