@@ -114,7 +114,7 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
         />
       )}
 
-      <span className={`gr-problem__state is-${state}`} role={state === 'error' ? 'alert' : undefined}>
+      <span className={`gr-problem__state is-${state}`} role={state === 'error' ? 'alert' : undefined} aria-live="polite">
         {state === 'error' ? tc(`errors.${errCode}`, { defaultValue: errCode }) : t(`problem.state.${state}`)}
       </span>
     </div>

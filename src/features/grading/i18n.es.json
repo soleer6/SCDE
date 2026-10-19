@@ -14,6 +14,7 @@
     "total": "Nota total",
     "progress": "{{done}}/{{total}} problemas",
     "problems": "Problemas",
+    "noProblems": "Este modelo no tiene problemas definidos. Añádelos en la configuración del examen para poder calificar.",
     "comment": "Comentario para el estudiante",
     "commentHint": "Se guarda automáticamente. El estudiante lo verá durante la revisión.",
     "commentPlaceholder": "Escribe una valoración general",

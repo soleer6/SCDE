@@ -37,9 +37,10 @@ export default function GradingPage() {
     return model?.problems ?? [];
   }, [exam.data, inst.data]);
 
-  if (inst.loading || (examId && exam.loading)) return <Loader page />;
+  // Only the first load shows the loader: reloading after each grade must not unmount the PDF and the problem rows.
   if (inst.error) return <ErrorState error={inst.error} onRetry={inst.reload} />;
   if (exam.error) return <ErrorState error={exam.error} onRetry={exam.reload} />;
+  if (!inst.data || !exam.data) return <Loader page />;
 
   const i = inst.data;
   const e = exam.data;
@@ -76,7 +77,7 @@ export default function GradingPage() {
               <Button onClick={() => navigate(`/instances/${next.id}/grade`)}>{t('actions.next')}</Button>
             )}
             {i.status === 'PENDING_GRADING' && (
-              <Button variant="solid" onClick={() => move('GRADED', 'toast.graded')} loading={transition.pending} disabled={gradedCount < problems.length}>
+              <Button variant="solid" onClick={() => move('GRADED', 'toast.graded')} loading={transition.pending} disabled={!problems.length || gradedCount < problems.length}>
                 {t('actions.finish')}
               </Button>
             )}
@@ -103,11 +104,12 @@ export default function GradingPage() {
           <Panel title={t('side.total')}>
             <div className="gr-total">
               <Score value={i.total_score} max={maxTotal} size="md" />
-              <span className="u-muted u-num">{t('side.progress', { done: gradedCount, total: problems.length })}</span>
+              <span className="u-muted u-num" role="status">{t('side.progress', { done: gradedCount, total: problems.length })}</span>
             </div>
           </Panel>
 
           <Panel title={t('side.problems')} flush>
+            {!problems.length && <p className="gr-empty u-muted">{t('side.noProblems')}</p>}
             {problems.map((p) => (
               <ProblemGrader
                 key={p.id}
@@ -125,6 +127,7 @@ export default function GradingPage() {
               {(id) => (
                 <Textarea
                   id={id}
+                  aria-label={t('side.comment')}
                   value={annotations.comment}
                   onChange={(ev) => annotations.setComment(ev.target.value)}
                   disabled={!editable || annotations.loading}
@@ -151,5 +154,5 @@ export default function GradingPage() {
 
 function SaveState({ state }) {
   const { t } = useTranslation('grading');
-  return <span className={`gr-save is-${state}`}>{t(`save.${state}`)}</span>;
+  return <span className={`gr-save is-${state}`} role="status">{t(`save.${state}`)}</span>;
 }

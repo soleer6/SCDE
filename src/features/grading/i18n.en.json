@@ -14,6 +14,7 @@
     "total": "Total grade",
     "progress": "{{done}}/{{total}} problems",
     "problems": "Problems",
+    "noProblems": "This model has no problems yet. Add them in the exam setup to start grading.",
     "comment": "Comment for the student",
     "commentHint": "Saved automatically. The student sees it during review.",
     "commentPlaceholder": "Write an overall assessment",
