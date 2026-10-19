@@ -11,9 +11,7 @@
  * without declaring it (./backend-shapes.js, gap-10). Unknown fields count
  * as violations.
  */
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import '../../app/registry.js';
 import { listMockRoutes, mockFetch } from '../../lib/mock/router.js';
 import { db } from '../../lib/mock/db.js';
@@ -56,17 +54,6 @@ function concretePaths(template) {
 
 /* `/exams/{exam_pk}/` and `/exams/:id/` are the same route; literals must match literally. */
 const shape = (path) => path.replace(/\{[a-z_]+\}|:[a-zA-Z_]+/g, '{}').replace(/\/?$/, '/');
-
-/* The handlers fetch the seed PDFs from /public, which jsdom cannot resolve. */
-const realFetch = globalThis.fetch;
-vi.stubGlobal('fetch', async (url, init) => {
-  if (typeof url === 'string' && url.startsWith('/mock-pdfs/')) {
-    const bytes = readFileSync(resolve('public', `.${url}`));
-    return { ok: true, status: 200, blob: async () => new Blob([bytes], { type: 'application/pdf' }) };
-  }
-  return realFetch(url, init);
-});
-afterAll(() => vi.unstubAllGlobals());
 
 const tokens = {};
 beforeAll(async () => {

@@ -233,6 +233,19 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
   nuevo en 3 baterías simultáneas (la causa se deduce del código, no se ha observado de forma aislada).
 - Tests propios: 63 (56 + 7).
 
+## Iteración 2026-10-19 · integración y descargas de PDF en las pruebas
+- `preview/integration` (`41f7292`) = claude `86facc8` + codex `b57f69a`: 167/167, lint/build/estilo
+  OK. Codex `b57f69a` (foco en notificaciones tras paginar y actualizar) queda en sus rutas, sin
+  endpoints nuevos ni estilos en línea: sin hallazgos.
+- La batería imprimía `[mock] handler error … /mock-pdfs/exam_101.pdf`: los mocks de descarga piden
+  el PDF semilla por URL relativa, que jsdom no resuelve, así que fuera del test de contrato toda
+  descarga respondía 500 y la vista del estudiante caía en «No se ha podido cargar tu examen» sin
+  que ninguna prueba lo comprobase (el ruido estaba en stderr con las pruebas en verde).
+- El sustituto de `fetch` para `/mock-pdfs/` pasa del test de contrato a `src/test/setup.js` (base
+  compartida, anotado en REQUESTS.md). Prueba nueva: el estudiante ve su examen escaneado y no el
+  error; falla si se rompe la descarga.
+- Tests propios: 64 (63 + 1).
+
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.
 - 2 tests con timeout bajo carga → ampliados localmente; entrada de texto con `change`.

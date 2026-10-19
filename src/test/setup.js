@@ -1,6 +1,8 @@
 import '@testing-library/jest-dom/vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { configure } from '@testing-library/react';
-import { afterAll, expect } from 'vitest';
+import { afterAll, expect, vi } from 'vitest';
 import { recordMutations } from './contract/mutations.js';
 
 // Flow tests lazy-load route chunks; under load (parallel agents, dev server)
@@ -12,4 +14,16 @@ configure({ asyncUtilTimeout: 8000 });
 const recorder = recordMutations();
 afterAll(async () => {
   expect(await recorder.stop(), 'mock mutation answers outside the backend contract').toEqual([]);
+});
+
+// Mock handlers fetch the seed PDFs from /public by relative URL, which jsdom
+// cannot resolve: without this every download answered 500 and views fell
+// back to their error state unnoticed. Tests may still replace fetch.
+const realFetch = globalThis.fetch;
+vi.stubGlobal('fetch', async (url, init) => {
+  if (typeof url === 'string' && url.startsWith('/mock-pdfs/')) {
+    const bytes = readFileSync(resolve('public', `.${url}`));
+    return { ok: true, status: 200, blob: async () => new Blob([bytes], { type: 'application/pdf' }) };
+  }
+  return realFetch(url, init);
 });
