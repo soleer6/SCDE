@@ -15,6 +15,7 @@ export default function NotificationsPage() {
   const marking = useRef(false);
   const resultsRef = useRef(null);
   const recovering = useRef(false);
+  const focusAfterLoad = useRef(null);
   const state = useApi(() => getNotifications(page), [page]);
   const unread = state.data?.results.filter((n) => n.status === 'UNREAD').map((n) => n.id) ?? [];
   useEffect(() => {
@@ -22,10 +23,13 @@ export default function NotificationsPage() {
   }, [error, pending]);
   useEffect(() => {
     if (state.loading) return;
-    if (state.error) recovering.current = true;
-    else if (state.data && recovering.current) {
+    if (state.error) {
+      focusAfterLoad.current = null;
+      recovering.current = true;
+    } else if (state.data && (recovering.current || (focusAfterLoad.current && focusAfterLoad.current.data !== state.data))) {
       resultsRef.current?.focus();
       recovering.current = false;
+      focusAfterLoad.current = null;
     }
   }, [state.loading, state.error, state.data]);
   async function mark(ids) {
@@ -35,7 +39,7 @@ export default function NotificationsPage() {
     setPending(true); setError(null);
     try {
       await markRead(ids);
-      recovering.current = true;
+      focusAfterLoad.current = { data: state.data };
       state.reload();
     } catch (err) { setError(err); } finally { marking.current = false; setPending(false); }
   }
@@ -43,13 +47,13 @@ export default function NotificationsPage() {
     <PageHeader eyebrow={t('account')} title={t('title')} actions={<Button variant="primary" loading={pending} disabled={!unread.length || state.loading} onClick={() => mark(unread)}>{t('markPage')}</Button>} />
     {error && <div ref={errorRef} tabIndex={-1}><ErrorState error={error} onRetry={() => mark(attemptedIds.current)} /></div>}
     <section ref={resultsRef} tabIndex={-1} aria-label={t('title')}>
-    <Records focusError state={state} emptyTitle={t('empty')} emptyBody={t('emptyHint')} action={<Button onClick={state.reload}>{t('refresh')}</Button>} columns={[
+    <Records focusError state={state} emptyTitle={t('empty')} emptyBody={t('emptyHint')} action={<Button onClick={() => { focusAfterLoad.current = { data: state.data }; state.reload(); }}>{t('refresh')}</Button>} columns={[
       { key: 'title', header: t('message'), render: (n) => <><p>{n.title}</p><p className="u-muted">{n.message}</p></> },
       { key: 'created_at', header: t('date'), render: (n) => <time dateTime={n.created_at}>{new Date(n.created_at).toLocaleString()}</time> },
       { key: 'status', header: t('status'), render: (n) => <Badge tone={n.status === 'UNREAD' ? 'gold' : undefined}>{t(n.status === 'UNREAD' ? 'new' : 'read')}</Badge> },
       { key: 'actions', header: t('actions'), render: (n) => n.status === 'UNREAD' && <Button size="sm" aria-label={t('markNamed', { title: n.title })} disabled={pending} onClick={() => mark([n.id])}>{t('mark')}</Button> },
     ]} />
     </section>
-    <Pagination data={state.data} page={page} onChange={setPage} />
+    <Pagination data={state.data} page={page} onChange={(value) => { focusAfterLoad.current = { data: state.data }; setPage(value); }} />
   </>;
 }
