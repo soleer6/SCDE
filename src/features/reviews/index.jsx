@@ -19,6 +19,8 @@ export default {
       emptyTitle: 'No hay solicitudes pendientes', emptyBody: 'Aparecerán aquí cuando el alumnado pida revisión durante un periodo abierto.',
       noMessage: 'Sin comentario del estudiante.', reply: 'Respuesta al estudiante', replyPlaceholder: 'Explica la decisión. Si cambias la nota, hazlo desde el examen.',
       openExam: 'Abrir examen', resolve: 'Resolver', resolved: 'Solicitud resuelta',
+      openExamFor: 'Abrir examen: {{label}}', resolveFor: 'Resolver: {{label}}',
+      errors: { ALREADY_RESOLVED: 'Otra persona ya resolvió esta solicitud. La lista se ha actualizado.' },
     },
     en: {
       nav: 'Reviews', eyebrow: 'Open review periods', title: 'Review requests',
@@ -26,6 +28,8 @@ export default {
       emptyTitle: 'No pending requests', emptyBody: 'They show up here when students ask for a review during an open period.',
       noMessage: 'No comment from the student.', reply: 'Reply to the student', replyPlaceholder: 'Explain the decision. To change the grade, do it from the exam.',
       openExam: 'Open exam', resolve: 'Resolve', resolved: 'Request resolved',
+      openExamFor: 'Open exam: {{label}}', resolveFor: 'Resolve: {{label}}',
+      errors: { ALREADY_RESOLVED: 'Someone else already resolved this request. The list has been refreshed.' },
     },
   },
 };

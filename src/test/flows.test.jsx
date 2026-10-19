@@ -156,7 +156,7 @@ describe('teacher review inbox', () => {
     const item = (await screen.findByText('Derivadas', { exact: false })).closest('li');
     const user = userEvent.setup();
     await user.type(within(item).getByLabelText('Respuesta al estudiante'), 'Se mantiene la nota');
-    await user.click(within(item).getByRole('button', { name: 'Resolver' }));
+    await user.click(within(item).getByRole('button', { name: /^Resolver/ }));
     expect(await screen.findByText('Solicitud resuelta')).toBeInTheDocument();
     expect(db.instances.find((i) => i.id === 'i-e-mat-p1-3').status).toBe('FINALIZED');
   });
