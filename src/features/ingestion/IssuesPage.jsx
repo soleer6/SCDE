@@ -85,7 +85,7 @@ function IssuesView({ exam, role }) {
       />
 
       <div className="dm-split in-body">
-        <section className="dm-section">
+        <section className="dm-section" aria-busy={instances.loading}>
           <Tabs
             label={t('issues.filterLabel')}
             value={filter}
@@ -95,7 +95,8 @@ function IssuesView({ exam, role }) {
               { value: 'all', label: t('issues.filters.all'), count: list.length },
             ]}
           />
-          {instances.loading ? (
+          {/* Refreshes after an action keep the table mounted (rows, focus, scroll). */}
+          {instances.loading && !instances.data ? (
             <Loader />
           ) : instances.error ? (
             <ErrorState error={instances.error} onRetry={instances.reload} />
@@ -144,7 +145,7 @@ function IssuesView({ exam, role }) {
           )}
           {isManager && !selected && (
             <Panel title={t('orphans.title')}>
-              {orphans.loading ? (
+              {orphans.loading && !orphans.data ? (
                 <Loader />
               ) : orphans.error ? (
                 <ErrorState error={orphans.error} onRetry={orphans.reload} />
