@@ -60,6 +60,10 @@ servicio analizada (commit \texttt{a8eb9f43}).
             fechas nulas y una lista donde el contrato declara otra cosa. &
             Sin efecto en la interfaz, que ya los traducía; la prueba de contrato valida los
             errores contra el sobre real del servicio. \\
+    gap-12 & La lista de miembros de una asignatura filtra por rol (\texttt{?role=}),
+            pero el contrato solo declara la paginación. &
+            Un cliente fiel al contrato no conoce el filtro. La interfaz recorre todas las
+            páginas y filtra el rol en el cliente. \\
     \hline
   \end{tabular}
 \end{table}
@@ -69,7 +73,9 @@ línea de administración); los cinco siguientes, al implementar la resolución 
 la configuración de exámenes y el reconocimiento de escritura, cuando el contrato se
 contrastó con el código de las vistas; y los dos últimos, con la prueba que valida las
 respuestas de la simulación contra el documento OpenAPI (\cref{SEC:TEST-REAL}), confirmados
-después en el código del servicio. Las dos últimas series muestran un límite del contrato
+después en el código del servicio. El duodécimo apareció al probar la configuración de la
+convocatoria: la interfaz leía solo la primera página de miembros, y al buscar en la vista
+cómo filtrarlos se encontró un parámetro que el contrato no recoge. Las dos últimas series muestran un límite del contrato
 generado: drf-spectacular describe lo que las anotaciones de la vista declaran, y una
 discrepancia entre esa declaración y el código ---como en gap-5, gap-8 o gap-10--- solo
 aparece al leer el código o al ejecutarlo contra el servicio real.

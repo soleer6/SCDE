@@ -1,8 +1,8 @@
 # Memoria del TFG (frontend) — esqueleto LaTeX
 
-**Estado:** borrador avanzado en redacción. Redactados en prosa: capítulos 1 (introducción), 2 (estado del arte, borradores de Codex revisados e integrados), 3 (análisis) y 4 (diseño), a 2026-10-18. El resto, esqueleto con material factual y marcas `\pendiente{...}` (en rojo en el PDF) para lo que falta redactar o exige dato o decisión del autor. Todo el texto es un borrador que el autor debe revisar.
+**Estado:** borrador completo a 2026-10-19: capítulos 1-8, resumen/abstract y apéndices A-E redactados en prosa a partir de hechos verificables. Quedan 16 marcas `\pendiente{...}` (en rojo en el PDF), casi todas decisiones, datos o valoraciones del autor y capturas de la demo. Todo el texto es un borrador que el autor debe revisar.
 
-**No compilado todavía**: la máquina de desarrollo no tiene distribución LaTeX.
+**No compilado todavía**: la máquina de desarrollo no tiene distribución LaTeX. Revisar en la primera compilación la figura TikZ de capas (`chapters/04-design/41-architecture.tex`, `FIG:DES-LAYERS`; `tikz` cargado en `preamble/definitions.tex`).
 
 ## Normativa oficial consultada (17/10/2026)
 - *Normativa de Trabajo Fin de Grado* de la EPS-UAM, aprobada en Junta de Centro el
@@ -48,6 +48,7 @@ pdflatex main ; bibtex main ; makeglossaries main ; makeindex -s main.ist main ;
 ## De dónde sale cada capítulo
 | Capítulo | Fuente técnica |
 |---|---|
+| Resumen / Abstract | Capítulos 6 y 8 (cifras), 1.2 (objetivos), 7 (generalización) |
 | 3 Análisis | `docs/tfg/01-analysis.md`, `docs/tfg/03-backend-gaps.md`, `docs/frontend/API_INVENTORY.md` |
 | 4 Diseño | `docs/tfg/02-architecture-decisions.md`, `docs/frontend/STYLE_GUIDE.md` |
 | 5 Implementación | `docs/tfg/05-parallel-workflow.md`, historial Git, `docs/coordination/*` |

@@ -1,1 +1,26 @@
-\pendiente{English version of the Resumen, written once the Spanish one is final.}
+% English version of resumen.tex; keep both in sync.
+SCDEE is a system for the digital grading of written exams: paper exams are scanned,
+assigned to each student and graded on the scanned image with annotations and rubrics. Its
+backend, developed in a separate bachelor's thesis, exposes a \acs{rest} \acs{api}
+described with OpenAPI, but lacked an interface through which organisation managers,
+coordinators, teachers and students could use it.
+
+This work builds that frontend: a single-page application in React that covers the
+administration of the organisation and its subjects, exam creation and configuration,
+resolution of scanning issues, grading with annotations, publication of grades, review
+requests and the student's view of results. The application is integrated with the real
+service contract without inventing operations: it calls 92 of its 94 operations, and the
+needs the contract does not cover are documented as twelve gaps, each with its evidence and
+a proposal for the backend team. An in-browser simulation of the server, validated against
+the OpenAPI schemas, makes it possible to develop and test without it.
+
+Development was carried out by two coding agents working in parallel on separate
+branches, under the author's supervision. A self-registering module architecture, declared
+file ownership and a set of deterministic checks (tests, static analysis, style and
+ownership audits) run before every commit allowed both lines of work to be merged without
+code conflicts. The merged code runs 175 automated tests that pass. The main limitation is
+that it has not been validated against the real server or with users.
+
+Finally, drawing on the recorded process, the work classifies the stages of building a
+frontend from a backend as deterministic, reasoning-based or requiring human decision, and
+proposes an architecture to automate them.

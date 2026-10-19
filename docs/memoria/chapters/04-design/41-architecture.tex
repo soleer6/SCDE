@@ -7,7 +7,8 @@ a los datos, el aspecto visual y las anotaciones se tratan en las secciones sigu
 
 \subsection{Capas}
 
-El código fuente se organiza en cuatro capas con dependencias en un único sentido:
+El código fuente se organiza en cuatro capas con dependencias en un único sentido
+(\cref{FIG:DES-LAYERS}); las dos inferiores no dependen entre sí:
 \begin{description}
   \item[\texttt{src/styles} y \texttt{src/ui}.] El sistema de diseño: los
         \textit{tokens} visuales (colores, tipografías, radios, sombras) y una veintena de
@@ -97,7 +98,55 @@ del examen, y es el rol del usuario en esa asignatura el que decide qué vista a
   \label{TAB:DES-FEATURES}
 \end{table}
 
-\pendiente{Añadir un diagrama de capas y módulos (figura en files/).}
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      font=\small,
+      caja/.style={draw, rounded corners=2pt, align=center, inner sep=5pt},
+      usa/.style={-{Stealth[length=2mm]}, thick},
+      descubre/.style={-{Stealth[length=2mm]}, dashed}
+    ]
+    \node[caja, fill=blue!6, text width=4.4cm, minimum height=1.7cm] (core)
+      {\textbf{Núcleo docente}\\[2pt] \texttt{auth}, \texttt{workspace}, \texttt{exams},
+       \texttt{results}, \texttt{grading}, \texttt{reviews}, \texttt{ingestion}};
+    \node[caja, fill=green!6, text width=4.4cm, minimum height=1.7cm, right=0.6cm of core]
+      (admin)
+      {\textbf{Gestión}\\[2pt] \texttt{admin}, \texttt{subject-admin},
+       \texttt{notifications}, \texttt{profile}};
+    \node[draw, dotted, inner sep=6pt, fit=(core)(admin)] (features) {};
+    \node[anchor=south west, inner sep=2pt] at (features.north west)
+      {\texttt{src/features}: un directorio por módulo};
+
+    \node[caja, fill=gray!8, text width=9.9cm, below=1.1cm of features] (app)
+      {\texttt{src/app}: barra superior, navegación, enrutador con guardas,
+       internacionalización y registro de módulos};
+
+    \node[caja, fill=gray!8, text width=4.4cm, minimum height=1.5cm,
+          below=1.1cm of app.south west, anchor=north west] (ui)
+      {\texttt{src/ui} y \texttt{src/styles}\\[2pt] \textit{tokens} visuales y
+       componentes primitivos};
+    \node[caja, fill=gray!8, text width=4.4cm, minimum height=1.5cm,
+          below=1.1cm of app.south east, anchor=north east] (lib)
+      {\texttt{src/lib}\\[2pt] cliente \acs{http}, sesión, simulación del
+       \textit{backend}, \textit{hooks} de datos y permisos};
+
+    \node[caja, text width=4.4cm, below=1.0cm of lib] (backend)
+      {\textit{Backend} SCDEE\\ (\acs{api} \acs{rest})};
+
+    \draw[usa] (features.south) -- (app.north);
+    \draw[usa] (app.south -| ui.north) -- (ui.north);
+    \draw[usa] (app.south -| lib.north) -- (lib.north);
+    \draw[descubre] (app.east) -- ++(0.6,0) |- node[pos=0.25, right]
+      {descubre} (features.east);
+    \draw[usa, dashed] (lib.south) -- node[right, align=left]
+      {\acs{http} con \acs{jwt}\\(si \texttt{VITE\_MOCK\_API=false})} (backend.north);
+  \end{tikzpicture}
+  \caption{Capas del \textit{frontend}. Las flechas continuas indican dependencias de uso:
+    cada capa usa solo las inferiores, y \texttt{src/ui} y \texttt{src/lib} no dependen
+    entre sí. Los módulos también usan directamente \texttt{src/lib} y \texttt{src/ui}. El
+    registro de \texttt{src/app} descubre los módulos en tiempo de compilación
+    (\texttt{import.meta.glob}), sin importarlos por su nombre.\label{FIG:DES-LAYERS}}
+\end{figure}
 
 \subsection{Otras decisiones de alcance general}
 

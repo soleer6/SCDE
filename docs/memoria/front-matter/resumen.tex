@@ -1,16 +1,29 @@
-% Máx. recomendado: 1 página. Redactar al final.
-\pendiente{Redactar al final (problema, qué se ha construido, cómo, resultados).}
+% Máx. recomendado: 1 página. Cifras al 19/10/2026 (núcleo 79aeef5, gestión 18f04b2,
+% integración f125c0d); actualizar si cambian los capítulos 6 y 8.
+SCDEE es un sistema de corrección digital de exámenes escritos: los exámenes en papel se
+escanean, se asignan a cada estudiante y se corrigen sobre la imagen con anotaciones y
+\dfnpl{rubrica}. Su \dfn{backend}, desarrollado en otro Trabajo Fin de Grado, expone una
+\acs{api} \acs{rest} descrita con OpenAPI, pero carecía de una interfaz con la que gestores,
+coordinadores, docentes y estudiantes pudieran utilizarlo.
 
-Material para redactar:
-\begin{itemize}
-  \item Problema: corrección de exámenes en papel; el \dfn{backend} SCDEE ofrece
-        95 operaciones \acs{rest} pero no había interfaz utilizable.
-  \item Aportación: \dfn{frontend} \acs{spa} (React) para gestores, coordinación,
-        docentes y estudiantes, alineado con el contrato real del \dfn{backend}.
-  \item Método: análisis del contrato OpenAPI y del código, desarrollo asistido por
-        dos \dfnpl{agente} en paralelo con auditoría determinista.
-  \item Resultados: flujo completo corregir--publicar--revisar; 58\,\% del contrato
-        con interfaz; pruebas de flujo; 4 huecos del contrato documentados.
-  \item Exploración: qué partes del proceso podrían automatizarse en un sistema
-        genérico \dfn{backend} $\rightarrow$ \dfn{frontend}.
-\end{itemize}
+Este trabajo construye ese \dfn{frontend}: una aplicación de página única en React que
+cubre la administración de la organización y de las asignaturas, la creación y
+configuración de exámenes, la resolución de incidencias de escaneo, la corrección con
+anotaciones, la publicación de notas, las solicitudes de revisión y la consulta de
+resultados por parte del estudiante. La aplicación se integra con el contrato real del
+servicio sin inventar operaciones: invoca 92 de sus 94 operaciones, y las necesidades que
+el contrato no cubre se documentan como doce huecos con su evidencia y una propuesta para
+el equipo del \dfn{backend}. Una simulación del servidor en el navegador, validada contra
+los esquemas OpenAPI, permite desarrollar y probar sin él.
+
+El desarrollo se realizó con dos \dfnpl{agente} trabajando en paralelo sobre ramas
+separadas, bajo la supervisión del autor. La arquitectura de módulos autodescubiertos, la
+propiedad de ficheros declarada y una batería de comprobaciones deterministas (pruebas,
+análisis estático, auditorías de estilo y de propiedad) ejecutada antes de cada
+\textit{commit} permitieron unir ambas líneas sin conflictos en el código. La unión
+ejecuta 175 pruebas automatizadas que terminan correctamente. La principal limitación es
+que no se ha validado contra el servidor real ni con usuarios.
+
+Por último, a partir del proceso registrado, el trabajo clasifica las etapas de la
+construcción de un \dfn{frontend} a partir de un \dfn{backend} en deterministas, de
+razonamiento y de decisión humana, y propone una arquitectura para automatizarla.

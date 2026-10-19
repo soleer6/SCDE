@@ -1,12 +1,16 @@
 Esta sección describe las baterías de las dos líneas de trabajo. Las cifras corresponden a
 ejecuciones de \texttt{npm run check} sobre \textit{commits} concretos: la línea del núcleo
-sobre \texttt{0b28e41} y la de gestión sobre \texttt{5d929ef}, integradas en
-\texttt{3003df7}. Son recuentos de casos que
+sobre \texttt{79aeef5} y la de gestión sobre \texttt{18f04b2}, integradas en
+\texttt{f125c0d}. Son recuentos de casos que
 terminan correctamente, no medidas de cobertura de líneas, de ramas ni de requisitos.
 
 \subsection{Núcleo docente}
 
-La rama del núcleo contiene 64 casos en trece ficheros (\cref{TAB:TEST-CORE}). Los casos de
+La rama del núcleo contiene 71 casos en catorce ficheros (\cref{TAB:TEST-CORE}). Tres de
+ellos, los de la configuración que leen los miembros de la asignatura, dependen de los
+manejadores de simulación de la línea de gestión y se omiten de forma explícita
+(\texttt{it.skipIf}) cuando la rama se ejecuta sola, que entonces cuenta 68; en la rama de
+integración se ejecutan los 71. Los casos de
 flujo montan la aplicación con su enrutador y su proveedor de sesión, inician sesión con uno
 de los usuarios de la simulación y recorren el caso de uso hasta comprobar tanto la pantalla
 como el estado de los datos simulados.
@@ -41,6 +45,11 @@ como el estado de los datos simulados.
       reconocida aplicada o propuesta según la confianza; texto reconocido añadido al
       comentario y borrado de la anotación temporal; la tinta de página ignora los
       paneles. \\
+    \texttt{exams/setup.test.jsx} & 7 & Pestañas de la configuración según el rol y
+      acceso denegado al estudiante; datos generales y borrado rechazado de un examen con
+      instancias; problemas y \dfnpl{rubrica} con aviso de exceso; convocatoria con los
+      estudiantes rechazados, reglas de correctores con su cobertura y lectura de todas las
+      páginas de miembros. \\
     \texttt{exams/zones.test.jsx} & 4 & Conversión de coordenadas en ambos sentidos y
       editor de zonas por página. \\
     \texttt{grading/useAnnotations.test.jsx} & 2 & Guardado de los trazos pendientes al
@@ -57,11 +66,11 @@ como el estado de los datos simulados.
     \texttt{test/contract/validate.test.js} & 3 & Validador del subconjunto de OpenAPI
       (referencias, composición, campos no declarados). \\
     \midrule
-    \textbf{Total} & \textbf{64} & \\
+    \textbf{Total} & \textbf{71} & 68 cuando la rama se ejecuta sola. \\
     \bottomrule
   \end{tabular}
   \caption{Pruebas de la línea del núcleo docente (\textit{commit}
-    \texttt{0b28e41}).\label{TAB:TEST-CORE}}
+    \texttt{79aeef5}).\label{TAB:TEST-CORE}}
 \end{table}
 
 Dos ejemplos muestran el tipo de aserción. La prueba del contrato de calificación guarda
@@ -80,8 +89,9 @@ La batería de la línea de gestión, redactada en detalle en un borrador de Cod
 aquí, contiene en el \textit{commit} \texttt{5d929ef} 107 casos en ocho ficheros: 104 de
 sus módulos y los tres del cliente compartido (\cref{TAB:TEST-ADMIN}). Los recuentos por
 fichero se obtuvieron con \texttt{vitest list} en la rama de integración
-(\textit{commit} \texttt{3003df7}), cuya ejecución sumó 168 casos correctos en veinte
-ficheros ($64 + 104$, con el fichero del cliente común contado una vez). En esa ejecución
+(\textit{commit} \texttt{f125c0d}), cuya ejecución sumó 175 casos correctos en veintiún
+ficheros ($71 + 104$, con el fichero del cliente común contado una vez). Los \textit{commits}
+de gestión posteriores a \texttt{5d929ef} solo modifican documentos de coordinación. En esa ejecución
 conjunta, las escrituras de la línea de gestión pasan también por el verificador de
 contrato del núcleo.
 
@@ -114,7 +124,7 @@ contrato del núcleo.
     \bottomrule
   \end{tabular}
   \caption{Pruebas de la línea de gestión (\textit{commit} \texttt{5d929ef}), contadas en
-    la integración \texttt{3003df7}.\label{TAB:TEST-ADMIN}}
+    la integración \texttt{f125c0d}.\label{TAB:TEST-ADMIN}}
 \end{table}
 
 Tres técnicas caracterizan esta batería. La primera es el \textbf{reloj controlado}: la
@@ -195,3 +205,12 @@ usuario (\texttt{76e4841}). Y en el entorno de pruebas toda descarga de un \acs{
 fallaba con un error que solo aparecía como aviso en la consola, de modo que la vista del
 estudiante mostraba el error en lugar del examen escaneado sin que ninguna aserción lo
 detectara (\texttt{0b28e41}).
+
+Las pruebas de la configuración del examen, las últimas añadidas, siguieron el mismo
+patrón. Cada guardado volvía a mostrar el indicador de carga de la página y desmontaba la
+pestaña activa, con lo que se perdía, por ejemplo, la lista de estudiantes rechazados que
+la convocatoria acababa de mostrar; dos de los casos fallan sin la corrección. Y la lista de estudiantes de la
+convocatoria y de correctores se construía con la primera página de miembros, de modo que
+en una asignatura con más de cien miembros los restantes no aparecían; la corrección
+recorre todas las páginas y, al buscar cómo filtrar por rol, destapó gap-12
+(\texttt{79aeef5}, \cref{SEC:AN-GAPS}).
