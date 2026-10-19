@@ -28,6 +28,7 @@ export default function ConfigPage() {
   return <div ref={pageRef}>
     <PageHeader eyebrow={t('management')} title={t('config')} />
     {state.loading ? <Loader /> : state.error ? <div ref={errorRef} tabIndex={-1}><ErrorState error={state.error} onRetry={state.reload} /></div> : state.data && <RecordForm
+      focusOnSaved
       initial={Object.fromEntries(fields.filter((k) => k in state.data).map((k) => [k, json.includes(k) ? JSON.stringify(state.data[k], null, 2) : state.data[k]]))}
       fields={fields.filter((name) => name in state.data).map((name) => ({ name, label: t(name), type: numbers.includes(name) ? 'number' : json.includes(name) ? 'json' : 'text', ...(numbers.includes(name) ? { required: true, min: 0, step: name === numbers[0] ? '0.01' : '1', ...(name === numbers[0] ? { max: 1 } : {}) } : {}) }))}
       onSave={async (values) => {
