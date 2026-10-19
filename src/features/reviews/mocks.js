@@ -32,11 +32,10 @@ export const mocks = [
       (body?.problems ?? []).forEach((item) => {
         const p = d.problems.find((x) => x.id === item.problem_id && x.exam_model_id === inst.model_id);
         if (!p) return; // backend skips invalid problems
-        let rr = d.review_requests.find((r) => r.instance_id === inst.id && r.problem_id === p.id);
-        if (!rr) {
-          rr = { id: d.uid('rr'), instance_id: inst.id, problem_id: p.id, student_message: item.message ?? '', resolved: false, resolved_at: null, resolver_message: '', created_at: new Date().toISOString() };
-          d.review_requests.push(rr);
-        }
+        // get_or_create: an existing request is kept and left out of the answer
+        if (d.review_requests.some((r) => r.instance_id === inst.id && r.problem_id === p.id)) return;
+        const rr = { id: d.uid('rr'), instance_id: inst.id, problem_id: p.id, student_message: item.message ?? '', resolved: false, resolved_at: null, resolver_message: '', created_at: new Date().toISOString() };
+        d.review_requests.push(rr);
         created.push(reviewRequestOut(rr));
       });
       return reply(201, created);

@@ -4,9 +4,14 @@ import { useAction } from '../../lib/hooks.js';
 import { Button, Checkbox, Field, Textarea, useToast } from '../../ui';
 import { submitReviewRequests } from './api.js';
 
+/* The window closed or the instance left IN_REVIEW since the page loaded. */
+const STALE = new Set(['REVIEW_NOT_OPEN', 'INSTANCE_NOT_IN_REVIEW']);
+
 /** POST /instances/{id}/review-requests/ { problems: [{ problem_id, message }] }.
- *  problem_id is only available if the backend exposes it (gap-2). */
-export default function ReviewRequestForm({ inst, existing, onSent }) {
+ *  problem_id is only available if the backend exposes it (gap-2).
+ *  The answer lists only the requests it created: a problem already requested
+ *  (e.g. from another tab) is skipped without error (get_or_create). */
+export default function ReviewRequestForm({ inst, existing, onSent, onStale }) {
   const { t } = useTranslation('results');
   const { t: tc } = useTranslation();
   const toast = useToast();
@@ -24,13 +29,17 @@ export default function ReviewRequestForm({ inst, existing, onSent }) {
   if (!problems.length) return <p className="u-muted">{t('review.noIds')}</p>;
 
   const submit = async () => {
+    const asked = Object.keys(picked).length;
     try {
-      await send.run();
+      const created = (await send.run())?.length ?? asked;
       setPicked({});
-      toast.success(t('review.sent'));
+      if (!created) toast.info(t('review.noneCreated'));
+      else if (created < asked) toast.success(t('review.partial', { count: created, total: asked }));
+      else toast.success(t('review.sent', { count: created }));
       onSent?.();
     } catch (e) {
       toast.error(t(`review.errors.${e.code}`, { defaultValue: tc(`errors.${e.code}`, { defaultValue: e.code }) }));
+      if (STALE.has(e.code)) onStale?.();
     }
   };
 
