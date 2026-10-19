@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApi } from '../../lib/hooks.js';
 import { formatDate, formatDateTime, formatScore } from '../../lib/format.js';
@@ -22,6 +22,17 @@ export default function StudentResultView({ exam }) {
   const review = useApi(() => getReview(exam.id), [exam.id]);
   const inst = instances.data?.[0];
   const requests = useApi(inst ? () => listMyReviewRequests(inst.id) : null, [inst?.id]);
+  // After sending, focus moves to the request list; if the window closed
+  // meanwhile, to the notice that replaces the form. Applied once reloaded.
+  const focusAfter = useRef(null);
+  const listRef = useRef(null);
+  const closedRef = useRef(null);
+  const settled = !instances.loading && !review.loading && !requests.loading;
+  useEffect(() => {
+    if (!focusAfter.current || !settled) return;
+    (focusAfter.current === 'list' ? listRef : closedRef).current?.focus();
+    focusAfter.current = null;
+  }, [settled]);
 
   const header = (
     <PageHeader
@@ -36,7 +47,8 @@ export default function StudentResultView({ exam }) {
     />
   );
 
-  if (instances.loading) return <>{header}<Loader page /></>;
+  // Reloads keep the page mounted (and the focus target alive).
+  if (instances.loading && !instances.data) return <>{header}<Loader page /></>;
   if (instances.error) return <>{header}<ErrorState error={instances.error} onRetry={instances.reload} /></>;
   if (!inst) {
     return (
@@ -84,11 +96,20 @@ export default function StudentResultView({ exam }) {
           <TeacherComment instanceId={inst.id} visible={Boolean(inst.pages)} />
           <Panel title={t('review.title')}>
             {reviewOpen ? (
-              <ReviewRequestForm inst={inst} existing={requests.data ?? []} onSent={requests.reload} />
+              <ReviewRequestForm
+                inst={inst}
+                existing={requests.data ?? []}
+                onSent={() => { focusAfter.current = 'list'; requests.reload(); }}
+                onStale={() => { focusAfter.current = 'closed'; review.reload(); instances.reload(); }}
+              />
             ) : (
-              <p className="u-muted">{review.data ? t('review.closed') : t('review.notOpen')}</p>
+              <p ref={closedRef} tabIndex={-1} className="u-muted">{review.data ? t('review.closed') : t('review.notOpen')}</p>
             )}
-            {(requests.data ?? []).length > 0 && <RequestList items={requests.data} />}
+            {(requests.data ?? []).length > 0 && (
+              <section ref={listRef} tabIndex={-1} aria-label={t('review.requests')}>
+                <RequestList items={requests.data} />
+              </section>
+            )}
           </Panel>
         </aside>
       </div>

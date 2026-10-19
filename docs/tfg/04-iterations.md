@@ -201,6 +201,20 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
   dura). Prueba de regresión: la misma tabla recibe el estudiante identificado (falla con el
   código anterior).
 
+## Iteración 2026-10-19 · integración y solicitudes de revisión del estudiante
+- `preview/integration` (`e7e1452`) = claude `7a1625c` + codex `262d6a9`: 154/154, lint/build/estilo
+  OK. Codex `1024d13` (foco tras guardar cursos, en `features/admin`) y sus dos commits de
+  bitácora: sin hallazgos de propiedad, contrato ni estilo.
+- El mock de `POST /instances/{id}/review-requests/` devolvía también las solicitudes ya
+  existentes; el servicio real (`submit_review_requests`, `get_or_create`) devuelve solo las
+  creadas y omite sin error las repetidas. Mock corregido.
+- El formulario anunciaba «Solicitud enviada» aunque no se hubiera creado nada (p. ej. enviada
+  antes desde otra pestaña): ahora cuenta lo que devuelve el backend (todas, parte o ninguna).
+  Plurales del botón y del aviso («1 problema»). Con `REVIEW_NOT_OPEN`/`INSTANCE_NOT_IN_REVIEW`
+  (409) recarga la revisión y la instancia sin desmontar la página y lleva el foco al aviso que
+  sustituye al formulario; tras enviar, el foco va a la lista de solicitudes.
+- 3 pruebas nuevas en `features/results/results.test.jsx` (fallan con el código anterior) → 56 propios.
+
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.
 - 2 tests con timeout bajo carga → ampliados localmente; entrada de texto con `change`.

@@ -129,7 +129,7 @@ describe('student result and review', () => {
     const user = userEvent.setup();
     await user.click(await screen.findByLabelText('Derivadas'));
     await user.type(await screen.findByLabelText('Motivo'), 'Revisad el apartado b');
-    await user.click(screen.getByRole('button', { name: 'Pedir revisión de 1 problemas' }));
+    await user.click(screen.getByRole('button', { name: 'Pedir revisión de 1 problema' }));
     expect(await screen.findByText('Solicitud enviada')).toBeInTheDocument();
     expect(db.review_requests.some((r) => r.instance_id === 'i-e-mat-p1-1' && r.student_message === 'Revisad el apartado b')).toBe(true);
   });
