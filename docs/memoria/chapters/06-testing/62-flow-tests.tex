@@ -1,16 +1,16 @@
 Esta sección describe las baterías de las dos líneas de trabajo. Las cifras corresponden a
 ejecuciones de \texttt{npm run check} sobre \textit{commits} concretos: la línea del núcleo
-sobre \texttt{2ebd2cb} y la de gestión sobre \texttt{18f04b2}, integradas en
-\texttt{9357888}. Son recuentos de casos que
+sobre \texttt{b84076c} y la de gestión sobre \texttt{18f04b2}, integradas en
+\texttt{06dcc9f}. Son recuentos de casos que
 terminan correctamente, no medidas de cobertura de líneas, de ramas ni de requisitos.
 
 \subsection{Núcleo docente}
 
-La rama del núcleo contiene 79 casos en dieciséis ficheros (\cref{TAB:TEST-CORE}). Tres de
+La rama del núcleo contiene 82 casos en diecisiete ficheros (\cref{TAB:TEST-CORE}). Tres de
 ellos, los de la configuración que leen los miembros de la asignatura, dependen de los
 manejadores de simulación de la línea de gestión y se omiten de forma explícita
-(\texttt{it.skipIf}) cuando la rama se ejecuta sola, que entonces cuenta 76; en la rama de
-integración se ejecutan los 79. Los casos de
+(\texttt{it.skipIf}) cuando la rama se ejecuta sola, que entonces cuenta 79; en la rama de
+integración se ejecutan los 82. Los casos de
 flujo montan la aplicación con su enrutador y su proveedor de sesión, inician sesión con uno
 de los usuarios de la simulación y recorren el caso de uso hasta comprobar tanto la pantalla
 como el estado de los datos simulados.
@@ -56,6 +56,10 @@ como el estado de los datos simulados.
       instancias; problemas y \dfnpl{rubrica} con aviso de exceso; convocatoria con los
       estudiantes rechazados, reglas de correctores con su cobertura y lectura de todas las
       páginas de miembros. \\
+    \texttt{exams/exam-view.test.jsx} & 3 & Vista docente del examen: filtro de
+      instancias por estado y estado vacío explicado; exportación de notas en \acs{csv}
+      (nombre del fichero y cabecera); apertura del periodo de revisión tras un intento
+      rechazado. \\
     \texttt{exams/zones.test.jsx} & 4 & Conversión de coordenadas en ambos sentidos y
       editor de zonas por página. \\
     \texttt{grading/useAnnotations.test.jsx} & 2 & Guardado de los trazos pendientes al
@@ -74,11 +78,11 @@ como el estado de los datos simulados.
     \texttt{test/contract/validate.test.js} & 3 & Validador del subconjunto de OpenAPI
       (referencias, composición, campos no declarados). \\
     \midrule
-    \textbf{Total} & \textbf{79} & 76 cuando la rama se ejecuta sola. \\
+    \textbf{Total} & \textbf{82} & 79 cuando la rama se ejecuta sola. \\
     \bottomrule
   \end{tabular}
   \caption{Pruebas de la línea del núcleo docente (\textit{commit}
-    \texttt{2ebd2cb}).\label{TAB:TEST-CORE}}
+    \texttt{b84076c}).\label{TAB:TEST-CORE}}
 \end{table}
 
 Dos ejemplos muestran el tipo de aserción. La prueba del contrato de calificación guarda
@@ -97,8 +101,8 @@ La batería de la línea de gestión, redactada en detalle en un borrador de Cod
 aquí, contiene en el \textit{commit} \texttt{5d929ef} 107 casos en ocho ficheros: 104 de
 sus módulos y los tres del cliente compartido (\cref{TAB:TEST-ADMIN}). Los recuentos por
 fichero se obtuvieron con \texttt{vitest list} en la rama de integración
-(\textit{commit} \texttt{9357888}), cuya ejecución sumó 183 casos correctos en veintitrés
-ficheros ($79 + 104$, con el fichero del cliente común contado una vez). Los \textit{commits}
+(\textit{commit} \texttt{06dcc9f}), cuya ejecución sumó 186 casos correctos en veinticuatro
+ficheros ($82 + 104$, con el fichero del cliente común contado una vez). Los \textit{commits}
 de gestión posteriores a \texttt{5d929ef} solo modifican documentos de coordinación. En esa ejecución
 conjunta, las escrituras de la línea de gestión pasan también por el verificador de
 contrato del núcleo.
@@ -132,7 +136,7 @@ contrato del núcleo.
     \bottomrule
   \end{tabular}
   \caption{Pruebas de la línea de gestión (\textit{commit} \texttt{5d929ef}), contadas en
-    la integración \texttt{9357888}.\label{TAB:TEST-ADMIN}}
+    la integración \texttt{06dcc9f}.\label{TAB:TEST-ADMIN}}
 \end{table}
 
 Tres técnicas caracterizan esta batería. La primera es el \textbf{reloj controlado}: la
@@ -250,3 +254,11 @@ campo de nota se guarda al perder el foco, bastaba con entrar y salir de él par
 estudiante siguiente la nota del anterior (consecuencia deducida del código del componente,
 no reproducida en una prueba). La corrección asigna la clave por instancia y muestra el indicador de carga al
 cambiar de instancia; la prueba que lo comprueba falla sin ella (\texttt{2ebd2cb}).
+
+La vista docente del examen, la última pantalla del núcleo sin prueba propia, mostró un
+defecto del mismo género: estado que sobrevive a lo que el usuario cree cerrado. El diálogo
+que abre el periodo de revisión permanecía montado aunque estuviera oculto, de modo que, si
+el servidor rechazaba un primer intento (por ejemplo, con \texttt{INVALID\_DATES}), al
+volver a abrirlo seguía mostrando ese error y las fechas propuestas al montarse por primera
+vez. La corrección monta el diálogo solo mientras está abierto; la prueba que provoca el
+rechazo, cierra y reabre falla sin ella (\texttt{b84076c}).

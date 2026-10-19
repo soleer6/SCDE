@@ -188,6 +188,9 @@ para las pantallas que solo tenían pruebas de contrato o de piezas sueltas. La
       Revisión del código al cambiar el gancho de datos & Cada problema se reutilizaba
       con la misma clave entre instancias & Clave por instancia; carga inicial
       distinguida en \texttt{useApi} (\texttt{2ebd2cb}) \\
+    42 & El diálogo de revisión reabierto muestra el intento rechazado & Prueba nueva &
+      El diálogo seguía montado mientras estaba oculto & Montarlo solo mientras está
+      abierto (\texttt{b84076c}) \\
     \bottomrule
   \end{tabular}
   \caption{Problemas encontrados al probar las pantallas, al final de la segunda
@@ -204,7 +207,7 @@ revisión y se corrigió con una prueba.
 
 \section*{Lectura del registro}
 
-Agrupando los 41 casos por el mecanismo que los hizo visibles, la mayoría los
+Agrupando los 42 casos por el mecanismo que los hizo visibles, la mayoría los
 detectó una herramienta sin intervención: Git, el \textit{linter}, Vitest o los
 auditores propios. La ejecución de la batería en la rama de integración merece
 mención aparte: los casos 14, 26 y 27 solo se manifestaban al unir las dos
@@ -218,7 +221,7 @@ investigación encontró el defecto de la interfaz. Los casos 23 y 25 muestran q
 las herramientas de verificación propias también fallan y deben verificarse a su
 vez; el 24, que una afirmación documentada no equivale a un cambio hecho.
 
-Los casos 32 a 41 añaden una lección distinta: estaban en pantallas que ya pasaban
+Los casos 32 a 42 añaden una lección distinta: estaban en pantallas que ya pasaban
 todas las comprobaciones existentes, y la mayoría apareció al escribir la primera
 prueba que montaba cada pantalla completa. El 39 es el más llamativo, porque la página de
 corrección, la central del sistema, no llegaba a pintarse desde su incorporación. El
@@ -226,7 +229,9 @@ corrección, la central del sistema, no llegaba a pintarse desde su incorporaci�
 con todas las pruebas en verde. Y 29, 30, 36 y 40 son el mismo error de diseño
 repetido en varias pantallas; se resolvió finalmente en el código compartido, y al
 hacerlo apareció el caso 41, que habría podido asignar a un estudiante las notas del
-anterior (\cref{SEC:TEST-FLOWS}).
+anterior (\cref{SEC:TEST-FLOWS}). El 42 comparte con el 41 la causa de fondo, un
+estado que sobrevive a lo que el usuario da por cerrado, aunque con consecuencias
+menores: un mensaje de error obsoleto, no una nota mal asignada.
 
 Solo dos casos requirieron a una persona: el rechazo de la dirección visual (16)
 y la detección de sesiones duplicadas del orquestador (31). Junto con el error
