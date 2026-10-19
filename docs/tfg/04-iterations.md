@@ -146,6 +146,17 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
 - Fuera de alcance (futuro): validar también cuerpos de petición y respuestas de
   operaciones de escritura.
 
+## Iteración 2026-10-19 · integración en preview y prueba lenta de ingestion
+- `preview/integration` (`0c1f9e5`) = claude `9c0183c` + codex `e884cae`: 136/136 pruebas,
+  lint/build sin errores, 0 errores de estilo (7 avisos ya conocidos). El commit nuevo de Codex
+  solo toca su bitácora: nada que auditar en código.
+- Prueba «identify the student» (9 s observados en batería): instrumentada paso a paso, el flujo
+  aislado tarda ~0,8 s (render inicial ~0,37 s; cada interacción ~0,1 s; latencia del mock = 0).
+  Los 9 s se debían a contención de CPU con otras sesiones en paralelo, no a la prueba.
+- Se separó la comprobación del enlace desde la página del examen en su propia prueba, de modo
+  que cada prueba monta una única ruta perezosa. Se probó también precargar los chunks en
+  `beforeAll` y se descartó: no produjo mejora medible (3 ejecuciones de la batería).
+
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.
 - 2 tests con timeout bajo carga → ampliados localmente; entrada de texto con `change`.
