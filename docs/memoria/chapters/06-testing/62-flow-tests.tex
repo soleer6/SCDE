@@ -1,16 +1,16 @@
 Esta sección describe las baterías de las dos líneas de trabajo. Las cifras corresponden a
 ejecuciones de \texttt{npm run check} sobre \textit{commits} concretos: la línea del núcleo
-sobre \texttt{79aeef5} y la de gestión sobre \texttt{18f04b2}, integradas en
-\texttt{f125c0d}. Son recuentos de casos que
+sobre \texttt{9c820f1} y la de gestión sobre \texttt{18f04b2}, integradas en
+\texttt{a77c955}. Son recuentos de casos que
 terminan correctamente, no medidas de cobertura de líneas, de ramas ni de requisitos.
 
 \subsection{Núcleo docente}
 
-La rama del núcleo contiene 71 casos en catorce ficheros (\cref{TAB:TEST-CORE}). Tres de
+La rama del núcleo contiene 75 casos en quince ficheros (\cref{TAB:TEST-CORE}). Tres de
 ellos, los de la configuración que leen los miembros de la asignatura, dependen de los
 manejadores de simulación de la línea de gestión y se omiten de forma explícita
-(\texttt{it.skipIf}) cuando la rama se ejecuta sola, que entonces cuenta 68; en la rama de
-integración se ejecutan los 71. Los casos de
+(\texttt{it.skipIf}) cuando la rama se ejecuta sola, que entonces cuenta 72; en la rama de
+integración se ejecutan los 75. Los casos de
 flujo montan la aplicación con su enrutador y su proveedor de sesión, inician sesión con uno
 de los usuarios de la simulación y recorren el caso de uso hasta comprobar tanto la pantalla
 como el estado de los datos simulados.
@@ -45,6 +45,11 @@ como el estado de los datos simulados.
       reconocida aplicada o propuesta según la confianza; texto reconocido añadido al
       comentario y borrado de la anotación temporal; la tinta de página ignora los
       paneles. \\
+    \texttt{grading/grading.test.jsx} & 4 & Página de corrección montada mientras se
+      guardan las notas (zoom, campo y foco conservados) y cierre de la corrección;
+      puntuación por encima del máximo rechazada sin llamar a la \acs{api}; nombre
+      accesible del comentario; aviso de un modelo sin problemas, que no se puede dar por
+      corregido. \\
     \texttt{exams/setup.test.jsx} & 7 & Pestañas de la configuración según el rol y
       acceso denegado al estudiante; datos generales y borrado rechazado de un examen con
       instancias; problemas y \dfnpl{rubrica} con aviso de exceso; convocatoria con los
@@ -66,11 +71,11 @@ como el estado de los datos simulados.
     \texttt{test/contract/validate.test.js} & 3 & Validador del subconjunto de OpenAPI
       (referencias, composición, campos no declarados). \\
     \midrule
-    \textbf{Total} & \textbf{71} & 68 cuando la rama se ejecuta sola. \\
+    \textbf{Total} & \textbf{75} & 72 cuando la rama se ejecuta sola. \\
     \bottomrule
   \end{tabular}
   \caption{Pruebas de la línea del núcleo docente (\textit{commit}
-    \texttt{79aeef5}).\label{TAB:TEST-CORE}}
+    \texttt{9c820f1}).\label{TAB:TEST-CORE}}
 \end{table}
 
 Dos ejemplos muestran el tipo de aserción. La prueba del contrato de calificación guarda
@@ -89,8 +94,8 @@ La batería de la línea de gestión, redactada en detalle en un borrador de Cod
 aquí, contiene en el \textit{commit} \texttt{5d929ef} 107 casos en ocho ficheros: 104 de
 sus módulos y los tres del cliente compartido (\cref{TAB:TEST-ADMIN}). Los recuentos por
 fichero se obtuvieron con \texttt{vitest list} en la rama de integración
-(\textit{commit} \texttt{f125c0d}), cuya ejecución sumó 175 casos correctos en veintiún
-ficheros ($71 + 104$, con el fichero del cliente común contado una vez). Los \textit{commits}
+(\textit{commit} \texttt{a77c955}), cuya ejecución sumó 179 casos correctos en veintidós
+ficheros ($75 + 104$, con el fichero del cliente común contado una vez). Los \textit{commits}
 de gestión posteriores a \texttt{5d929ef} solo modifican documentos de coordinación. En esa ejecución
 conjunta, las escrituras de la línea de gestión pasan también por el verificador de
 contrato del núcleo.
@@ -124,7 +129,7 @@ contrato del núcleo.
     \bottomrule
   \end{tabular}
   \caption{Pruebas de la línea de gestión (\textit{commit} \texttt{5d929ef}), contadas en
-    la integración \texttt{f125c0d}.\label{TAB:TEST-ADMIN}}
+    la integración \texttt{a77c955}.\label{TAB:TEST-ADMIN}}
 \end{table}
 
 Tres técnicas caracterizan esta batería. La primera es el \textbf{reloj controlado}: la
@@ -206,7 +211,7 @@ fallaba con un error que solo aparecía como aviso en la consola, de modo que la
 estudiante mostraba el error en lugar del examen escaneado sin que ninguna aserción lo
 detectara (\texttt{0b28e41}).
 
-Las pruebas de la configuración del examen, las últimas añadidas, siguieron el mismo
+Las pruebas de la configuración del examen siguieron el mismo
 patrón. Cada guardado volvía a mostrar el indicador de carga de la página y desmontaba la
 pestaña activa, con lo que se perdía, por ejemplo, la lista de estudiantes rechazados que
 la convocatoria acababa de mostrar; dos de los casos fallan sin la corrección. Y la lista de estudiantes de la
@@ -214,3 +219,18 @@ convocatoria y de correctores se construía con la primera página de miembros, 
 en una asignatura con más de cien miembros los restantes no aparecían; la corrección
 recorre todas las páginas y, al buscar cómo filtrar por rol, destapó gap-12
 (\texttt{79aeef5}, \cref{SEC:AN-GAPS}).
+
+Las últimas, las de la página de corrección, encontraron el defecto más grave de la serie:
+la página no llegaba a pintarse. Al llegar la instancia se conoce el examen, pero la
+consulta de este aún no ha empezado y no figura como pendiente, de modo que el primer
+pintado leía los datos del examen sin tenerlos y lanzaba un error de tipo. El defecto
+existía desde la incorporación de la página (\texttt{00948a7}) y ninguna prueba montaba la
+pantalla completa, solo sus piezas (reconocimiento de escritura y autoguardado). Las cuatro
+pruebas nuevas fallan sin la corrección; se reprodujo en el \acs{dom} simulado con React,
+no en un navegador, porque la máquina no dispone de uno sin interfaz. La misma página
+repetía además el patrón de las pantallas anteriores: cada nota guardada recargaba la
+instancia y desmontaba el visor y las filas de problemas, con la pérdida del zoom, del
+borrador y del foco (\texttt{9c820f1}). Que el mismo error de diseño, mostrar el indicador
+de carga en cada recarga, apareciera en seis pantallas sugiere que habría convenido
+resolverlo una vez en el gancho de datos compartido; queda como mejora en el trabajo
+futuro (\cref{SEC:CONC-FUTURE}).

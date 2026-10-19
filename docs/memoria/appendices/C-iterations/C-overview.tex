@@ -145,6 +145,51 @@ encontrados, con el mismo formato.
   \caption{Problemas registrados en la segunda fase.\label{TAB:IT-PHASE2}}
 \end{table}
 
+Las últimas iteraciones de la segunda fase se dedicaron a escribir pruebas de interfaz
+para las pantallas que solo tenían pruebas de contrato o de piezas sueltas. La
+\cref{TAB:IT-PHASE2B} recoge lo que encontraron.
+
+\begin{table}[htbp]
+  \centering
+  \scriptsize
+  \begin{tabular}{rp{0.22\textwidth}p{0.12\textwidth}p{0.24\textwidth}p{0.26\textwidth}}
+    \toprule
+    \textbf{\#} & \textbf{Síntoma} & \textbf{Detección} & \textbf{Causa} & \textbf{Corrección} \\
+    \midrule
+    32 & El formulario de revisión anuncia un envío que no ha creado nada & Revisión del
+      código & La simulación devolvía también las solicitudes existentes; el servidor solo
+      devuelve las creadas & Simulación corregida; mensaje según lo creado
+      (\texttt{a21f8ef}) \\
+    33 & La página de la asignatura pide dos veces los exámenes & Prueba nueva que cuenta
+      peticiones & La petición salía antes de conocer el rol y se repetía después &
+      Esperar al rol (\texttt{76e4841}) \\
+    34 & Foco intermitente tras recargar los resultados & Vitest (una de cuatro
+      ejecuciones) & El efecto dependía solo de la marca de fin de carga, que React
+      agrupaba con latencia nula & Depender también de los datos (\texttt{76e4841}) \\
+    35 & El estudiante ve un error en lugar de su examen, con las pruebas en verde & Aviso
+      en la salida de errores de la batería & El entorno de pruebas no resolvía la
+      dirección relativa del \acs{pdf} semilla & Sustituto de \texttt{fetch} en la
+      preparación común (\texttt{0b28e41}) \\
+    36 & Guardar en la configuración del examen desmonta la pestaña & Prueba nueva & El
+      indicador de carga salía en cada recarga & Solo en la carga inicial
+      (\texttt{79aeef5}) \\
+    37 & La convocatoria omite miembros en asignaturas grandes & Revisión del código &
+      Se leía solo la primera página de miembros & Recorrer todas las páginas; hueco
+      gap-12 (\texttt{79aeef5}) \\
+    38 & Prueba de contrato falla en \texttt{PATCH /exams/\{id\}/} & Prueba de contrato &
+      Respuesta real no declarada (gap-10) & Forma registrada tras leer la vista
+      (\texttt{79aeef5}) \\
+    39 & \textbf{La página de corrección no llega a pintarse} & Prueba nueva & Se leían los
+      datos del examen antes de que su consulta empezara & Esperar a instancia y examen
+      (\texttt{9c820f1}) \\
+    40 & Guardar una nota desmonta el visor y los problemas & Prueba nueva & El indicador
+      de carga salía en cada recarga & Solo en la carga inicial (\texttt{9c820f1}) \\
+    \bottomrule
+  \end{tabular}
+  \caption{Problemas encontrados al probar las pantallas, al final de la segunda
+    fase.\label{TAB:IT-PHASE2B}}
+\end{table}
+
 La línea de gestión mantuvo su propio registro
 (\texttt{docs/coordination/codex-log.md}). Sus incidencias fueron de la misma
 naturaleza: la ejecución de Vitest y de los auditores fallaba en su entorno
@@ -155,7 +200,7 @@ revisión y se corrigió con una prueba.
 
 \section*{Lectura del registro}
 
-Agrupando los 31 casos por el mecanismo que los hizo visibles, la mayoría los
+Agrupando los 40 casos por el mecanismo que los hizo visibles, la mayoría los
 detectó una herramienta sin intervención: Git, el \textit{linter}, Vitest o los
 auditores propios. La ejecución de la batería en la rama de integración merece
 mención aparte: los casos 14, 26 y 27 solo se manifestaban al unir las dos
@@ -168,6 +213,15 @@ producían ningún error visible, o el caso 30, en el que la primera explicació
 investigación encontró el defecto de la interfaz. Los casos 23 y 25 muestran que
 las herramientas de verificación propias también fallan y deben verificarse a su
 vez; el 24, que una afirmación documentada no equivale a un cambio hecho.
+
+Los casos 32 a 40 añaden una lección distinta: estaban en pantallas que ya pasaban
+todas las comprobaciones existentes, y la mayoría apareció al escribir la primera
+prueba que montaba cada pantalla completa. El 39 es el más llamativo, porque la página de
+corrección, la central del sistema, no llegaba a pintarse desde su incorporación. El
+35 pasaba desapercibido porque el síntoma solo era un aviso en la salida de errores
+con todas las pruebas en verde. Y 29, 30, 36 y 40 son el mismo error de diseño
+repetido en varias pantallas, lo que apunta a resolverlo en el código compartido
+(\cref{SEC:CONC-FUTURE}).
 
 Solo dos casos requirieron a una persona: el rechazo de la dirección visual (16)
 y la detección de sesiones duplicadas del orquestador (31). Junto con el error
