@@ -23,7 +23,9 @@ export default function SubjectPage() {
   const teaching = isTeachingRole(role) || session?.isStaff;
 
   const subject = useApi(() => getSubject(subjectId), [subjectId]);
-  const exams = useApi(async () => {
+  // Wait for the role: fetching earlier would load the list twice (and the
+  // per-exam instances once more) when the role turns out to be a teaching one.
+  const exams = useApi(rolesLoading ? null : async () => {
     const list = await getSubjectExams(subjectId);
     if (!teaching) return list;
     // Teachers: attach grading progress per exam (one request per exam).
@@ -37,7 +39,7 @@ export default function SubjectPage() {
         }
       }),
     );
-  }, [subjectId, teaching]);
+  }, [subjectId, teaching, rolesLoading]);
 
   if (subject.loading || rolesLoading) return <Loader page />;
   if (subject.error) return <ErrorState error={subject.error} onRetry={subject.reload} />;
@@ -82,7 +84,7 @@ export default function SubjectPage() {
       <div className="dm-split">
         <section className="dm-section">
           <h2 className="ui-h3">{t('subject.exams')}</h2>
-          {exams.loading ? (
+          {exams.loading || (!exams.data && !exams.error) ? (
             <Loader />
           ) : exams.error ? (
             <ErrorState error={exams.error} onRetry={exams.reload} />

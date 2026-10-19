@@ -215,6 +215,24 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
   sustituye al formulario; tras enviar, el foco va a la lista de solicitudes.
 - 3 pruebas nuevas en `features/results/results.test.jsx` (fallan con el código anterior) → 56 propios.
 
+## Iteración 2026-10-19 · integración, pruebas del espacio de trabajo y foco tras recargar
+- `preview/integration` (`ababa55`) = claude `5794666` + codex `3071431`: 158/158, lint/build/estilo
+  OK. Los 20 commits nuevos de Codex (foco tras filtrar, paginar, guardar e importar en
+  `features/admin`, `profile` y `subject-admin`, y su bitácora) quedan en sus rutas, no añaden
+  endpoints ni estilos en línea: sin hallazgos.
+- `features/workspace` no tenía pruebas propias. 7 nuevas (`workspace.test.jsx`): inicio de
+  coordinador (cola y revisiones), de estudiante (solo sus asignaturas) y de gestor sin
+  asignaturas; reintento de la lista; página de asignatura con y sin rol docente; 403 ajeno.
+- Encontrado al escribirlas: `SubjectPage` pedía los exámenes antes de conocer el rol y los volvía
+  a pedir (más una petición de instancias por examen) cuando el rol resultaba docente. Ahora espera
+  al rol; la prueba que cuenta peticiones falla con el código anterior.
+- Fallo intermitente en `results.test.jsx` (foco tras enviar o con la revisión cerrada, 1 de 4
+  baterías): el efecto de foco dependía solo de `settled`; con latencia 0, si la respuesta llega
+  antes de pintar el estado de carga, ambas actualizaciones se agrupan y `settled` no cambia, así
+  que el foco no se aplica. El efecto depende también de los datos recibidos. No se reprodujo de
+  nuevo en 3 baterías simultáneas (la causa se deduce del código, no se ha observado de forma aislada).
+- Tests propios: 63 (56 + 7).
+
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.
 - 2 tests con timeout bajo carga → ampliados localmente; entrada de texto con `change`.

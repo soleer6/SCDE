@@ -28,11 +28,13 @@ export default function StudentResultView({ exam }) {
   const listRef = useRef(null);
   const closedRef = useRef(null);
   const settled = !instances.loading && !review.loading && !requests.loading;
+  // Keyed on the data too: when a reload answers before the loading state is
+  // rendered, both updates batch and `settled` never flips (seen under load).
   useEffect(() => {
     if (!focusAfter.current || !settled) return;
     (focusAfter.current === 'list' ? listRef : closedRef).current?.focus();
     focusAfter.current = null;
-  }, [settled]);
+  }, [settled, instances.data, review.data, requests.data]);
 
   const header = (
     <PageHeader
