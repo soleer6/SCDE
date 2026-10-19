@@ -1,4 +1,5 @@
-/* Student review requests in mock mode: plurals, requests already made
+/* Student result in mock mode: the scanned exam loads; review requests:
+ * plurals, requests already made
  * elsewhere, a window that closes meanwhile and where the focus lands. */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
@@ -26,6 +27,7 @@ globalThis.ResizeObserver ??= class {
 };
 URL.createObjectURL ??= () => 'blob:mock';
 URL.revokeObjectURL ??= () => {};
+HTMLCanvasElement.prototype.getContext = () => null; // jsdom has no canvas; InkCanvas skips painting
 
 const INSTANCE = 'i-e-mat-p1-1'; // Elena's, IN_REVIEW with the window OPEN
 
@@ -59,6 +61,14 @@ beforeEach(async () => {
   db.reset();
   await i18n.changeLanguage('es');
   await loginAs('elena.rodriguez@estudiante.uam.es', 'est123');
+});
+
+describe('student result', () => {
+  it('shows the scanned exam instead of the download error', async () => {
+    renderResult();
+    expect(await screen.findByTestId('pdf-doc', {}, { timeout: 8000 })).toBeInTheDocument();
+    expect(screen.queryByText('No se ha podido cargar tu examen')).not.toBeInTheDocument();
+  });
 });
 
 describe('student review requests', () => {
