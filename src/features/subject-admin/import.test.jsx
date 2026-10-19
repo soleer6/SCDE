@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { fireEvent, screen, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { api } from '../../lib/api/client.js';
 import { db } from '../../lib/mock/db.js';
@@ -47,6 +47,9 @@ it('shows the summary on the page and refreshes the directory after import', asy
   fireEvent.submit(screen.getByRole('button', { name: 'Importar archivo' }).closest('form'));
   await screen.findByText('Importación completada');
   const dialog = within(screen.getByRole('dialog'));
+  await waitFor(() => expect(dialog.getByRole('status', { name: 'Importación completada' })).toHaveFocus());
+  await user.tab();
+  expect(dialog.getByRole('button', { name: 'Descargar errores' })).toHaveFocus();
   expect(dialog.getByText('Creados').nextElementSibling).toHaveTextContent('1');
   expect(dialog.getByText('Filas con errores').nextElementSibling).toHaveTextContent('1');
   expect(dialog.queryByText('Filas procesadas')).not.toBeInTheDocument();

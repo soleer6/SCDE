@@ -22,6 +22,7 @@ export default function SubjectsPage() {
   const resultsRef = useRef(null);
   const restoreFocus = useRef(null);
   const importPendingRef = useRef(false);
+  const closeImport = useCallback(() => { if (!importPendingRef.current) setImporting(false); }, []);
   const [error, setError] = useState(null);
   const courseId = course || current.data?.id;
   const state = useApi(courseId ? () => searchCatalog({ course_id: courseId, search: query, page }) : null, [courseId, query, page]);
@@ -64,7 +65,7 @@ export default function SubjectsPage() {
       if (page > 1 && state.data?.results?.length === 1) setPage(page - 1);
       else state.reload();
     }} />}
-    <Dialog open={importing} title={t('import')} onClose={() => !importPendingRef.current && setImporting(false)}>
+    <Dialog open={importing} title={t('import')} onClose={closeImport}>
       {importing && <ImportForm hint={t('importHint')} onImport={importSubjects} onComplete={state.reload} onPendingChange={(value) => { importPendingRef.current = value; }} />}
     </Dialog>
   </>;

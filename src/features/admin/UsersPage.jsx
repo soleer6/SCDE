@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Dialog, ErrorState, Field, Input, PageHeader, Select } from '../../ui';
 import { useApi } from '../../lib/hooks.js';
@@ -23,6 +23,7 @@ export default function UsersPage() {
   const actingRef = useRef(false);
   const savingRef = useRef(false);
   const importPendingRef = useRef(false);
+  const closeImport = useCallback(() => { if (!importPendingRef.current) setImporting(false); }, []);
   const confirmationErrorRef = useRef(null);
   useEffect(() => {
     if (confirm && error && !pending) confirmationErrorRef.current?.focus();
@@ -77,7 +78,7 @@ export default function UsersPage() {
     ]} />
     </section>
     <Pagination data={users.data} page={page} onChange={setPage} />
-    <Dialog open={importing} title={t('importUsers')} onClose={() => !importPendingRef.current && setImporting(false)}>
+    <Dialog open={importing} title={t('importUsers')} onClose={closeImport}>
       {importing && <ImportForm hint={t('userImportHint')} onImport={importUsers} onComplete={users.reload} onPendingChange={(value) => { importPendingRef.current = value; }} />}
     </Dialog>
     <Dialog open={Boolean(editing)} title={t(editing?.id ? 'edit' : 'create')} onClose={() => !savingRef.current && setEditing(null)}>
