@@ -147,6 +147,11 @@
   gap: var(--s-3);
 }
 
+.gr-empty {
+  margin: 0;
+  padding: var(--s-4);
+}
+
 .gr-problem {
   border-bottom: 1px solid var(--line);
   padding: var(--s-4);

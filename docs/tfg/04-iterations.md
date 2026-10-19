@@ -266,6 +266,27 @@ Registro cronológico (2026-10-17). Formato: síntoma → detección → causa �
   sola (`it.skipIf`) y corren en la integración.
 - Tests propios: 68 ejecutados en la rama (64 + 4) y 71 en la integración (+3).
 
+## Iteración 2026-10-19 · integración y pruebas de la página de corrección
+- `preview/integration` (`9173047`) = claude `05229a5` + codex `18f04b2` (sin commits nuevos de
+  Codex): 175/175, lint/build/estilo OK.
+- `/instances/:id/grade` no tenía pruebas de interfaz (solo `ocr` y `useAnnotations`). Nuevo
+  `src/features/grading/grading.test.jsx` (4 casos) y dos defectos de `GradingPage` desde `00948a7`:
+  1. **La página no llegaba a pintarse**: cuando llega la instancia aparece `examId`, pero el
+     `useApi` del examen se creó con `fn = null` (`loading: false`) y su efecto aún no ha corrido;
+     el render leía `exam.data.subject_code` sin datos y lanzaba `TypeError`. Las 4 pruebas fallan
+     con el código anterior. Reproducido en jsdom con React real (no hay navegador sin cabeza en
+     la máquina); el orden de render es el mismo en el navegador. Ahora el cargador espera a tener
+     instancia y examen, y los errores se comprueban antes.
+  2. Cada nota guardada llama a `inst.reload()` y el cargador de página salía en cada recarga:
+     se desmontaban el visor (página, zoom, herramienta) y las filas de problemas (borrador y foco
+     de la siguiente). Mismo patrón que `00c1137`/`79aeef5`; la prueba comprueba que el zoom, el
+     nodo del campo y el foco sobreviven.
+- Accesibilidad y estados vacíos: el comentario para el estudiante no tenía nombre accesible
+  (solo pista); el progreso, el estado de guardado y el de cada problema se anuncian
+  (`role="status"`/`aria-live`); un modelo sin problemas muestra un aviso y no deja marcar como
+  corregido (antes quedaba un panel vacío y el botón activo con 0/0).
+- Tests propios: 72 ejecutados en la rama (68 + 4) y 75 en la integración.
+
 ## Iteraciones de Codex (resumen de `docs/coordination/codex-log.md`)
 - Vitest y el auditor fallaban por `spawn EPERM` en su sandbox → reejecutados con permiso.
 - 2 tests con timeout bajo carga → ampliados localmente; entrada de texto con `change`.
