@@ -1177,3 +1177,11 @@
 - Sin publicación, backend real ni revisión visual/manual; sin cambios de contrato, mocks ni base compartida. Ajuste inicial de bitácora mediante parche con contexto inexistente rechazado, corregido con contexto real. Progreso actualizado y mensaje fix(notificaciones) delegado al lanzador tras controles, sin escribir en .git.
 - Siguiente: verificar commit, publicar ambas ramas y sincronizar borradores con navegación de notificaciones y 107 locales/104 propios.
 - Cierre: repetición de propiedad bloqueada por spawnSync cmd.exe EPERM; reintento aislado correcto (45 rutas). Diff correcto; mensaje de commit preparado para el lanzador.
+
+
+## Misión v2 · iteración 36/40 · 2026-10-19 13:54 +02:00
+- Verificado b57f69a y revisados cinco commits de ambas ramas y REQUESTS de Claude 86facc8, sin petición funcional nueva. Archivo privado setup-remote-ssh.local.ps1 preservado; sin cambios de código ni base compartida.
+- Dos invocaciones de deploy-vercel.ps1 en terminal detenidas antes de Vitest por spawn EPERM de esbuild tras lint correcto; cero composiciones/publicaciones nuevas y sin HTTP nuevo. Última demo verificada: iteración 34, Claude 5794666 + Codex 26e01f3, sin navegación nueva de notificaciones.
+- §5.4: listos chapters/05-implementation/admin.tex y chapters/06-testing/admin.tex externos; espera de datos nuevos tras paginar/actualizar/marcar, dos casos nuevos con GET retenidos, error/Reintentar y teclado. bibliography/codex.bib e INTEGRACION-admin.md sincronizados; docs/memoria intacto.
+- Check independiente correcto: 107/107 en ocho ficheros, lint/build/estilo OK con dos avisos previos de auth; npm run audit:ownership OK (45 rutas). Validador documental actualizado y correcto (9 fragmentos, 45 claves, 33 operaciones, 104+3 casos). Sin Django ni revisión visual/manual.
+- Progreso actualizado y mensaje docs(memoria) delegado al lanzador tras controles, sin escribir en .git. Siguiente: verificar commit documental, recuperar publicación de ambas ramas y continuar §5.3.
