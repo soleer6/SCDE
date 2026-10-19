@@ -90,29 +90,69 @@ it('lists historical courses, searches on the server and paginates', async () =>
   db.courses.push(...Array.from({ length: 26 }, (_, i) => ({ ...db.courses[1], id: `old-${i}`, label: `History ${i}` })));
   const user = userEvent.setup(); renderPage(<CoursesPage />);
   await screen.findByText('2025-2026');
+  const results = screen.getByRole('region', { name: 'Cursos' });
+  expect(results).not.toHaveFocus();
+  const originalGet = api.get.bind(api);
+  let releasePage;
+  const pageGate = new Promise((resolve) => { releasePage = resolve; });
+  const get = vi.spyOn(api, 'get').mockImplementationOnce(async (...args) => {
+    await pageGate;
+    return originalGet(...args);
+  });
   await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+  await waitFor(() => expect(get).toHaveBeenCalledWith('/search/', { page: 2, search: '' }));
+  expect(results).not.toHaveFocus();
+  expect(within(results).queryByRole('table')).not.toBeInTheDocument();
+  await act(async () => { releasePage(); });
   await screen.findByText('History 25');
+  await waitFor(() => expect(results).toHaveFocus());
+  await user.tab();
+  expect(within(results).getAllByRole('button', { name: 'Editar curso' })[0]).toHaveFocus();
+  let releaseSearch;
+  const searchGate = new Promise((resolve) => { releaseSearch = resolve; });
+  get.mockImplementationOnce(async (...args) => {
+    await searchGate;
+    return originalGet(...args);
+  });
   fireEvent.change(screen.getByLabelText('Buscar cursos'), { target: { value: '2026-2027' } });
   await user.click(screen.getByRole('button', { name: 'Buscar' }));
+  await waitFor(() => expect(get).toHaveBeenLastCalledWith('/search/', { page: 1, search: '2026-2027' }));
+  expect(results).not.toHaveFocus();
+  await act(async () => { releaseSearch(); });
   await screen.findByText('2026-2027');
+  await waitFor(() => expect(results).toHaveFocus());
   expect(screen.queryByText('2025-2026')).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled();
+  const search = screen.getByLabelText('Buscar cursos');
+  await user.click(search);
+  await user.keyboard('{Enter}');
+  await waitFor(() => expect(results).toHaveFocus());
+  expect(get).toHaveBeenLastCalledWith('/search/', { page: 1, search: '2026-2027' });
+  fireEvent.change(search, { target: { value: 'missing' } });
+  await user.click(screen.getByRole('button', { name: 'Buscar' }));
+  await within(results).findByText('No hay registros');
+  await waitFor(() => expect(results).toHaveFocus());
+  await user.tab();
+  expect(within(results).getByRole('button', { name: 'Crear curso' })).toHaveFocus();
 });
 
 it('retries the same course search with Enter after a request failure', async () => {
   const user = userEvent.setup(); renderPage(<CoursesPage />);
   await screen.findByText('2025-2026');
+  const results = screen.getByRole('region', { name: 'Cursos' });
   const get = vi.spyOn(api, 'get');
   get.mockRejectedValueOnce(new Error('Temporary network failure'));
   const search = screen.getByRole('textbox', { name: 'Buscar cursos' });
   await user.click(search);
   await user.type(search, '2026-2027{Enter}');
   await screen.findByRole('button', { name: 'Reintentar' });
+  expect(screen.getByRole('alert').parentElement).toHaveFocus();
   expect(screen.queryByText('2026-2027')).not.toBeInTheDocument();
   expect(search).toHaveValue('2026-2027');
   await user.click(search);
   await user.keyboard('{Enter}');
   await screen.findByText('2026-2027');
+  await waitFor(() => expect(results).toHaveFocus());
   expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
   expect(screen.queryByText('2025-2026')).not.toBeInTheDocument();
   expect(get.mock.calls).toEqual([
@@ -120,6 +160,19 @@ it('retries the same course search with Enter after a request failure', async ()
     ['/search/', { page: 1, search: '2026-2027' }],
   ]);
   expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled();
+  expect(db.courses).toHaveLength(2);
+  // An error discards the query destination; generic retry returns to search.
+  get.mockRejectedValueOnce(new Error('Temporary network failure'));
+  await user.click(search);
+  await user.keyboard('{Enter}');
+  expect((await screen.findByRole('alert')).parentElement).toHaveFocus();
+  await user.tab();
+  expect(screen.getByRole('button', { name: 'Reintentar' })).toHaveFocus();
+  await user.keyboard('{Enter}');
+  await screen.findByText('2026-2027');
+  await waitFor(() => expect(search).toHaveFocus());
+  expect(search).toHaveValue('2026-2027');
+  expect(results).not.toHaveFocus();
   expect(db.courses).toHaveLength(2);
 });
 

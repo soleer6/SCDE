@@ -365,6 +365,7 @@ describe('organization administration in mock mode', () => {
     expect(await screen.findByText('No hay registros')).toBeInTheDocument();
     const admin = db.users.find((u) => u.id === 'u-admin');
     admin.is_active = false;
+    await user.click(search);
     await user.keyboard('{Enter}');
     expect(await screen.findByText('No tienes permiso para esta acción.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Editar curso' })).not.toBeInTheDocument();
@@ -374,7 +375,7 @@ describe('organization administration in mock mode', () => {
     expect(await screen.findByText('No hay registros')).toBeInTheDocument();
     expect(screen.queryByText('No tienes permiso para esta acción.')).not.toBeInTheDocument();
     expect(search).toHaveValue('2030-2031');
-    expect(search).toHaveFocus();
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Cursos' })).toHaveFocus());
     expect(db.courses.filter((c) => c.is_active)).toHaveLength(1);
   }, 15000);
 
@@ -402,7 +403,7 @@ describe('organization administration in mock mode', () => {
     await user.keyboard('{Enter}');
     expect(await screen.findByText('Curso activo')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    expect(search).toHaveFocus();
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Cursos' })).toHaveFocus());
     expect(db.courses).toEqual(originalCourses);
   }, 15000);
 

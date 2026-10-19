@@ -16,15 +16,23 @@ export default function CoursesPage() {
   const searchRef = useRef(null);
   const resultsRef = useRef(null);
   const focusAfterSave = useRef(null);
+  const focusAfterQuery = useRef(null);
   const recovering = useRef(false);
   useEffect(() => {
     if (courses.loading) return;
     if (courses.error) {
+      focusAfterQuery.current = null;
       recovering.current = true;
     } else if (recovering.current && courses.data) {
       recovering.current = false;
-      searchRef.current?.focus();
+      if (!focusAfterQuery.current) searchRef.current?.focus();
     }
+  }, [courses.loading, courses.error, courses.data]);
+  useEffect(() => {
+    const target = focusAfterQuery.current;
+    if (!target || courses.loading || courses.error || target.data === courses.data) return;
+    focusAfterQuery.current = null;
+    resultsRef.current?.focus();
   }, [courses.loading, courses.error, courses.data]);
   useEffect(() => {
     const target = focusAfterSave.current;
@@ -36,6 +44,7 @@ export default function CoursesPage() {
     <PageHeader eyebrow={t('management')} title={t('courses')} lede={t('courseListHint')} actions={<Button variant="primary" onClick={() => setEditing({ label: '', start_date: '', end_date: '' })}>{t('newCourse')}</Button>} />
     <form className="admin-actions" onSubmit={(e) => {
       e.preventDefault();
+      focusAfterQuery.current = { data: courses.data };
       if (page === 1 && query === search) courses.reload();
       else { setQuery(search); setPage(1); }
     }}>
@@ -49,7 +58,7 @@ export default function CoursesPage() {
       { key: 'subject_count', header: t('subjectCount'), align: 'num' },
       { key: 'actions', header: t('actions'), render: (c) => <Button size="sm" onClick={() => setEditing(c)}>{t('editCourse')}</Button> },
     ]} /></section>
-    <Pagination data={courses.data} page={page} onChange={setPage} />
+    <Pagination data={courses.data} page={page} onChange={(value) => { focusAfterQuery.current = { data: courses.data }; setPage(value); }} />
     <Dialog open={Boolean(editing)} title={t(editing?.id ? 'editCourse' : 'newCourse')} onClose={() => !savingRef.current && setEditing(null)}>
       {editing && <RecordForm key={editing.id ?? 'new'} initial={editing} fields={['label', 'start_date', 'end_date'].map((name) => ({ name, label: t(name), type: name === 'label' ? 'text' : 'date', required: name === 'label' }))} onSave={async (v) => {
         savingRef.current = true;
