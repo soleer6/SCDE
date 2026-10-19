@@ -2,6 +2,7 @@ import { mockError, paginate, reply } from '../../lib/mock/router.js';
 import { DEFAULT_PERMISSIONS, PERMISSION_KEYS } from '../../lib/permissions.js';
 import { requireRecord, requireStaff } from '../admin/mocks.js';
 import { subjectImportMocks } from './subject-import.mocks.js';
+import { subjectCrudMocks } from './subject-crud.mocks.js';
 
 function permit(db, user, subject, permission) {
   requireRecord(db.subjects.find((s) => s.id === subject));
@@ -27,6 +28,7 @@ const permissionTarget = (db, user, id, editing) => {
   return m;
 };
 export const mocks = [
+  ...subjectCrudMocks,
   ...subjectImportMocks,
   { method: 'GET', path: '/subjects/export/', handler: ({ db, user, query }) => {
     requireStaff(user);

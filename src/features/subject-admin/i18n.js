@@ -1,5 +1,13 @@
 export const i18n = {
   es: {
+    directoryHint: 'Crea asignaturas en el curso activo. Las asignaturas de cursos archivados solo se pueden consultar.',
+    createSubject: 'Crear asignatura', editSubject: 'Editar asignatura', deleteSubject: 'Eliminar asignatura',
+    semester: 'Semestre (opcional)', coordinator_id: 'Identificador del coordinador',
+    createSubjectHint: 'La asignatura se crea en el curso activo. Usa el identificador de un usuario activo de tu organización como coordinador.',
+    coordinatorHint: 'Si cambias el coordinador, el anterior pasa a ser docente y se restablecen los permisos de ambos al rol.',
+    deleteSubjectConfirm: '¿Eliminar esta asignatura y sus grupos y membresías? Solo puedes eliminar asignaturas del curso activo sin exámenes.',
+    deleteSubjectError: 'No se ha podido eliminar la asignatura.',
+    subjectErrors: { HAS_EXAMS: 'La asignatura tiene exámenes. Elimínalos antes de borrar la asignatura.', COURSE_ARCHIVED: 'No puedes modificar asignaturas de un curso archivado.' },
     import: 'Importar asignaturas', importHint: 'Se importan en el curso activo. JSON: lista con name, code, coordinator_email y opcionalmente semester, groups, teachers y students. Para CSV sencillo usa name,code,coordinator_email,semester. Usa JSON para conservar grupos y miembros.',
     search: 'Buscar asignaturas', courseHint: 'Identificador del curso. Por defecto se muestra el curso activo.',
     title: 'Administrar asignatura', directory: 'Asignaturas', context: 'Gestión por asignatura', members: 'Miembros', groups: 'Grupos', permissions: 'Permisos',
@@ -9,6 +17,14 @@ export const i18n = {
     permissionNames: { can_create_exams: 'Crear exámenes', can_assign_correctors: 'Asignar correctores', can_create_rubric: 'Crear rúbricas', can_resolve_issues: 'Resolver incidencias', can_publish_grades: 'Publicar notas', can_manage_reviews: 'Gestionar revisiones', can_view_all_instances: 'Ver todas las entregas', can_export_grades: 'Exportar notas', can_manage_members: 'Gestionar miembros', can_delegate_perms: 'Delegar permisos', can_manage_groups: 'Gestionar grupos' },
   },
   en: {
+    directoryHint: 'Create subjects in the active course. Subjects from archived courses are read-only.',
+    createSubject: 'Create subject', editSubject: 'Edit subject', deleteSubject: 'Delete subject',
+    semester: 'Semester (optional)', coordinator_id: 'Coordinator ID',
+    createSubjectHint: 'The subject is created in the active course. Use the ID of an active user in your organization as coordinator.',
+    coordinatorHint: 'Changing the coordinator makes the previous coordinator a teacher and resets both members’ permissions to their role defaults.',
+    deleteSubjectConfirm: 'Delete this subject and its groups and memberships? Only subjects in the active course without exams can be deleted.',
+    deleteSubjectError: 'The subject could not be deleted.',
+    subjectErrors: { HAS_EXAMS: 'This subject has exams. Delete them before deleting the subject.', COURSE_ARCHIVED: 'Subjects in archived courses cannot be changed.' },
     import: 'Import subjects', importHint: 'Subjects are imported into the active course. JSON: an array with name, code, coordinator_email and optional semester, groups, teachers and students. For simple CSV use name,code,coordinator_email,semester. Use JSON to preserve groups and members.',
     search: 'Search subjects', courseHint: 'Course ID. The active course is shown by default.',
     title: 'Manage subject', directory: 'Subjects', context: 'Subject administration', members: 'Members', groups: 'Groups', permissions: 'Permissions',
