@@ -12,8 +12,16 @@ function Members({ subjectId, onPermissions }) {
   const [page, setPage] = useState(1);
   const state = useApi(() => getMembers(subjectId, page), [subjectId, page]);
   const [adding, setAdding] = useState(false);
-  const savingRef = useRef(false);
   const [removing, setRemoving] = useState(null);
+  const resultsRef = useRef(null);
+  const restoreFocus = useRef(null);
+  useEffect(() => {
+    const target = restoreFocus.current;
+    if (!target || adding || removing || state.loading || state.error || target.data === state.data) return;
+    restoreFocus.current = null;
+    resultsRef.current?.focus();
+  }, [adding, removing, state.loading, state.error, state.data]);
+  const savingRef = useRef(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
   const removalErrorRef = useRef(null);
@@ -28,10 +36,10 @@ function Members({ subjectId, onPermissions }) {
   const action = <Button variant="primary" onClick={() => setAdding(true)} disabled={state.loading || Boolean(state.error)}>{t('assign')}</Button>;
   return <>
     <div className="admin-actions">{action}</div>
-    <Records state={state} focusError action={action} columns={[
+    <section ref={resultsRef} tabIndex={-1} aria-label={t('members')}><Records state={state} focusError action={action} columns={[
       { key: 'user_name', header: t('name') }, { key: 'user_email', header: t('email') }, { key: 'id', header: t('membership') }, { key: 'role', header: t('role'), render: (m) => t('common:roles.' + m.role) }, { key: 'group_label', header: t('group') },
       { key: 'actions', header: t('actions'), render: (m) => <div className="admin-actions"><Button size="sm" onClick={() => onPermissions(m)}>{t('inspect')}</Button><Button size="sm" variant="danger" onClick={(event) => { removalTriggerRef.current = event.currentTarget; setError(null); setRemoving(m); }}>{t('remove')}</Button></div> },
-    ]} />
+    ]} /></section>
     <Pagination data={state.data} page={page} onChange={setPage} />
     <Dialog open={adding} title={t('assign')} onClose={() => !savingRef.current && setAdding(false)}>
       {adding && <RecordForm initial={{ user_id: '', role: 'STUDENT', group_id: '' }} fields={[
@@ -42,6 +50,7 @@ function Members({ subjectId, onPermissions }) {
         savingRef.current = true;
         try {
           await assignMember(subjectId, { ...values, group_id: values.group_id || null });
+          restoreFocus.current = { data: state.data };
           setAdding(false); state.reload();
         } finally { savingRef.current = false; }
       }} />}
@@ -50,7 +59,7 @@ function Members({ subjectId, onPermissions }) {
       if (removalPendingRef.current) return;
       removalPendingRef.current = true;
       setPending(true); setError(null);
-      try { await removeMember(subjectId, removing.id); setRemoving(null); state.reload(); } catch (err) { setError(err); } finally { removalPendingRef.current = false; setPending(false); }
+      try { await removeMember(subjectId, removing.id); restoreFocus.current = { data: state.data }; setRemoving(null); state.reload(); } catch (err) { setError(err); } finally { removalPendingRef.current = false; setPending(false); }
     }}>{t('common:confirm')}</Button>}><p>{t('removeConfirm')}</p><p>{removing?.user_email}</p>{error && <div ref={removalErrorRef} tabIndex={-1}><ErrorState error={error} /></div>}</Dialog>
   </>;
 }
@@ -60,8 +69,16 @@ function Groups({ subjectId }) {
   const [page, setPage] = useState(1);
   const state = useApi(() => getGroups(subjectId, page), [subjectId, page]);
   const [editing, setEditing] = useState(null);
-  const savingRef = useRef(false);
   const [removing, setRemoving] = useState(null);
+  const resultsRef = useRef(null);
+  const restoreFocus = useRef(null);
+  useEffect(() => {
+    const target = restoreFocus.current;
+    if (!target || editing || removing || state.loading || state.error || target.data === state.data) return;
+    restoreFocus.current = null;
+    resultsRef.current?.focus();
+  }, [editing, removing, state.loading, state.error, state.data]);
+  const savingRef = useRef(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
   const removalErrorRef = useRef(null);
@@ -76,16 +93,17 @@ function Groups({ subjectId }) {
   const action = <Button variant="primary" onClick={() => setEditing({ label: '' })} disabled={state.loading || Boolean(state.error)}>{t('createGroup')}</Button>;
   return <>
     <div className="admin-actions">{action}</div>
-    <Records state={state} focusError action={action} columns={[
+    <section ref={resultsRef} tabIndex={-1} aria-label={t('groups')}><Records state={state} focusError action={action} columns={[
       { key: 'label', header: t('label') }, { key: 'id', header: t('group_id') }, { key: 'member_count', header: t('member_count'), align: 'num' },
       { key: 'actions', header: t('actions'), render: (g) => <div className="admin-actions"><Button size="sm" onClick={() => setEditing(g)}>{t('editGroup')}</Button><Button size="sm" variant="danger" onClick={(event) => { removalTriggerRef.current = event.currentTarget; setError(null); setRemoving(g); }}>{t('deleteGroup')}</Button></div> },
-    ]} />
+    ]} /></section>
     <Pagination data={state.data} page={page} onChange={setPage} />
     <Dialog open={Boolean(editing)} title={t(editing?.id ? 'editGroup' : 'createGroup')} onClose={() => !savingRef.current && setEditing(null)}>
       {editing && <RecordForm key={editing.id ?? 'new'} initial={{ label: editing.label }} fields={[{ name: 'label', label: t('label'), required: true }]} onSave={async (values) => {
         savingRef.current = true;
         try {
           if (editing.id) await updateGroup(subjectId, editing.id, values); else await createGroup(subjectId, values);
+          restoreFocus.current = { data: state.data };
           setEditing(null); state.reload();
         } finally { savingRef.current = false; }
       }} />}
@@ -94,7 +112,7 @@ function Groups({ subjectId }) {
       if (removalPendingRef.current) return;
       removalPendingRef.current = true;
       setPending(true); setError(null);
-      try { await deleteGroup(subjectId, removing.id); setRemoving(null); state.reload(); } catch (err) { setError(err); } finally { removalPendingRef.current = false; setPending(false); }
+      try { await deleteGroup(subjectId, removing.id); restoreFocus.current = { data: state.data }; setRemoving(null); state.reload(); } catch (err) { setError(err); } finally { removalPendingRef.current = false; setPending(false); }
     }}>{t('common:confirm')}</Button>}><p>{t('deleteConfirm')}</p><p>{removing?.label}</p>{error && <div ref={removalErrorRef} tabIndex={-1}><ErrorState error={error} /></div>}</Dialog>
   </>;
 }

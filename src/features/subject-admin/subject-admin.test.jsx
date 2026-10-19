@@ -17,6 +17,8 @@ it.each(['member', 'create-group', 'edit-group'])('keeps the %s form open while 
   const isMember = kind === 'member';
   if (!isMember) await user.click(screen.getByRole('tab', { name: 'Grupos' }));
   const row = (await screen.findByText(isMember ? 'javier.ruiz@uam.es' : 'Grupo 611')).closest('tr');
+  const results = screen.getByRole('region', { name: isMember ? 'Miembros' : 'Grupos' });
+  expect(results).not.toHaveFocus();
   const open = () => kind === 'edit-group'
     ? user.click(within(row).getByRole('button', { name: 'Renombrar grupo' }))
     : user.click(screen.getByRole('button', { name: isMember ? 'Añadir miembro' : 'Crear grupo' }));
@@ -68,9 +70,21 @@ it.each(['member', 'create-group', 'edit-group'])('keeps the %s form open while 
     await open();
     const retryDialog = within(screen.getByRole('dialog'));
     fill(retryDialog);
+    const get = api.get;
+    let resolveReload;
+    const reload = vi.spyOn(api, 'get').mockImplementationOnce((...args) => new Promise((resolve) => {
+      resolveReload = async () => resolve(await get(...args));
+    }));
     await user.click(retryDialog.getByRole('button', { name: 'Guardar' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(reload).toHaveBeenCalledWith(isMember ? '/subjects/s-mat101/members/' : '/subjects/s-mat101/groups/', { page: 1 });
+    expect(results).not.toHaveFocus();
+    await act(async () => { await resolveReload(); });
+    reload.mockRestore();
     expect(await screen.findByText(isMember ? 'admin@uam.es' : body.label)).toBeInTheDocument();
+    await waitFor(() => expect(results).toHaveFocus());
+    await user.tab();
+    expect(within(results).getAllByRole('button', { name: isMember ? 'Consultar permisos' : 'Renombrar grupo' })[0]).toHaveFocus();
     expect(operation.mock.calls).toEqual([[path, body], [path, body]]);
     if (isMember) {
       expect(db.memberships).toHaveLength(membersBefore.length + 1);
@@ -170,8 +184,29 @@ it.each(['member', 'group'])('sends one %s removal while pending and permits ret
     expect(confirm).toBeEnabled();
     expect(db.groups).toEqual(groupsBefore);
     expect(db.memberships).toEqual(membersBefore);
+    const results = screen.getByRole('region', { name: kind === 'member' ? 'Miembros' : 'Grupos' });
+    const reload = vi.spyOn(api, 'get').mockRejectedValueOnce(new ApiError('PERMISSION_DENIED', 403));
     await user.click(confirm);
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    const reloadError = await within(results).findByRole('alert');
+    await waitFor(() => expect(reloadError.parentElement).toHaveFocus());
+    expect(results).not.toHaveFocus();
+    reload.mockRestore();
+    const get = api.get;
+    let resolveReload;
+    const retry = vi.spyOn(api, 'get').mockImplementationOnce((...args) => new Promise((resolve) => {
+      resolveReload = async () => resolve(await get(...args));
+    }));
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Reintentar' })).toHaveFocus();
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(retry).toHaveBeenCalledOnce());
+    expect(results).not.toHaveFocus();
+    await act(async () => { await resolveReload(); });
+    retry.mockRestore();
+    await waitFor(() => expect(results).toHaveFocus());
+    await user.tab();
+    expect(within(results).getAllByRole('button', { name: kind === 'member' ? 'Consultar permisos' : 'Renombrar grupo' })[0]).toHaveFocus();
     expect(operation).toHaveBeenCalledTimes(2);
     expect(operation.mock.calls[1][0]).toBe(path);
     if (kind === 'member') {
