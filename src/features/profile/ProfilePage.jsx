@@ -4,9 +4,18 @@ import { ErrorState, KeyValue, Loader, PageHeader } from '../../ui';
 import { useApi } from '../../lib/hooks.js';
 import { RecordForm } from '../admin/components.jsx';
 import { getProfile, updateProfile } from './api.js';
+import { useAuth } from '../../lib/auth/AuthProvider.jsx';
 
 export default function ProfilePage() {
   const { t } = useTranslation('profile');
+  const { updateSession } = useAuth();
+  const saveProfile = async (body) => {
+    const saved = await updateProfile(body);
+    // The integrated base supports session updates. Keep compatibility with the
+    // older administration-only base while reflecting the server's saved email.
+    updateSession?.({ email: saved.email });
+    return saved;
+  };
   const state = useApi(getProfile);
   const pageRef = useRef(null);
   const errorRef = useRef(null);
@@ -28,7 +37,7 @@ export default function ProfilePage() {
       <RecordForm focusOnSaved initial={{ email: state.data.email, email_notifications_enabled: state.data.email_notifications_enabled }} fields={[
         { name: 'email', label: t('email'), type: 'email', autoComplete: 'email', required: true },
         { name: 'email_notifications_enabled', label: t('notifications'), type: 'checkbox' },
-      ]} onSave={updateProfile} />
+      ]} onSave={saveProfile} />
     </>}
   </div>;
 }
