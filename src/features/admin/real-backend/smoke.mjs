@@ -48,6 +48,10 @@ await check('CORS: browser authorization preflight', async () => {
 for (const role of ['manager', 'teacher', 'student', 'publishedStudent']) {
   await check(`JWT login: ${role}`, async () => { sessions[role] = await login(fixture[role]); });
 }
+// Administrative tests create other subjects. Never infer the exam's subject
+// from the first alphabetically sorted membership returned by /my-subjects/.
+fixture.subjectId = (await request(`/exams/${fixture.examId}/`, { token: sessions.manager.access_token })).subject_id;
+assert.ok(fixture.subjectId, 'Seed exam must identify its subject');
 await check('unauthenticated requests are rejected', async () => {
   const data = await request('/profile/', { status: 401 });
   assert.ok(data.error_code);
@@ -60,7 +64,7 @@ for (const role of ['manager', 'teacher', 'student']) {
     assert.ok(!('password' in profile));
     const subjects = await request('/my-subjects/', { token });
     assert.ok(Array.isArray(subjects) && subjects.length > 0);
-    fixture.subjectId ||= subjects[0].id;
+    assert.ok(subjects.some(subject => subject.id === fixture.subjectId));
     await request('/my-exams/', { token });
     const list = await request('/notifications/', { token });
     assert.ok(Array.isArray(list.results));

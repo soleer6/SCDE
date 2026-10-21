@@ -8,7 +8,7 @@ function permit(db, user, subject, permission) {
   if (!user?.is_active) throw mockError(403, 'PERMISSION_DENIED');
   if (user.is_staff || user.is_superadmin) return;
   const membership = db.memberships.find((m) => m.user_id === user.id && m.subject_id === subject && m.is_active);
-  if (!membership || !(membership.permission_overrides?.[permission] ?? DEFAULT_PERMISSIONS[membership.role]?.[permission])) throw mockError(403, 'PERMISSION_DENIED');
+  if (!membership || ![permission].flat().some((key) => membership.permission_overrides?.[key] ?? DEFAULT_PERMISSIONS[membership.role]?.[key])) throw mockError(403, 'PERMISSION_DENIED');
 }
 const memberShape = (m, db) => {
   const u = requireRecord(db.users.find((u) => u.id === m.user_id));
@@ -22,8 +22,11 @@ function effective(m, db) {
 }
 const permissionTarget = (db, user, id, editing) => {
   if (!user?.is_active) throw mockError(403, 'PERMISSION_DENIED');
-  const m = requireRecord(db.memberships.find((m) => m.id === id && m.is_active));
-  if (editing || m.user_id !== user?.id) permit(db, user, m.subject_id, 'can_delegate_perms');
+  const m = requireRecord(db.memberships.find((m) => m.id === id));
+  const subject = requireRecord(db.subjects.find((s) => s.id === m.subject_id));
+  const organization = subject.organization_id ?? db.users.find((u) => u.id === subject.coordinator_id)?.organization_id;
+  if (!user.is_superadmin && (organization !== user.organization_id || (m.organization_id && m.organization_id !== user.organization_id))) throw mockError(404, 'NOT_FOUND');
+  if (editing || m.user_id !== user.id || !m.is_active) permit(db, user, m.subject_id, editing ? 'can_delegate_perms' : ['can_manage_members', 'can_delegate_perms']);
   return m;
 };
 const shape = (s, db) => ({
@@ -167,7 +170,10 @@ export const mocks = [
     db.memberships.filter((m) => m.group_id === params.group).forEach((m) => { m.group_id = null; });
     return reply(204);
   } },
-  { method: 'GET', path: '/memberships/:member/permissions/', handler: ({ db, user, params }) => effective(permissionTarget(db, user, params.member, false), db) },
+  { method: 'GET', path: '/memberships/:member/permissions/', handler: ({ db, user, params }) => {
+    const result = effective(permissionTarget(db, user, params.member, false), db);
+    return { ...result, permissions: Object.fromEntries(Object.entries(result.permissions).filter(([, value]) => value)) };
+  } },
   { method: 'PATCH', path: '/memberships/:member/permissions/', handler: ({ db, user, params, body }) => {
     const m = permissionTarget(db, user, params.member, true);
     const overrides = body.permissions;

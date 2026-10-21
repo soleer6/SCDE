@@ -142,12 +142,17 @@ export async function runAdminSmoke(fixtureFile) {
       assert.ok(!(await request(path)).permissions.can_manage_groups);
       const student = await request(`/memberships/${artifacts.studentMembershipId}/permissions/`, { method: 'PATCH', status: 403, body: { permissions: { can_manage_groups: true } } });
       assert.equal(student.error_code, 'STUDENT_PERMS_FIXED');
+      // Reading managed permissions requires either authority; changing them
+      // still requires delegation. These are deliberately different checks.
+      await request(path, { method: 'PATCH', body: { permissions: { can_delegate_perms: null, can_manage_members: true } } });
+      assert.equal((await request(`/memberships/${artifacts.studentMembershipId}/permissions/`, { role: 'teacher' })).role, 'STUDENT');
+      assert.equal((await request(path, { role: 'teacher', method: 'PATCH', status: 403, body: { permissions: {} } })).error_code, 'PERMISSION_DENIED');
     } finally {
-      await request(path, { method: 'PATCH', body: { permissions: { can_manage_groups: null, can_create_rubric: null, can_delegate_perms: null } } });
+      await request(path, { method: 'PATCH', body: { permissions: { can_manage_groups: null, can_create_rubric: null, can_delegate_perms: null, can_manage_members: null } } });
     }
     assert.equal((await request(path)).has_overrides, false);
   });
-  await check('notifications: real count/read transport (empty fixture limitations in report)', async () => {
+  await check('notifications: recipient isolation, persisted read and idempotence', async () => {
     const teacher = await request('/notifications/', { role: 'teacher' });
     const student = await request('/notifications/', { role: 'student' });
     if (!teacher.results.length || !student.results.length) {
@@ -167,15 +172,18 @@ export async function runAdminSmoke(fixtureFile) {
     assert.ok(!teacher.results.some(n => n.id === id));
     assert.equal((await request('/notifications/read/', { role: 'teacher', method: 'PATCH', body: { notification_ids: [id] } })).marked_read, 0);
     const expected = student.results[0].status === 'UNREAD' ? 1 : 0;
+    if (!expected) pending.push('Notification already READ: this run checks persistence/idempotence/isolation but does not demonstrate an UNREAD to READ transition.');
     assert.equal((await request('/notifications/read/', { role: 'student', method: 'PATCH', body: { notification_ids: [id] } })).marked_read, expected);
     assert.equal((await request('/notifications/count/', { role: 'student' })).unread_count, count - expected);
     assert.equal((await request('/notifications/', { role: 'student' })).results.find(n => n.id === id).status, 'READ');
     assert.equal((await request('/notifications/read/', { role: 'student', method: 'PATCH', body: { notification_ids: [id] } })).marked_read, 0);
   });
-  await check('backend observation: student can GET another membership permissions in own organization', async () => {
-    const response = await request(`/memberships/${artifacts.teacherMembershipId}/permissions/`, { role: 'student' });
-    assert.equal(response.role, 'TEACHER');
-    pending.push('Backend permission GET returns 200 to another student in the same organization without checking can_delegate_perms; PATCH is correctly denied. Backend read-only: authorization review pending.');
+  await check('permissions: own active reads allowed, another member denied without authority', async () => {
+    for (const role of ['teacher', 'student']) {
+      assert.equal((await request(`/memberships/${artifacts[`${role}MembershipId`]}/permissions/`, { role })).role, role.toUpperCase());
+      const other = role === 'student' ? 'teacher' : 'student';
+      assert.equal((await request(`/memberships/${artifacts[`${other}MembershipId`]}/permissions/`, { role, status: 403 })).error_code, 'PERMISSION_DENIED');
+    }
   });
   await mkdir(reportDir, { recursive: true });
   await writeFile(reportFile, JSON.stringify({ date: new Date().toISOString(), organizationId: fixture.organizationId, checks, artifacts, pending }, null, 2));
