@@ -1,5 +1,6 @@
 import { db, q } from '../../lib/mock/db.js';
 import { mockError, reply } from '../../lib/mock/router.js';
+import { encryptPdf } from './pdfCrypto.js';
 import { gradeOut, hasPerm, instanceOut, recalcTotal, studentCan, studentInstanceOut } from '../exams/mockSerializers.js';
 
 /* Mirrors apps.instances.models.instances.VALID_TRANSITIONS */
@@ -15,6 +16,16 @@ const instOr404 = (id) => {
   return i;
 };
 const subjectOf = (inst) => q.exam(inst.exam_id).subject_id;
+/* jsdom's Blob has no arrayBuffer(); FileReader exists in both jsdom and browsers. */
+const blobBytes = (blob) =>
+  typeof blob.arrayBuffer === 'function'
+    ? blob.arrayBuffer()
+    : new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result);
+        fr.onerror = () => reject(fr.error);
+        fr.readAsArrayBuffer(blob);
+      });
 const isOwner = (inst, user) => inst.student_id && inst.student_id === user.id;
 
 /** Teacher can grade: coordinator-like (view all) or matching assignment rule. */
@@ -109,8 +120,12 @@ export const mocks = [
     handler: async ({ params, user }) => {
       const inst = instOr404(params.id);
       if (isOwner(inst, user) ? !studentCan(inst, 'can_view_pages') : !canSee(user, inst)) throw mockError(403, 'PERMISSION_DENIED');
-      const res = await fetch(inst.pdf);
-      return reply(200, await res.blob(), { 'Content-Type': 'application/pdf' });
+      const pdf = await (await fetch(inst.pdf)).blob();
+      // InstanceDownloadView: the owner without can_download_pages gets it encrypted.
+      if (isOwner(inst, user) && !q.exam(inst.exam_id).student_permissions?.can_download_pages) {
+        return reply(200, new Blob([await encryptPdf(await blobBytes(pdf), user.id)]), { 'Content-Type': 'application/octet-stream' });
+      }
+      return reply(200, pdf, { 'Content-Type': 'application/pdf' });
     },
   },
   {

@@ -1,11 +1,21 @@
-import { api, asList } from '../../lib/api/client.js';
+import { api, asList, request } from '../../lib/api/client.js';
+import { decryptPdf } from './pdfCrypto.js';
 
 /* GET /instances/{id}/ -> InstanceResponse (teacher/staff) | StudentInstance (owner) */
 export const getInstance = (id) => api.get(`/instances/${id}/`);
 
-/* GET /instances/{id}/download/ -> PDF (watermarked for students). Returns an object URL. */
-export async function getInstancePdfUrl(id) {
-  const blob = await api.blob(`/instances/${id}/download/`);
+/* GET /instances/{id}/download/ -> application/pdf (staff, teachers, students allowed to
+ * download) or application/octet-stream (student owner without can_download_pages:
+ * AES-GCM, see pdfCrypto.js). Both carry the student watermark. `userId` is the
+ * authenticated user's id, needed for the encrypted case. Returns an object URL
+ * of a plain PDF; the caller revokes it. */
+export async function getInstancePdfUrl(id, userId) {
+  const res = await request(`/instances/${id}/download/`, { raw: true });
+  const type = (res.headers.get('Content-Type') || '').split(';')[0].trim().toLowerCase();
+  const blob =
+    type === 'application/octet-stream'
+      ? await decryptPdf(await res.arrayBuffer(), userId)
+      : new Blob([await res.arrayBuffer()], { type: 'application/pdf' });
   return URL.createObjectURL(blob);
 }
 

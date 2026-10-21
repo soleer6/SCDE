@@ -99,6 +99,15 @@ export const BACKEND_SHAPES = {
   'GET /instances/{instance_pk}/': StudentVariants,
 };
 
+/* Content types the backend really sends but its OpenAPI does not declare.
+ * apps/instances/views/instances.py · InstanceDownloadView: the student owner
+ * without can_download_pages gets the PDF AES-GCM encrypted as
+ * application/octet-stream (only the description says so; `responses` lists
+ * application/pdf). */
+export const BACKEND_CONTENT_TYPES = {
+  'GET /instances/{instance_pk}/download/': ['application/octet-stream'],
+};
+
 /* Same idea for the answers to mutations (src/test/contract/mutations.js). */
 const nullable = (schema, keys) => ({
   ...schema,
