@@ -14,6 +14,7 @@ import CoursesPage from '@scde-integration/src/features/admin/CoursesPage.jsx';
 import SubjectsPage from '@scde-integration/src/features/subject-admin/SubjectsPage.jsx';
 import ManagePage from '@scde-integration/src/features/subject-admin/ManagePage.jsx';
 import PermissionsEditor from '@scde-integration/src/features/subject-admin/PermissionsEditor.jsx';
+import NotificationsPage from '@scde-integration/src/features/notifications/NotificationsPage.jsx';
 
 let fixture;
 beforeAll(async () => {
@@ -26,13 +27,32 @@ afterEach(cleanup);
 async function signIn(role) {
   localStorage.clear();
   tokenStore.clear();
-  const data = await api.post('/auth/login/', { email: fixture[role], password: fixture.password }, { auth: false });
+  const data = await login(role);
   expect(data.user.organization_id).toBe(fixture.organizationId);
   tokenStore.set(data.access_token, data.refresh_token);
   localStorage.setItem('scde.user', JSON.stringify({
     id: data.user.id, email: data.user.email, firstName: data.user.first_name, lastName: data.user.last_name,
     organizationId: data.user.organization_id, isStaff: role === 'manager', isSuperadmin: false,
   }));
+}
+async function login(role, attempt = 0) {
+  const response = await fetch('http://127.0.0.1:8000/api/v1/auth/login/', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: fixture[role], password: fixture.password }),
+    signal: AbortSignal.timeout(15000),
+  });
+  // Fixture setup honors server Retry-After, without disabling real throttles.
+  if (response.status === 429 && attempt < 2) {
+    const seconds = Number(response.headers.get('retry-after'));
+    if (seconds > 0 && seconds <= 60) {
+      await new Promise(resolve => setTimeout(resolve, seconds * 1000));
+      return login(role, attempt + 1);
+    }
+  }
+  expect(response.status, 'Real fixture login failed').toBe(200);
+  const data = await response.json();
+  expect(data.user.organization_id).toBe(fixture.organizationId);
+  return data;
 }
 // Test-only observer of the actual session provider.
 // eslint-disable-next-line react-refresh/only-export-components
@@ -109,7 +129,7 @@ it('creates and edits a subject through the real administration form', async () 
 it('creates/renames a group and assigns a real student through the management forms', async () => {
   await signIn('manager');
   const subject = await createAdminSubject();
-  const student = await api.post('/auth/login/', { email: fixture.student, password: fixture.password }, { auth: false });
+  const student = await login('student');
   expect(student.user.organization_id).toBe(fixture.organizationId);
   mount(<Routes><Route path="/subjects/:subjectId/manage" element={<ManagePage />} /></Routes>, `/subjects/${subject.id}/manage`);
   await screen.findByText(fixture.manager, {}, { timeout: 10000 });
@@ -140,7 +160,7 @@ it('creates/renames a group and assigns a real student through the management fo
 it('restores permission inheritance with null and verifies the stored override is removed', async () => {
   await signIn('manager');
   const subject = await createAdminSubject();
-  const teacher = await api.post('/auth/login/', { email: fixture.teacher, password: fixture.password }, { auth: false });
+  const teacher = await login('teacher');
   expect(teacher.user.organization_id).toBe(fixture.organizationId);
   const member = await api.post(`/subjects/${subject.id}/members/`, { user_id: teacher.user.id, role: 'TEACHER' });
   await api.patch(`/memberships/${member.id}/permissions/`, { permissions: { can_manage_groups: true } });
@@ -175,4 +195,24 @@ it('recovers concurrent real HTTP requests by rotating a rejected access token o
   expect(Array.isArray(tasks.grading_tasks)).toBe(true);
   expect(tokenStore.getAccess()).not.toBe('expired-integration-token');
   expect(tokenStore.getRefresh()).not.toBe(refresh);
+});
+
+it('marks a real unread notification in the page, persists it after remount and reduces the count', async () => {
+  await signIn('student');
+  const notifications = await api.get('/notifications/');
+  const notification = notifications.results.find(n => n.status === 'UNREAD' && n.title === 'Validación P1 de notificaciones');
+  expect(notification, 'Run notifications-fixture.py before this integration test').toBeTruthy();
+  const before = (await api.get('/notifications/count/')).unread_count;
+  mount(<NotificationsPage />);
+  const mark = await screen.findByRole('button', { name: `Marcar como leída: ${notification.title}` }, { timeout: 10000 });
+  fireEvent.click(mark);
+  await waitFor(async () => {
+    expect((await api.get('/notifications/')).results.find(n => n.id === notification.id).status).toBe('READ');
+  }, { timeout: 10000 });
+  expect((await api.get('/notifications/count/')).unread_count).toBe(before - 1);
+  cleanup();
+  mount(<NotificationsPage />);
+  const row = (await screen.findByText(notification.title, {}, { timeout: 10000 })).closest('tr');
+  expect(within(row).getByText('Leída')).toBeInTheDocument();
+  expect(within(row).queryByRole('button')).not.toBeInTheDocument();
 });

@@ -9,6 +9,31 @@ function invoke(method, path, body, user = 'u-admin', params = {}) {
   });
 }
 const patchPermissions = (member, permissions, user) => invoke('PATCH', '/memberships/:member/permissions/', { permissions }, user, { member });
+const getPermissions = (member, user) => invoke('GET', '/memberships/:member/permissions/', undefined, user, { member });
+
+it('allows own active permission reads and rejects another student or inactive owner', () => {
+  const student = db.memberships.find(m => m.subject_id === 's-mat101' && m.role === 'STUDENT');
+  expect(getPermissions(student.id, student.user_id)).toMatchObject({ role: 'STUDENT', permissions: {} });
+  expect(() => getPermissions('m-2', student.user_id)).toThrow('PERMISSION_DENIED');
+  student.is_active = false;
+  expect(() => getPermissions(student.id, student.user_id)).toThrow('PERMISSION_DENIED');
+  expect(getPermissions(student.id, 'u-admin').role).toBe('STUDENT');
+});
+
+it('permits member managers to read others without granting delegation rights', () => {
+  patchPermissions('m-2', { can_manage_members: true, can_delegate_perms: false });
+  expect(getPermissions('m-1', 'u-javier').role).toBe('COORDINATOR');
+  expect(getPermissions('m-2', 'u-javier').permissions).not.toHaveProperty('can_delegate_perms');
+  expect(() => patchPermissions('m-1', {}, 'u-javier')).toThrow('PERMISSION_DENIED');
+  patchPermissions('m-2', { can_manage_members: null, can_delegate_perms: true });
+  expect(getPermissions('m-1', 'u-javier').role).toBe('COORDINATOR');
+});
+
+it('hides another tenant membership even from organization managers', () => {
+  db.subjects.find(s => s.id === 's-mat101').organization_id = 'another-tenant';
+  expect(() => getPermissions('m-2', 'u-admin')).toThrow('NOT_FOUND');
+  expect(() => patchPermissions('m-2', {})).toThrow('NOT_FOUND');
+});
 
 it('merges permission patches and only null removes existing overrides', () => {
   patchPermissions('m-2', { can_manage_groups: true, can_create_rubric: false });

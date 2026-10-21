@@ -8,7 +8,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['src/features/admin/real-backend/components.integration.jsx'],
-    testTimeout: 30000,
+    testTimeout: 150000,
     env: { VITE_MOCK_API: 'false', VITE_API_URL: 'http://127.0.0.1:8000' },
   },
 });

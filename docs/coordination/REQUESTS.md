@@ -1,5 +1,11 @@
 # Requests to the auditor (shared-file changes, missing backend fields)
 
+## P1 recorridos reales — 2026-10-21, tarea #5
+
+- [codex] [2026-10-21] Propietario grading: `claude/core-flows@323e276` sigue leyendo `scde.grades.<instanceId>` en `grading/api.js` y `useKnownGrades`; GradingPage no hidrata `inst.data.grades`. Tras guardar vía HTTP real, otra sesión JWT puede leer la nota del proceso actual, pero un navegador limpio carece del old_score y PUT con null devuelve 409 VERSION_CONFLICT. Solicitud: hidratar score y rubric_selections desde instancia por problem_id, aplicar precedencia al servidor sobre caché y releer tras 409 antes de reintentar; cubrir navegador limpio, segunda sesión y rúbrica sin simular transporte. Dependencia backend #1: implementación local SIN validar/commit; no cerrar gap-1 ni prometer disponibilidad desde e790905.
+- [codex] [2026-10-21] Propietario results/reviews: validar ReviewRequestForm y StudentResultView completos con API real (selección del id expuesto, envío, recarga, petición duplicada, ventana cerrada y aislamiento). Hay probe HTTP propio `admin/real-backend/core-journeys.mjs`; no equivale a prueba de esas pantallas. Los problem_id del proceso actual dependen de cambios sin commit de #1 y son opcionales en el contrato; conservar mitigación de gap-2. PDF cifrado: corrección 323e276 ya presente; antigua solicitud del 21/10 sobre descifrado queda resuelta por su propietario, sin acreditar revisión visual.
+- [codex] [2026-10-21] Propietario shared/contratos: integrar YAML canónico de backend e790905, SHA-256 LF 1373efd4dd580d802a7efb1f76ba1c6e86797f99c918550d7587d3a9d0908f24 (74 rutas/96 operaciones con health), inventario y `src/test/contract` de la rama core. Esta rama administrativa conserva inventario a8eb9f43 y no tiene src/test/contract: no editarlo fuera de propiedad. Revisar unión por rol, listas/objetos, nulos y errores específicos; retirar mitigaciones 8/10/11/12 solo tras pruebas; conservar 1/2. `pages/{id}/image/` necesita Bearer y Blob, image_url no es pública. Detalle backend en docs/integracion-openapi-p1.md e integracion-ingesta-p1.md. Mantener pendiente API→worker habitual (faltan dependencias) para #6.
+
 Format: `- [agent] [date] what / why / workaround used`
 
 ## Actualización tras consultar el OpenAPI real (2026-10-17)

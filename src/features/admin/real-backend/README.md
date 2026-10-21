@@ -43,8 +43,20 @@ $env:SCDE_INTEGRATED_SOURCE = $source
 npx vitest run --config src/features/admin/real-backend/vitest.config.mjs
 ```
 
-Estas pruebas comprueban perfil y sesión tras cambiar el email, listados de
-usuarios/cursos y renovación concurrente de JWT con el cliente HTTP real.
+Estas pruebas comprueban perfil/sesión, usuarios/cursos, asignaturas,
+grupos/miembros, herencia de permisos, rechazo al alumno, notificaciones y
+renovación concurrente de JWT con el cliente HTTP real. Para el caso de
+notificaciones hace falta un aviso sintético nuevo sin leer:
+
+```powershell
+Get-Content src/features/admin/real-backend/notifications-fixture.py -Raw | docker exec -i scde-integration-api-1 python manage.py shell
+```
+
+Ese comando comprueba el tenant de las dos cuentas Codex, crea dos filas
+nuevas y no envía correo, elimina datos ni reinicia servicios. Ejecutarlo antes
+de cada repetición de componentes; ejecutar el smoke administrativo después
+del componente permite que cada uno consuma un aviso diferente si se generan
+dos tandas.
 No son una revisión visual de navegador. La batería HTTP adicional comprueba
 roles, permisos, importación multipart, notas/conflictos, PDF escaneados,
 anotaciones mediante URL firmada con CORS y revocación de refresh tokens.
@@ -56,12 +68,22 @@ La rama local `fix/integracion-real` de SCDEE corrige el descubrimiento de model
 (`models/__init__.py` ausentes) y el error 500 de `/courses/current/` para gestores
 (`annotate` se estaba llamando sobre una instancia). Incluye regresiones.
 
-El PDF del alumno con `can_download_pages=false` se entrega cifrado, mientras
-el visor actual lo trata como PDF plano. La batería confirma el cifrado y su
-descifrado real, pero eso **no arregla todavía el visor**: solicitud registrada
-en `docs/coordination/REQUESTS.md` para el propietario de corrección/resultados.
-También siguen abiertos los huecos conocidos de lectura de notas parciales e
-identificadores de problemas para pedir revisión.
+El propietario corrigió el visor cifrado en `claude/core-flows@323e276`.
+La batería HTTP confirma el transporte y su descifrado; la revisión visual
+sigue pendiente. Los commits backend `382d9d0` a `e790905` incorporan permisos,
+ingesta y contrato. El smoke administrativo exige ahora 403 al consultar
+permisos ajenos sin autoridad, y comprueba la consulta por gestión de miembros
+sin conceder derecho a PATCH.
+
+`node src/features/admin/real-backend/core-journeys.mjs` comprueba lectura de
+nota desde dos sesiones JWT, conflicto sin old_score, ids de problemas,
+solicitud de revisión real, persistencia y deduplicación y aislamiento entre
+alumnos. Usar después del smoke general que guarda una nota sintética. No
+edita ni valida los cambios de backend #1 bloqueados por el guardián: los
+resultados solo describen el proceso API ejecutado, que contiene cambios
+locales sin commit. Tampoco demuestra hidratación de la pantalla de corrección:
+el propietario aún usa localStorage y debe resolver ese recorrido. Evidencia
+sin secretos en `core-journeys-results.local`.
 
 La publicación de Vercel sigue siendo una demo simulada: `127.0.0.1` pertenece
 al dispositivo que la abre, no al PC del desarrollador. Para usar el backend real
