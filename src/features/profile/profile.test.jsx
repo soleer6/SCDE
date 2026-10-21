@@ -6,7 +6,13 @@ import { db } from '../../lib/mock/db.js';
 import { loginAs, renderPage, resetDemo } from '../admin/test-utils.jsx';
 import ProfilePage from './ProfilePage.jsx';
 
-beforeEach(async () => { await resetDemo(); await loginAs('elena.rodriguez@estudiante.uam.es', 'est123'); });
+const { updateSession } = vi.hoisted(() => ({ updateSession: vi.fn() }));
+vi.mock('../../lib/auth/AuthProvider.jsx', async (importOriginal) => {
+  const original = await importOriginal();
+  return { ...original, useAuth: () => ({ ...original.useAuth(), updateSession }) };
+});
+
+beforeEach(async () => { updateSession.mockClear(); await resetDemo(); await loginAs('elena.rodriguez@estudiante.uam.es', 'est123'); });
 it('updates only the allowed profile fields for a student', async () => {
   const user = userEvent.setup(); renderPage(<ProfilePage />);
   const input = await screen.findByLabelText('Email');
@@ -27,9 +33,11 @@ it('updates only the allowed profile fields for a student', async () => {
     expect(input).toBeDisabled();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
     expect(db.users.find((u) => u.id === 'u-elena').email).toBe('elena.rodriguez@estudiante.uam.es');
+    expect(updateSession).not.toHaveBeenCalled();
     release();
     const saved = await screen.findByRole('status');
     expect(saved).toHaveTextContent('Cambios guardados');
+    expect(updateSession).toHaveBeenCalledExactlyOnceWith({ email: 'elena.nueva@uam.es' });
     await waitFor(() => expect(saved).toHaveFocus());
     await user.tab();
     expect(screen.getByRole('button', { name: 'Guardar' })).toHaveFocus();
