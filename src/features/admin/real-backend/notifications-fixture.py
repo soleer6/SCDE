@@ -1,6 +1,7 @@
 """Create new unread notifications only for the isolated Codex fixture; no mail."""
 import json
 from pathlib import Path
+from uuid import uuid4
 
 from django.contrib.auth import get_user_model
 
@@ -13,8 +14,8 @@ for user in users:
     Notification.objects.create(
         user=user,
         notification_type='GENERAL',
-        title='Validación P1 de notificaciones',
-        message='Aviso sintético para comprobar lectura persistida y aislamiento.',
+        title=f'P1 synthetic notification {uuid4().hex[:8]}',
+        message='Aviso de prueba para lectura persistida y aislamiento.',
         metadata={'source': 'codex-p1-frontend'},
     )
 print('Created 2 synthetic unread notifications in the Codex organization; no email sent.')
