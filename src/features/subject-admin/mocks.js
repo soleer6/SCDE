@@ -126,11 +126,14 @@ export const mocks = [
   } },
   { method: 'POST', path: '/subjects/:subject/members/', handler: ({ db, user, params, body }) => {
     permit(db, user, params.subject, 'can_manage_members');
-    const target = db.users.find((u) => u.id === body.user_id && u.organization_id === user.organization_id && u.is_active);
-    if (!target) throw mockError(400, 'VALIDATION_ERROR', { user_id: ['INVALID'] });
-    if (!Object.hasOwn(DEFAULT_PERMISSIONS, body.role)) throw mockError(400, 'VALIDATION_ERROR', { role: ['INVALID'] });
-    if (body.group_id && !db.groups.some((g) => g.id === body.group_id && g.subject_id === params.subject)) throw mockError(400, 'VALIDATION_ERROR', { group_id: ['INVALID'] });
-    if (db.memberships.some((m) => m.subject_id === params.subject && m.user_id === body.user_id && m.is_active)) throw mockError(409, 'CONFLICT');
+    if (!['TEACHER', 'STUDENT'].includes(body.role)) throw mockError(400, 'VALIDATION_ERROR', { role: ['INVALID'] });
+    const target = db.users.find((u) => u.id === body.user_id && u.organization_id === user.organization_id);
+    if (!target) throw mockError(409, 'USER_NOT_FOUND');
+    if (!target.is_active) throw mockError(409, 'USER_INACTIVE');
+    if (body.group_id && !db.groups.some((g) => g.id === body.group_id && g.subject_id === params.subject)) throw mockError(409, 'GROUP_NOT_FOUND');
+    const existing = db.memberships.find((m) => m.subject_id === params.subject && m.user_id === body.user_id && m.is_active);
+    if (body.role === 'STUDENT' && body.group_id && existing?.group_id && existing.group_id !== body.group_id) throw mockError(409, 'STUDENT_ALREADY_IN_GROUP');
+    if (existing) throw mockError(409, 'ALREADY_MEMBER');
     const m = { id: crypto.randomUUID(), subject_id: params.subject, user_id: body.user_id, role: body.role, group_id: body.group_id || null, permission_overrides: {}, is_active: true };
     db.memberships.push(m); return reply(201, memberShape(m, db));
   } },
@@ -145,12 +148,16 @@ export const mocks = [
   { method: 'POST', path: '/subjects/:subject/groups/', handler: ({ db, user, params, body }) => {
     permit(db, user, params.subject, 'can_manage_groups');
     if (!body.label?.trim()) throw mockError(400, 'VALIDATION_ERROR', { label: ['FIELD_REQUIRED'] });
+    if (body.label.trim().length > 50) throw mockError(400, 'VALIDATION_ERROR', { label: ['INVALID'] });
+    if (db.groups.some((g) => g.subject_id === params.subject && g.label === body.label.trim())) throw mockError(409, 'GROUP_LABEL_EXISTS');
     const g = { id: crypto.randomUUID(), subject_id: params.subject, label: body.label.trim() }; db.groups.push(g); return reply(201, groupShape(g, db));
   } },
   { method: 'PATCH', path: '/subjects/:subject/groups/:group/', handler: ({ db, user, params, body }) => {
     permit(db, user, params.subject, 'can_manage_groups');
     const g = requireRecord(db.groups.find((g) => g.id === params.group && g.subject_id === params.subject));
     if (!body.label?.trim()) throw mockError(400, 'VALIDATION_ERROR', { label: ['FIELD_REQUIRED'] });
+    if (body.label.trim().length > 50) throw mockError(400, 'VALIDATION_ERROR', { label: ['INVALID'] });
+    if (db.groups.some((row) => row.id !== g.id && row.subject_id === params.subject && row.label === body.label.trim())) throw mockError(409, 'GROUP_LABEL_EXISTS');
     g.label = body.label.trim(); return groupShape(g, db);
   } },
   { method: 'DELETE', path: '/subjects/:subject/groups/:group/', handler: ({ db, user, params }) => {
@@ -164,7 +171,15 @@ export const mocks = [
   { method: 'PATCH', path: '/memberships/:member/permissions/', handler: ({ db, user, params, body }) => {
     const m = permissionTarget(db, user, params.member, true);
     const overrides = body.permissions;
-    if (!overrides || Array.isArray(overrides) || Object.entries(overrides).some(([k, v]) => !PERMISSION_KEYS.includes(k) || typeof v !== 'boolean')) throw mockError(400, 'VALIDATION_ERROR', { permissions: ['INVALID'] });
-    m.permission_overrides = overrides; return effective(m, db);
+    if (!overrides || typeof overrides !== 'object' || Array.isArray(overrides) || Object.entries(overrides).some(([k, v]) => !PERMISSION_KEYS.includes(k) || (v !== null && typeof v !== 'boolean'))) throw mockError(400, 'VALIDATION_ERROR', { permissions: ['INVALID'] });
+    if (m.role === 'STUDENT') throw mockError(403, 'STUDENT_PERMS_FIXED');
+    const grantor = db.memberships.find((row) => row.subject_id === m.subject_id && row.user_id === user.id && row.is_active);
+    const allowed = user.is_staff || user.is_superadmin ? Object.fromEntries(PERMISSION_KEYS.map((key) => [key, true])) : effective(grantor, db).permissions;
+    if (Object.entries(overrides).some(([key, value]) => value === true && !allowed[key])) throw mockError(403, 'DELEGATION_EXCEEDED');
+    const merged = { ...m.permission_overrides };
+    for (const [key, value] of Object.entries(overrides)) {
+      if (value === null) delete merged[key]; else merged[key] = value;
+    }
+    m.permission_overrides = merged; return effective(m, db);
   } },
 ];

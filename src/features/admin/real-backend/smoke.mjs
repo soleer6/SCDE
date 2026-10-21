@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
-import { readFile, writeFile } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 
-const fixtureFile = process.argv[2] || join(process.env.LOCALAPPDATA, 'SCDE/integration/fixtures.local.json');
+const fixtureFile = process.argv.slice(2).find(arg => !arg.startsWith('--')) || process.env.SCDE_FIXTURE_FILE || join(process.env.LOCALAPPDATA, 'SCDE/integration/fixtures-codex.local.json');
+if (process.argv.includes('--admin-only')) {
+  const { runAdminSmoke } = await import('./admin-smoke.mjs');
+  await runAdminSmoke(fixtureFile);
+} else {
 const fixture = JSON.parse(await readFile(fixtureFile, 'utf8'));
 const origin = new URL(process.env.SCDE_REAL_API || 'http://127.0.0.1:8000');
 if (!['127.0.0.1', 'localhost'].includes(origin.hostname)) throw new Error('This mutating smoke test only runs on the isolated local fixture.');
@@ -185,6 +189,8 @@ await check('JWT refresh rotates tokens and logout revokes refresh', async () =>
   await request('/auth/refresh/', { method: 'POST', body: { refresh_token: rotated.refresh_token }, status: 401 });
 });
 const report = { date: new Date().toISOString(), origin: origin.origin, checks };
-await writeFile(join(dirname(fixtureFile), 'smoke-results.local.json'), JSON.stringify(report, null, 2));
+await mkdir(resolve('dist/real-backend'), { recursive: true });
+await writeFile(resolve('dist/real-backend/smoke-results.local.json'), JSON.stringify(report, null, 2));
 console.log(`${checks.filter(c => c.passed).length}/${checks.length} real backend checks passed.`);
 if (checks.some(c => !c.passed)) process.exitCode = 1;
+}

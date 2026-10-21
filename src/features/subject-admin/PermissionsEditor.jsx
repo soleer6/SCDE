@@ -38,16 +38,21 @@ export default function PermissionsEditor({ member }) {
   return <div ref={editorRef}><Panel title={member.user_name ?? member.id}>
     <p>{t('common:roles.' + data.role)}</p><p>{t('permissionHint')}</p>
     {data.is_staff_bypass && <p role="status" tabIndex={-1} data-permission-summary>{t('bypass')}</p>}
-    <RecordForm focusOnSaved initial={initial} fields={PERMISSION_KEYS.map((key) => ({
+    {data.role === 'STUDENT' && <p role="status" tabIndex={-1} data-permission-summary>{t('studentFixed')}</p>}
+    <RecordForm focusOnSaved disabled={data.is_staff_bypass || data.role === 'STUDENT'} initial={initial} fields={PERMISSION_KEYS.map((key) => ({
       name: key,
       label: `${t('permissionNames.' + key)} · ${t('default')}: ${t(defaults[key] ? 'yes' : 'no')} · ${t('effective')}: ${t(data.permissions[key] ? 'yes' : 'no')}`,
-      type: 'select', disabled: data.is_staff_bypass,
+      type: 'select', disabled: data.is_staff_bypass || data.role === 'STUDENT',
       options: [{ value: 'inherit', label: t('inherited') }, { value: 'true', label: t('allow') }, { value: 'false', label: t('deny') }],
     }))} onSave={async (values) => {
-      const permissions = Object.fromEntries(Object.entries(values).filter(([, v]) => v !== 'inherit').map(([key, value]) => [key, value === 'true']));
+      // Django merges PATCH values. Omission preserves an override; null removes it.
+      // A direct lookup has no raw overrides, so reset every inherited key there.
+      const permissions = Object.fromEntries(Object.entries(values)
+        .filter(([key, value]) => value !== 'inherit' || overrides === undefined || Object.hasOwn(overrides, key))
+        .map(([key, value]) => [key, value === 'inherit' ? null : value === 'true']));
       const result = await updatePermissions(member.id, permissions);
       // Keep the exact overrides separate from the effective response.
-      setOverrides(permissions);
+      setOverrides(Object.fromEntries(Object.entries(permissions).filter(([, value]) => value !== null)));
       state.setData(result);
     }} />
   </Panel></div>;
