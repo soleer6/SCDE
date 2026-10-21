@@ -17,7 +17,7 @@ import { listMockRoutes, mockFetch } from '../../lib/mock/router.js';
 import { db } from '../../lib/mock/db.js';
 import spec from './openapi.json';
 import { createValidator } from './validate.js';
-import { BACKEND_SHAPES } from './backend-shapes.js';
+import { BACKEND_CONTENT_TYPES, BACKEND_SHAPES } from './backend-shapes.js';
 
 const validate = createValidator(spec.schemas);
 const BASE = 'http://mock/api/v1';
@@ -92,7 +92,9 @@ describe('mock responses follow the backend contract', () => {
           const type = res.headers.get('Content-Type') ?? '';
           if (!type.includes('json')) {
             const types = Object.keys(declared.content ?? {});
-            if (types.length && !types.some((t) => t === '*/*' || type.startsWith(t))) violations.push(`${who}: content type ${type} not declared (${types.join(', ')})`);
+            const real = (BACKEND_CONTENT_TYPES[`GET ${template}`] ?? []).find((t) => type.startsWith(t));
+            if (real) shapesUsed.add(`GET ${template} ${real}`);
+            else if (types.length && !types.some((t) => t === '*/*' || type.startsWith(t))) violations.push(`${who}: content type ${type} not declared (${types.join(', ')})`);
             continue;
           }
           const schema = declared.content?.['application/json']?.schema;
@@ -113,7 +115,7 @@ describe('mock responses follow the backend contract', () => {
       }
     }
 
-    const stale = Object.entries(BACKEND_SHAPES).filter(([key]) => ![...shapesUsed].some((u) => u.startsWith(`${key} `)));
+    const stale = Object.entries({ ...BACKEND_SHAPES, ...BACKEND_CONTENT_TYPES }).filter(([key]) => ![...shapesUsed].some((u) => u.startsWith(`${key} `)));
     console.info(`[contract] ${operations.size} GET operations, ${checked} JSON answers validated against ${spec.source} (${spec.sha256}); undeclared backend shapes used: ${shapesUsed.size}`);
     if (process.env.CONTRACT_DUMP) (await import('node:fs')).writeFileSync(process.env.CONTRACT_DUMP, [...violations, '--', ...shapesUsed].join('\n'));
     expect(operations.size).toBeGreaterThan(15);
