@@ -44,7 +44,7 @@ function Members({ subjectId, onPermissions }) {
     <Dialog open={adding} title={t('assign')} onClose={() => !savingRef.current && setAdding(false)}>
       {adding && <RecordForm initial={{ user_id: '', role: 'STUDENT', group_id: '' }} fields={[
         { name: 'user_id', label: t('user_id'), required: true },
-        { name: 'role', label: t('role'), type: 'select', options: ['STUDENT', 'TEACHER', 'COORDINATOR'].map((value) => ({ value, label: t('common:roles.' + value) })) },
+        { name: 'role', label: t('role'), type: 'select', options: ['STUDENT', 'TEACHER'].map((value) => ({ value, label: t('common:roles.' + value) })) },
         { name: 'group_id', label: t('group_id') },
       ]} onSave={async (values) => {
         savingRef.current = true;
@@ -99,7 +99,7 @@ function Groups({ subjectId }) {
     ]} /></section>
     <Pagination data={state.data} page={page} onChange={setPage} />
     <Dialog open={Boolean(editing)} title={t(editing?.id ? 'editGroup' : 'createGroup')} onClose={() => !savingRef.current && setEditing(null)}>
-      {editing && <RecordForm key={editing.id ?? 'new'} initial={{ label: editing.label }} fields={[{ name: 'label', label: t('label'), required: true }]} onSave={async (values) => {
+      {editing && <RecordForm key={editing.id ?? 'new'} initial={{ label: editing.label }} fields={[{ name: 'label', label: t('label'), required: true, maxLength: 50 }]} onSave={async (values) => {
         savingRef.current = true;
         try {
           if (editing.id) await updateGroup(subjectId, editing.id, values); else await createGroup(subjectId, values);

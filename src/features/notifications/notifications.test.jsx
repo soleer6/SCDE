@@ -12,6 +12,19 @@ import NotificationsBell from './NotificationsBell.jsx';
 beforeEach(async () => { await resetDemo(); await loginAs('elena.rodriguez@estudiante.uam.es', 'est123'); });
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
+it('excludes archived notifications by default and supports explicit status/type filters', async () => {
+  db.notifications.push({ ...db.notifications[0], id: 'archived', status: 'ARCHIVED' });
+  expect((await api.get('/notifications/')).results.map(n => n.id)).not.toContain('archived');
+  expect((await api.get('/notifications/', { status: 'ARCHIVED' })).results.map(n => n.id)).toEqual(['archived']);
+  expect((await api.get('/notifications/', { notification_type: 'REVIEW_OPENED' })).results.map(n => n.id)).toEqual(['n-2']);
+});
+
+it('treats an empty selection as marking all own unread notifications, as Django does', async () => {
+  expect(await api.patch('/notifications/read/', { notification_ids: [] })).toEqual({ marked_read: 2 });
+  expect(await api.patch('/notifications/read/', { notification_ids: [] })).toEqual({ marked_read: 0 });
+  expect(db.notifications.find(n => n.id === 'n-3').status).toBe('UNREAD');
+});
+
 function deferred() {
   let resolve, reject;
   const promise = new Promise((yes, no) => { resolve = yes; reject = no; });

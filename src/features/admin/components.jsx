@@ -28,7 +28,7 @@ export function Pagination({ data, page, onChange }) {
 }
 
 // Remount with a record key when switching records. Values remain intact after validation errors.
-export function RecordForm({ initial, fields, onSave, submitLabel, children, focusOnSaved = false }) {
+export function RecordForm({ initial, fields, onSave, submitLabel, children, focusOnSaved = false, disabled = false }) {
   const { t } = useTranslation('admin');
   const formId = useId();
   const formRef = useRef(null);
@@ -50,7 +50,7 @@ export function RecordForm({ initial, fields, onSave, submitLabel, children, foc
   }, [error, pending]);
   async function submit(event) {
     event.preventDefault();
-    if (savingRef.current) return;
+    if (savingRef.current || disabled) return;
     savingRef.current = true;
     setPending(true); setError(null); setSaved(false);
     try { await onSave(values); setSaved(true); }
@@ -76,6 +76,6 @@ export function RecordForm({ initial, fields, onSave, submitLabel, children, foc
     {children}
     {error && <div ref={errorRef} tabIndex={-1}><ErrorState error={error} /></div>}
     {saved && <p ref={savedRef} role="status" tabIndex={focusOnSaved ? -1 : undefined}>{t('saved')}</p>}
-    <Button type="submit" variant="solid" loading={pending}>{submitLabel ?? t('common:save')}</Button>
+    <Button type="submit" variant="solid" loading={pending} disabled={disabled}>{submitLabel ?? t('common:save')}</Button>
   </form>;
 }

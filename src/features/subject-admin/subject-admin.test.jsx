@@ -7,11 +7,44 @@ import { db } from '../../lib/mock/db.js';
 import { loginAs, renderPage, resetDemo } from '../admin/test-utils.jsx';
 import ManagePage from './ManagePage.jsx';
 import SubjectsPage from './SubjectsPage.jsx';
+import PermissionsEditor from './PermissionsEditor.jsx';
 import { createSubject, deleteSubject, updateSubject } from './api.js';
 import { subjectCrudMocks } from './mocks.js';
 
 beforeEach(async () => { await resetDemo(); await loginAs('maria.perez@uam.es', 'prof123'); });
 const manage = () => renderPage(<ManagePage />, '/subjects/s-mat101/manage', '/subjects/:subjectId/manage');
+
+it('shows fixed student permissions as read-only and prevents submission', async () => {
+  const member = db.memberships.find(m => m.subject_id === 's-mat101' && m.role === 'STUDENT');
+  const patch = vi.spyOn(api, 'patch');
+  const user = userEvent.setup();
+  renderPage(<PermissionsEditor member={member} />);
+  const explanation = await screen.findByText('Los permisos del alumnado son fijos y no admiten excepciones.');
+  await waitFor(() => expect(explanation).toHaveFocus());
+  for (const control of screen.getAllByRole('combobox')) expect(control).toBeDisabled();
+  const save = screen.getByRole('button', { name: 'Guardar' });
+  expect(save).toBeDisabled();
+  await user.click(save);
+  fireEvent.submit(save.closest('form'));
+  expect(patch).not.toHaveBeenCalled();
+  patch.mockRestore();
+});
+
+it('sends null to remove an explicit override that equals the role default', async () => {
+  const member = db.memberships.find(m => m.id === 'm-2');
+  member.permission_overrides = { can_manage_groups: false, can_create_rubric: false };
+  const user = userEvent.setup();
+  renderPage(<PermissionsEditor member={member} />);
+  const groups = await screen.findByRole('combobox', { name: /Gestionar grupos/ });
+  expect(groups).toHaveValue('false');
+  const patch = vi.spyOn(api, 'patch');
+  await user.selectOptions(groups, 'inherit');
+  await user.click(screen.getByRole('button', { name: 'Guardar' }));
+  await screen.findByText('Cambios guardados');
+  expect(patch).toHaveBeenCalledWith('/memberships/m-2/permissions/', { permissions: { can_create_rubric: false, can_manage_groups: null } });
+  expect(member.permission_overrides).toEqual({ can_create_rubric: false });
+  patch.mockRestore();
+});
 it.each(['member', 'create-group', 'edit-group'])('keeps the %s form open while saving and releases closing after failure', async (kind) => {
   const user = userEvent.setup(); manage();
   const isMember = kind === 'member';

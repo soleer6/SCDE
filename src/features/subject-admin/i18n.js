@@ -1,5 +1,6 @@
 export const i18n = {
   es: {
+    studentFixed: 'Los permisos del alumnado son fijos y no admiten excepciones.',
     directoryHint: 'Crea asignaturas en el curso activo. Las asignaturas de cursos archivados solo se pueden consultar.',
     createSubject: 'Crear asignatura', editSubject: 'Editar asignatura', deleteSubject: 'Eliminar asignatura',
     semester: 'Semestre (opcional)', coordinator_id: 'Identificador del coordinador',
@@ -17,6 +18,7 @@ export const i18n = {
     permissionNames: { can_create_exams: 'Crear exámenes', can_assign_correctors: 'Asignar correctores', can_create_rubric: 'Crear rúbricas', can_resolve_issues: 'Resolver incidencias', can_publish_grades: 'Publicar notas', can_manage_reviews: 'Gestionar revisiones', can_view_all_instances: 'Ver todas las entregas', can_export_grades: 'Exportar notas', can_manage_members: 'Gestionar miembros', can_delegate_perms: 'Delegar permisos', can_manage_groups: 'Gestionar grupos' },
   },
   en: {
+    studentFixed: 'Student permissions are fixed and cannot be overridden.',
     directoryHint: 'Create subjects in the active course. Subjects from archived courses are read-only.',
     createSubject: 'Create subject', editSubject: 'Edit subject', deleteSubject: 'Delete subject',
     semester: 'Semester (optional)', coordinator_id: 'Coordinator ID',
