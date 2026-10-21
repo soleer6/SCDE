@@ -39,7 +39,6 @@ async function login(role, attempt = 0) {
   const response = await fetch('http://127.0.0.1:8000/api/v1/auth/login/', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: fixture[role], password: fixture.password }),
-    signal: AbortSignal.timeout(15000),
   });
   // Fixture setup honors server Retry-After, without disabling real throttles.
   if (response.status === 429 && attempt < 2) {
@@ -120,7 +119,7 @@ it('creates and edits a subject through the real administration form', async () 
   const edit = within(screen.getByRole('dialog'));
   fireEvent.change(edit.getByLabelText('Nombre'), { target: { value: 'Asignatura verificada' } });
   fireEvent.click(edit.getByRole('button', { name: 'Guardar' }));
-  await screen.findByText('Asignatura verificada', {}, { timeout: 10000 });
+  await waitFor(() => expect(within(screen.getByText(code).closest('tr')).getByText('Asignatura verificada')).toBeInTheDocument(), { timeout: 10000 });
   const current = await api.get('/courses/current/');
   const saved = (await api.get('/search/', { course_id: current.id, q: code })).results.find(s => s.code === code);
   expect((await api.get(`/subjects/${saved.id}/`)).name).toBe('Asignatura verificada');
@@ -200,7 +199,7 @@ it('recovers concurrent real HTTP requests by rotating a rejected access token o
 it('marks a real unread notification in the page, persists it after remount and reduces the count', async () => {
   await signIn('student');
   const notifications = await api.get('/notifications/');
-  const notification = notifications.results.find(n => n.status === 'UNREAD' && n.title === 'Validación P1 de notificaciones');
+  const notification = notifications.results.find(n => n.status === 'UNREAD' && n.title.startsWith('P1 synthetic notification'));
   expect(notification, 'Run notifications-fixture.py before this integration test').toBeTruthy();
   const before = (await api.get('/notifications/count/')).unread_count;
   mount(<NotificationsPage />);
