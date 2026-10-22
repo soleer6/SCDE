@@ -2,17 +2,19 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatScore } from '../../lib/format.js';
 import { Checkbox, Input } from '../../ui';
-import { gradeManual, gradeRubric } from './api.js';
+import { gradeManual, gradeRubric, toKnownGrade } from './api.js';
 import { GradeOcr } from './HandwritingOcr.jsx';
 
 /**
  * One problem row. Rubric problems grade by criteria (PUT .../rubric/),
  * the rest by a manual score (PUT .../grade/). Both send old_score for
- * optimistic concurrency; known.grades holds what we last saved.
- * known.grades[pid] = { score: "2.50", criteria?: [ids] }
+ * optimistic concurrency; known.grades holds the persisted grade (server
+ * first, see useKnownGrades): known.grades[pid] = { score: "2.50", criteria?: [ids] }.
+ * On 409 VERSION_CONFLICT, onConflict() re-reads the instance and the row shows
+ * the current value, so the next save carries the right old_score.
  * Manual-score problems can also be graded from a handwritten number (GradeOcr).
  */
-export default function ProblemGrader({ instanceId, problem, known, disabled, onSaved }) {
+export default function ProblemGrader({ instanceId, problem, known, disabled, onSaved, onConflict }) {
   const { t } = useTranslation('grading');
   const { t: tc } = useTranslation();
   const current = known.grades[problem.id];
@@ -27,13 +29,26 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
     setErrCode(null);
     try {
       const res = await fn(current?.score ?? null);
-      known.remember(problem.id, { score: res.score, criteria: res.rubric_selections?.map((r) => r.criterion_id) });
+      known.remember(problem.id, toKnownGrade(res));
       setDraft(String(Number(res.score)));
       setState('saved');
       onSaved?.();
     } catch (e) {
+      let code = e.code;
+      if (code === 'VERSION_CONFLICT' && onConflict) {
+        try {
+          const fresh = await onConflict();
+          if (fresh) {
+            const latest = fresh[problem.id];
+            setDraft(latest?.score != null ? String(Number(latest.score)) : '');
+            code = 'VERSION_CONFLICT_RELOADED';
+          }
+        } catch {
+          /* keep the generic conflict message */
+        }
+      }
       setState('error');
-      setErrCode(e.code);
+      setErrCode(code);
     }
   };
 
@@ -115,7 +130,11 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
       )}
 
       <span className={`gr-problem__state is-${state}`} role={state === 'error' ? 'alert' : undefined} aria-live="polite">
-        {state === 'error' ? tc(`errors.${errCode}`, { defaultValue: errCode }) : t(`problem.state.${state}`)}
+        {state === 'error'
+          ? errCode === 'VERSION_CONFLICT_RELOADED'
+            ? t('problem.conflict')
+            : tc(`errors.${errCode}`, { defaultValue: errCode })
+          : t(`problem.state.${state}`)}
       </span>
     </div>
   );

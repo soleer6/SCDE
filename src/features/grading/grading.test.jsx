@@ -1,6 +1,7 @@
 /* Grading page in mock mode: manual scores, the page staying mounted while
- * each grade reloads the instance, finishing and reopening, and an exam
- * model without problems. */
+ * each grade reloads the instance, finishing and reopening, an exam model
+ * without problems, and grades hydrated from the server (clean browser,
+ * VERSION_CONFLICT from another session, rubric selections). */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -19,6 +20,7 @@ import AppRouter from '../../app/AppRouter.jsx';
 import { api } from '../../lib/api/client.js';
 import { tokenStore } from '../../lib/api/tokens.js';
 import { db } from '../../lib/mock/db.js';
+import { recalcTotal } from '../exams/mockSerializers.js';
 import { clearSubjectsCache } from '../workspace/api.js';
 
 globalThis.ResizeObserver ??= class {
@@ -130,5 +132,59 @@ describe('grading', () => {
     renderGrading();
     expect(await screen.findByText(/Este modelo no tiene problemas definidos/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Marcar como corregido' })).toBeDisabled();
+  });
+
+  it('hydrates persisted grades in a clean browser and regrades with them as old_score', async () => {
+    const user = userEvent.setup();
+    db.grades.push({ id: 'gr-other', instance_id: INSTANCE, problem_id: 'p-e-mat-p2-1', score: 2.5, grader_id: 'u-maria', rubric_selections: [] });
+    recalcTotal(db.instances.find((i) => i.id === INSTANCE));
+    localStorage.removeItem(`scde.grades.${INSTANCE}`);
+    renderGrading();
+    const series = await screen.findByLabelText('Nota de Series');
+    expect(series).toHaveValue('2.5');
+    expect(screen.getByText('1/3 problemas')).toBeInTheDocument();
+    expect(screen.queryByText(/ya tiene notas puestas desde otra sesión/)).not.toBeInTheDocument();
+
+    await user.clear(series);
+    await user.type(series, '3{Enter}');
+    await waitFor(() => expect(Number(db.grades.find((g) => g.id === 'gr-other').score)).toBe(3));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('re-reads the grade after a VERSION_CONFLICT and saves on the next attempt', async () => {
+    const user = userEvent.setup();
+    renderGrading();
+    const series = await screen.findByLabelText('Nota de Series');
+    await user.type(series, '2{Enter}');
+    await waitFor(() => expect(screen.getByText('1/3 problemas')).toBeInTheDocument());
+
+    // Another session regrades Series behind this page's back.
+    Object.assign(db.grades.find((g) => g.instance_id === INSTANCE), { score: 3.75 });
+    await user.clear(series);
+    await user.type(series, '1{Enter}');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Otra sesión cambió esta nota');
+    expect(series).toHaveValue('3.75');
+    expect(Number(db.grades.find((g) => g.instance_id === INSTANCE).score)).toBe(3.75);
+
+    await user.clear(series);
+    await user.type(series, '1{Enter}');
+    await waitFor(() => expect(Number(db.grades.find((g) => g.instance_id === INSTANCE).score)).toBe(1));
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+  });
+
+  it('shows persisted rubric selections and keeps them when adding a criterion', async () => {
+    const user = userEvent.setup();
+    const id = 'i-e-prg-pr1-4'; // PENDING_GRADING, rubric problems Diseño and Implementación
+    db.grades.push({ id: 'gr-rub', instance_id: id, problem_id: 'p-e-prg-pr1-1', score: 1.6, grader_id: 'u-maria', rubric_selections: ['rc-p-e-prg-pr1-1-1'] });
+    recalcTotal(db.instances.find((i) => i.id === id));
+    renderGrading(id);
+    const boxes = await screen.findAllByRole('checkbox', { name: 'Planteamiento correcto' });
+    expect(boxes[0]).toBeChecked();
+    expect(boxes[1]).not.toBeChecked();
+
+    await user.click(screen.getAllByRole('checkbox', { name: 'Resultado final' })[0]);
+    await waitFor(() => expect(db.grades.find((g) => g.id === 'gr-rub').rubric_selections).toEqual(['rc-p-e-prg-pr1-1-1', 'rc-p-e-prg-pr1-1-3']));
+    expect(Number(db.grades.find((g) => g.id === 'gr-rub').score)).toBeCloseTo(2.4);
+    await waitFor(() => expect(screen.getAllByRole('checkbox', { name: 'Resultado final' })[0]).toBeChecked());
   });
 });

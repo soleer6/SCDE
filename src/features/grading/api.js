@@ -51,11 +51,28 @@ export async function readAnnotationPayload(annotation) {
 }
 
 /* ------------------------------------------------------------------
- * Known-grade cache. The backend has no endpoint that returns per-problem
- * grades to teachers, but re-grading requires old_score (optimistic
- * concurrency). We remember what this browser last saved.
- * Open question for the backend team: docs/tfg/03-backend-gaps.md
+ * Known grades. Re-grading requires old_score (optimistic concurrency).
+ * Backends with gap-1 resolved return InstanceResponse.grades (GradeResponse
+ * for the problems the requester may grade): that is the source of truth.
+ * Older backends omit the field, so this browser also remembers what it last
+ * saved and falls back to it. See docs/tfg/03-backend-gaps.md#gap-1
  * ------------------------------------------------------------------ */
+
+/** rubric_selections holds criterion ids; tolerate { criterion_id } objects too. */
+export const selectionIds = (selections) =>
+  (Array.isArray(selections) ? selections : []).map((s) => (typeof s === 'object' && s !== null ? s.criterion_id : s)).filter(Boolean);
+
+/** GradeResponse -> the known-grade shape { score, criteria }. */
+export const toKnownGrade = (g) => ({ score: g.score, criteria: selectionIds(g.rubric_selections) });
+
+/** InstanceResponse.grades -> { [problem_id]: { score, criteria } }, or null when the backend does not send it. */
+export function serverGrades(instance) {
+  if (!Array.isArray(instance?.grades)) return null;
+  const out = {};
+  for (const g of instance.grades) if (g?.problem_id && g.score != null) out[g.problem_id] = toKnownGrade(g);
+  return out;
+}
+
 const gradeKey = (id) => `scde.grades.${id}`;
 export function readKnownGrades(id) {
   try {
