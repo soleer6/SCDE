@@ -32,6 +32,10 @@ desde el frontend; son preguntas para el equipo backend.
   por qué no puede reclamar. El mock implementa la propuesta, marcada `PROPOSAL`.
 - **Propuesta** (2 líneas en `StudentInstanceSerializer`): añadir `"problem_id": str(p.id)`
   a cada elemento de `rubric` y `grades`.
+- **Estado (22/10/2026)**: resuelto en el backend local `fix/integracion-real` b6ce6ff:
+  `problem_id` obligatorio en cada elemento de `StudentInstance.rubric/grades`. El mock deja
+  de marcarlo como propuesta. Envío, recarga, duplicado y aislamiento validados con Django
+  real en `src/features/results/real-backend/`; ventana cerrada solo con mock.
 
 ## gap-3 · Cursos (detectado por Codex)
 - No existe `GET /courses/` ni operación para activar un curso (PATCH no admite `is_active`).
@@ -126,6 +130,10 @@ Detectado por el test de contrato del mock (`src/test/contract/`), contrastado c
 - **Propuesta**: declarar `oneOf` con los tres serializers de examen y los dos de instancia
   (`PolymorphicProxySerializer` de drf-spectacular) y tipar `models_problems` con un
   serializer propio.
+- **Estado (22/10/2026)**: el contrato canónico b6ce6ff declara las uniones por rol
+  (`InstanceList`, `InstanceDetail`, variantes de examen), `models_problems` tipado y
+  `InstanceResponse.grades`. `BACKEND_SHAPES` queda vacío; sigue sin declararse
+  `application/octet-stream` en `GET /instances/{id}/download/` (única alternativa conservada).
 
 ## gap-11 · Errores de servicio y campos nulos que el OpenAPI no declara
 Detectado al extender el test de contrato a las mutaciones (`src/test/contract/mutations.js`):
@@ -154,6 +162,8 @@ instantánea del OpenAPI. Las 18 discrepancias distintas de la rama claude y las
 - **Propuesta**: declarar en cada vista los códigos de servicio que puede devolver
   (`OpenApiResponse` con el enum de `apps/core/openapi/errors.py`, que ya los lista) y
   `allow_null=True` en los campos de salida anulables.
+- **Estado (22/10/2026)**: b6ce6ff declara las fechas anulables y la lista de zonas;
+  `MUTATION_SHAPES` queda vacío. Los errores siguen validándose contra el sobre real.
 
 ## gap-12 · Filtro `role` de los miembros de una asignatura sin declarar
 - `GET /subjects/{id}/members/` filtra por `?role=` (`MemberListCreateView.get`,
@@ -162,6 +172,9 @@ instantánea del OpenAPI. Las 18 discrepancias distintas de la rama claude y las
 - **Mitigación**: `listSubjectMembers` (`src/features/exams/api.js`) recorre todas las páginas y
   filtra el rol en el cliente; no depende del parámetro.
 - **Propuesta**: `OpenApiParameter("role", enum=Role.choices)` en el `extend_schema` de la vista.
+- **Estado (22/10/2026)**: declarado en b6ce6ff. `listSubjectMembers` hace ya una consulta
+  `?role=` por rol (conserva una comprobación defensiva del rol); validado con Django real en
+  `src/features/exams/real-backend/`.
 
 ## Otras observaciones
 - `CreateReviewSerializer.notify_students` tiene `default=False`, pero la vista usa

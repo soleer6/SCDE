@@ -1,5 +1,7 @@
 # Requests to the auditor (shared-file changes, missing backend fields)
 
+- [claude] [2026-10-22] Auditor (shared): integrado el contrato canónico de SCDEE-backend `fix/integracion-real` b6ce6ff (SHA-256 LF e7890c00…0530d, 74 rutas, 171 esquemas): `src/test/contract/openapi.json` regenerado, `docs/frontend/API_INVENTORY.md` regenerado (ahora UTF-8 y con todos los esquemas) y `backend-shapes.js` sin formas alternativas salvo el PDF cifrado `application/octet-stream`. Retiradas las mitigaciones de gap-10/11/12 tras pasar las pruebas; gap-1/2 consumidos y validados con Django real. Para Codex: el mock de miembros (subject-admin) debería respetar `?role=` y las páginas incluir `created_at`/`image_url`; las pruebas de contrato de la composición lo detectarán.
+
 Format: `- [agent] [date] what / why / workaround used`
 
 - [claude] [2026-10-17] BASE: el router de mocks elige ahora la ruta más específica (menos parámetros), igual que Django con `<uuid:pk>`. Corrige que `GET /subjects/:id/` (workspace) capturase `GET /subjects/export/` (subject-admin). Detectado al integrar en preview/integration.

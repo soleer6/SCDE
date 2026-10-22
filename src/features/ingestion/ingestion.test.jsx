@@ -64,7 +64,7 @@ describe('page management contract (mock = backend services)', () => {
     await loginAs('admin@uam.es', 'admin123');
     const orphans = await api.get('/orphan-pages/');
     expect(orphans).toHaveLength(2);
-    expect(Object.keys(orphans[0]).sort()).toEqual(['id', 'instance_id', 'issue_type', 'page_number', 'recognized_at', 'status', 'storage_ref']);
+    expect(Object.keys(orphans[0]).sort()).toEqual(['created_at', 'id', 'image_url', 'instance_id', 'issue_type', 'page_number', 'recognized_at', 'status', 'storage_ref']);
     await api.post('/instances/i-e-fis-p1-6/pages/attach/', { page_id: orphans[0].id });
     await expect(api.post('/instances/i-e-fis-p1-6/pages/attach/', { page_id: orphans[0].id })).rejects.toMatchObject({ code: 'PAGE_NOT_ORPHAN' });
     expect(inst('i-e-fis-p1-6').status).toBe('RECEIVED');

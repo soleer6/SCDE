@@ -67,7 +67,16 @@ export function examOut(exam, user) {
 }
 
 /** InstanceResponseSerializer */
-export function instanceOut(inst) {
+/** apps.grading.services.grading.can_user_grade_instance: coordinator-like (view all), staff, or a matching assignment rule. */
+export function canGradeInstance(user, inst, problemId) {
+  const subjectId = q.exam(inst.exam_id).subject_id;
+  if (hasPerm(user, subjectId, 'can_view_all_instances') && q.membership(user.id, subjectId)?.role === 'COORDINATOR') return true;
+  if (user.is_staff) return true;
+  return db.assignment_rules.some((r) => r.exam_id === inst.exam_id && r.correctors.includes(user.id) && (!problemId || r.problems.includes(problemId)));
+}
+
+/** InstanceResponseSerializer. `grades` lists the persisted grades of the problems `user` may grade (empty without a user). */
+export function instanceOut(inst, user = null) {
   const student = inst.student_id ? q.user(inst.student_id) : null;
   const model = db.models.find((m) => m.id === inst.model_id);
   return {
@@ -86,6 +95,7 @@ export function instanceOut(inst) {
     page_ids: (db.pages ?? []).filter((p) => p.instance_id === inst.id).sort((a, b) => a.page_number - b.page_number).map((p) => p.id),
     created_at: inst.created_at,
     updated_at: inst.updated_at,
+    grades: user ? db.grades.filter((g) => g.instance_id === inst.id && canGradeInstance(user, inst, g.problem_id)).map(gradeOut) : [],
   };
 }
 
@@ -117,12 +127,13 @@ export function studentInstanceOut(inst) {
   if (studentCan(inst, 'can_view_pages')) {
     out.pages = Array.from({ length: inst.expected_pages }, (_, i) => ({
       id: `${inst.id}-pg${i + 1}`, instance_id: inst.id, page_number: i + 1, storage_ref: '', status: 'RECOGNIZED', issue_type: '', recognized_at: inst.created_at,
+      created_at: inst.created_at, image_url: null, // PageResponseSerializer.get_image_url: null for the student
     }));
   }
   const problems = db.problems.filter((p) => p.exam_model_id === inst.model_id).sort((a, b) => a.order - b.order);
   if (studentCan(inst, 'can_view_rubric')) {
     out.rubric = problems.map((p) => ({
-      problem_id: p.id, // PROPOSAL (not in backend yet): see docs/tfg/03-backend-gaps.md#gap-2
+      problem_id: p.id, // gap-2, resolved in SCDEE-backend b6ce6ff
       problem_name: p.name,
       max_score: dec(p.max_score),
       criteria: db.criteria.filter((c) => c.problem_id === p.id).map((c) => ({ description: c.description, score: dec(c.score) })),
@@ -131,7 +142,7 @@ export function studentInstanceOut(inst) {
   if (studentCan(inst, 'can_view_grade_breakdown')) {
     out.grades = db.grades
       .filter((g) => g.instance_id === inst.id)
-      .map((g) => ({ problem_id: g.problem_id /* PROPOSAL, gap-2 */, problem_name: problems.find((p) => p.id === g.problem_id)?.name ?? '', score: dec(g.score), rubric_selections: g.rubric_selections }));
+      .map((g) => ({ problem_id: g.problem_id, problem_name: problems.find((p) => p.id === g.problem_id)?.name ?? '', score: dec(g.score), rubric_selections: g.rubric_selections }));
   }
   out.can_download = Boolean(exam.student_permissions?.can_download_pages);
   return out;
