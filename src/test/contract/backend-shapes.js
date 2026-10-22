@@ -6,7 +6,7 @@
  * fails when an alternative stops being needed (the gap was fixed).
  *
  * 22/10/2026: snapshot regenerated from the canonical contract of SCDEE-backend
- * fix/integracion-real b6ce6ff (SHA-256 e7890c006a79…). It declares the role
+ * fix/integracion-real 1a0b35a (SHA-256 82f08af87dda…; the declared schemas match b6ce6ff). It declares the role
  * unions of exams and instances (InstanceList/InstanceDetail), typed
  * models_problems, nullable dates, the zones list, InstanceResponse.grades
  * (gap-1) and problem_id in StudentInstance (gap-2): every shape that used to
@@ -19,7 +19,7 @@ export const BACKEND_SHAPES = {};
 /* apps/instances/views/instances.py · InstanceDownloadView: the student owner
  * without can_download_pages gets the PDF AES-GCM encrypted as
  * application/octet-stream (only the description says so; `responses` lists
- * application/pdf). Still undeclared in b6ce6ff. */
+ * application/pdf). Still undeclared in 1a0b35a. */
 export const BACKEND_CONTENT_TYPES = {
   'GET /instances/{instance_pk}/download/': ['application/octet-stream'],
 };
