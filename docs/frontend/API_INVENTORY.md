@@ -1,6 +1,6 @@
 # API inventory (generated)
 
-Source: canonical contract of the local backend `SCDEE-backend`, branch `fix/integracion-real` @ b6ce6ff (2026-10-22), file `docs/files/spectacular/SCDEE API.yaml` (SHA-256 LF e7890c006a7919926693b08841980ad0b394d9e1ea965f3325f68c4d7ef0530d). Previous source: `anxoCRuam/SCDEE` `backend` @ a8eb9f43.
+Source: canonical contract of the local backend `SCDEE-backend`, branch `fix/integracion-real` @ 1a0b35a (2026-10-22), file `docs/files/spectacular/SCDEE API.yaml` (SHA-256 LF 82f08af87dda306fe2ccfa7427f89290a2705fa1f589ca2c54b1005de7216292). Previous source: `anxoCRuam/SCDEE` `backend` @ a8eb9f43.
 Regenerate with `scripts/analyze/endpoints.py` and `scripts/analyze/schemas.py` (need PyYAML). All paths below are relative to `/api/v1`.
 
 **Never use an endpoint or field that is not listed here.** If you need one, write it in docs/coordination/REQUESTS.md.
