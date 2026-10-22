@@ -1,7 +1,7 @@
 import { db, q } from '../../lib/mock/db.js';
 import { mockError, reply } from '../../lib/mock/router.js';
 import { encryptPdf } from './pdfCrypto.js';
-import { gradeOut, hasPerm, instanceOut, recalcTotal, studentCan, studentInstanceOut } from '../exams/mockSerializers.js';
+import { canGradeInstance as canGrade, gradeOut, hasPerm, instanceOut, recalcTotal, studentCan, studentInstanceOut } from '../exams/mockSerializers.js';
 
 /* Mirrors apps.instances.models.instances.VALID_TRANSITIONS */
 const VALID = {
@@ -27,13 +27,6 @@ const blobBytes = (blob) =>
         fr.readAsArrayBuffer(blob);
       });
 const isOwner = (inst, user) => inst.student_id && inst.student_id === user.id;
-
-/** Teacher can grade: coordinator-like (view all) or matching assignment rule. */
-function canGrade(user, inst, problemId) {
-  if (hasPerm(user, subjectOf(inst), 'can_view_all_instances') && ['COORDINATOR'].includes(q.membership(user.id, subjectOf(inst))?.role)) return true;
-  if (user.is_staff) return true;
-  return db.assignment_rules.some((r) => r.exam_id === inst.exam_id && r.correctors.includes(user.id) && (!problemId || r.problems.includes(problemId)));
-}
 
 function canSee(user, inst) {
   if (user.is_staff || user.is_superadmin) return true;
@@ -111,9 +104,7 @@ export const mocks = [
       const inst = instOr404(params.id);
       if (!canSee(user, inst)) throw mockError(403, 'PERMISSION_DENIED');
       if (isOwner(inst, user) && !user.is_staff && !user.is_superadmin) return studentInstanceOut(inst);
-      // InstanceResponse.grades (gap-1): persisted grades of the problems this user may grade.
-      const grades = db.grades.filter((g) => g.instance_id === inst.id && canGrade(user, inst, g.problem_id)).map(gradeOut);
-      return { ...instanceOut(inst), grades };
+      return instanceOut(inst, user);
     },
   },
   {
@@ -140,7 +131,7 @@ export const mocks = [
       if (!VALID[inst.status]?.includes(target)) throw mockError(400, 'INVALID_TRANSITION');
       inst.status = target;
       inst.updated_at = new Date().toISOString();
-      return instanceOut(inst);
+      return instanceOut(inst, user);
     },
   },
   {

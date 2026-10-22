@@ -41,9 +41,11 @@ extendSeed((d) => {
 });
 
 /** PageResponseSerializer */
+/** PageResponseSerializer; image_url is the authenticated PNG route (Bearer), given here to the staff views that list pages. */
 export const pageOut = (p) => ({
   id: p.id, instance_id: p.instance_id, page_number: p.page_number, storage_ref: p.storage_ref,
-  status: p.status, issue_type: p.issue_type, recognized_at: p.recognized_at,
+  status: p.status, issue_type: p.issue_type, recognized_at: p.recognized_at, created_at: p.created_at,
+  image_url: `/api/v1/pages/${p.id}/image/`,
 });
 
 const instOr404 = (id) => {
@@ -193,7 +195,7 @@ export const mocks = [
         has_issues: false, issue_types: [], total_score: null, expected_pages: 0, pdf: db.instances[0]?.pdf, created_at: now, updated_at: now,
       };
       db.instances.push(inst);
-      return reply(201, instanceOut(inst));
+      return reply(201, instanceOut(inst, user));
     },
   },
   {
@@ -221,7 +223,7 @@ export const mocks = [
         changed = true;
       }
       if (changed) recalcIssues(inst);
-      return instanceOut(inst);
+      return instanceOut(inst, user);
     },
   },
   {

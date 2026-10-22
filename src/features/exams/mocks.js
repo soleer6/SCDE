@@ -43,7 +43,7 @@ export const mocks = [
       if (s) list = list.filter((i) => i.status === s);
       const hi = query.get('has_issues');
       if (hi) list = list.filter((i) => i.has_issues === (hi === 'true'));
-      return paginate(list.map(instanceOut), query);
+      return paginate(list.map((i) => instanceOut(i, user)), query);
     },
   },
   {
