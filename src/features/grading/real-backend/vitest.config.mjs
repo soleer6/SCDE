@@ -10,7 +10,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
-    include: ['src/features/grading/real-backend/*.integration.jsx'],
+    include: ['src/features/{grading,results}/real-backend/*.integration.jsx'],
     testTimeout: 120000,
     fileParallelism: false,
     env: { VITE_MOCK_API: 'false', VITE_API_URL: 'http://127.0.0.1:8000' },
