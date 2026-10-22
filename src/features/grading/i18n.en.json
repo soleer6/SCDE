@@ -24,6 +24,7 @@
   },
   "problem": {
     "scoreFor": "Grade for {{name}}",
+    "conflict": "Another session changed this grade: the saved value is shown. Check it and save again.",
     "state": { "idle": "Not graded", "saving": "Saving", "saved": "Saved", "error": "Error" }
   },
   "ocr": {

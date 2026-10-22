@@ -110,8 +110,10 @@ export const mocks = [
     handler: ({ params, user }) => {
       const inst = instOr404(params.id);
       if (!canSee(user, inst)) throw mockError(403, 'PERMISSION_DENIED');
-      if (user.is_staff || user.is_superadmin) return instanceOut(inst);
-      return isOwner(inst, user) ? studentInstanceOut(inst) : instanceOut(inst);
+      if (isOwner(inst, user) && !user.is_staff && !user.is_superadmin) return studentInstanceOut(inst);
+      // InstanceResponse.grades (gap-1): persisted grades of the problems this user may grade.
+      const grades = db.grades.filter((g) => g.instance_id === inst.id && canGrade(user, inst, g.problem_id)).map(gradeOut);
+      return { ...instanceOut(inst), grades };
     },
   },
   {
@@ -166,7 +168,7 @@ export const mocks = [
       const crit = db.criteria.filter((c) => c.problem_id === problem.id && ids.includes(c.id));
       if (crit.length !== ids.length) throw mockError(400, 'VALIDATION_ERROR', { criterion_ids: ['INVALID'] });
       const score = Math.min(crit.reduce((a, c) => a + c.score, 0), problem.max_score);
-      const rubric = crit.map((c) => ({ criterion_id: c.id, description: c.description, score: c.score.toFixed(2) }));
+      const rubric = crit.map((c) => c.id); // Grade.rubric_selections: JSON list of criterion ids
       return gradeOut(applyGrade({ inst, problem, score, oldScore: body?.old_score ?? null, user, rubric }));
     },
   },

@@ -86,6 +86,18 @@ const StudentVariants = [
   { name: 'StudentInstanceSerializer + problem_id (gap-2 proposal)', schema: StudentInstanceProposal },
 ];
 
+/* The mock also adds InstanceResponse.grades (docs/tfg/03-backend-gaps.md#gap-1,
+ * implemented but not committed in SCDEE-backend fix/integracion-real): the
+ * GradeResponse of each problem the requester may grade, read by the grading
+ * page as old_score. Tolerated only on the teacher/staff detail. */
+const InstanceWithGrades = {
+  name: 'InstanceResponse + grades (gap-1 proposal)',
+  schema: {
+    ...spec.schemas.InstanceResponse,
+    properties: { ...spec.schemas.InstanceResponse.properties, grades: { type: 'array', items: { $ref: '#/components/schemas/GradeResponse' } } },
+  },
+};
+
 const ExamList = { name: '[ExamFull | ExamTeacher | ExamBasic]', schema: { type: 'array', items: { oneOf: ExamVariants.map((v) => v.schema) } } };
 
 /* Keyed by "METHOD template" (without /api/v1). */
@@ -96,7 +108,7 @@ export const BACKEND_SHAPES = {
   // apps/instances/views/instances.py · InstanceListView: a student gets a bare list.
   'GET /exams/{exam_pk}/instances/': StudentVariants.map(({ name, schema }) => ({ name: `[${name}]`, schema: { type: 'array', items: schema } })),
   // apps/instances/views/instances.py · InstanceDetailView: the student branch.
-  'GET /instances/{instance_pk}/': StudentVariants,
+  'GET /instances/{instance_pk}/': [...StudentVariants, InstanceWithGrades],
 };
 
 /* Content types the backend really sends but its OpenAPI does not declare.

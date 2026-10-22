@@ -14,6 +14,14 @@ desde el frontend; son preguntas para el equipo backend.
   las notas parciales.
 - **Propuesta**: incluir `grades: [{problem_id, score, grader_email, rubric_selections}]`
   en `InstanceResponse` para usuarios con permiso de corrección, o `GET /instances/{id}/grades/`.
+- **Estado (22/10/2026)**: el backend local `fix/integracion-real` implementa la propuesta
+  (`InstanceResponse.grades`, GradeResponse filtrado por problema corregible) pero aún sin
+  commit ni regresiones (tarea #1). El frontend ya la consume: las notas del servidor
+  tienen prioridad sobre la caché local, `rubric_selections` se lee como lista de ids y,
+  tras un 409 `VERSION_CONFLICT`, la página relee la instancia y muestra el valor guardado
+  antes de permitir otro intento. La caché local queda solo como reserva para backends sin
+  el campo. Validado con Django real en `src/features/grading/real-backend/`
+  (navegador limpio, segunda sesión JWT, conflicto y rúbrica); sin revisión visual.
 
 ## gap-2 · El alumnado no recibe los ids de los problemas
 - **Evidencia**: `POST /instances/{id}/review-requests/` requiere

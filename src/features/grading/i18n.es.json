@@ -24,6 +24,7 @@
   },
   "problem": {
     "scoreFor": "Nota de {{name}}",
+    "conflict": "Otra sesión cambió esta nota: se muestra el valor guardado. Revísalo y vuelve a guardar.",
     "state": { "idle": "Sin nota", "saving": "Guardando", "saved": "Guardado", "error": "Error" }
   },
   "ocr": {

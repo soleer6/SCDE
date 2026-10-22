@@ -6,7 +6,7 @@ import { Badge, Button, ErrorState, Field, Loader, PageHeader, Panel, Textarea, 
 import { getAllExamInstances, getExam } from '../exams/api.js';
 import { LifecycleRail, Score, StatusBadge } from '../workspace/domain.jsx';
 import { studentName } from '../workspace/model.js';
-import { getInstance, transitionInstance } from './api.js';
+import { getInstance, serverGrades, transitionInstance } from './api.js';
 import { usePdfUrl } from './usePdfUrl.js';
 import { useAnnotations } from './useAnnotations.js';
 import { useKnownGrades } from './useKnownGrades.js';
@@ -29,7 +29,8 @@ export default function GradingPage() {
   const siblings = useApi(examId ? () => getAllExamInstances(examId, { status: 'PENDING_GRADING' }) : null, [examId]);
   const { url: pdfUrl, error: pdfError } = usePdfUrl(instanceId);
   const annotations = useAnnotations(instanceId);
-  const known = useKnownGrades(instanceId);
+  const server = useMemo(() => serverGrades(inst.data), [inst.data]);
+  const known = useKnownGrades(instanceId, server);
   const transition = useAction((target) => transitionInstance(instanceId, target));
 
   const problems = useMemo(() => {
@@ -48,6 +49,13 @@ export default function GradingPage() {
   const gradedCount = problems.filter((p) => known.grades[p.id] !== undefined).length;
   const maxTotal = problems.reduce((a, p) => a + Number(p.max_score), 0);
   const next = (siblings.data ?? []).find((s) => s.id !== i.id);
+
+  // After a 409 VERSION_CONFLICT: re-read the instance so old_score is the persisted one before any retry.
+  const refreshGrades = async () => {
+    const fresh = await getInstance(instanceId);
+    inst.setData(fresh);
+    return serverGrades(fresh);
+  };
 
   const move = async (target, msgKey) => {
     try {
@@ -118,6 +126,7 @@ export default function GradingPage() {
                 known={known}
                 disabled={!editable}
                 onSaved={() => inst.reload()}
+                onConflict={refreshGrades}
               />
             ))}
           </Panel>
