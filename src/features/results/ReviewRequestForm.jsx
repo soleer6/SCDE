@@ -27,6 +27,7 @@ export default function ReviewRequestForm({ inst, existing, onSent, onStale }) {
 
   if (!(inst.rubric ?? inst.grades)?.length) return <p className="u-muted">{t('review.noProblems')}</p>;
   if (!problems.length) return <p className="u-muted">{t('review.noIds')}</p>;
+  if (problems.every((p) => already.has(p.problem_id))) return <p className="u-muted">{t('review.allSent')}</p>;
 
   const submit = async () => {
     const asked = Object.keys(picked).length;

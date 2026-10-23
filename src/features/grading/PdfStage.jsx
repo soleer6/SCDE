@@ -53,7 +53,8 @@ export default function PdfStage({ url, annotations, readOnly = false, aside }) 
     return () => window.removeEventListener('keydown', onKey);
   }, [pages, page, readOnly, annotations]);
 
-  const pageWidth = Math.max(Math.min(box - 64, 900) * zoom, 200);
+  // box is the stage's content width (padding already excluded).
+  const pageWidth = Math.max(Math.min(box, 900) * zoom, 200);
   const pad = (n) => String(n).padStart(2, '0');
 
   return (

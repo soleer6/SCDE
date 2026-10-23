@@ -101,6 +101,14 @@ describe('student review requests', () => {
     expect(db.review_requests.filter((r) => r.instance_id === INSTANCE)).toHaveLength(1);
   });
 
+  it('drops the form once every problem has been requested', async () => {
+    db.problems.filter((p) => p.exam_model_id === 'mdl-e-mat-p1').forEach((p) => requestElsewhere(p.id));
+    renderResult();
+    expect(await screen.findByText(/Ya has pedido la revisión de todos los problemas/, {}, { timeout: 8000 })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Pedir revisión/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Tus solicitudes' })).toBeInTheDocument();
+  });
+
   it('replaces the form and moves the focus when the window closed meanwhile', async () => {
     renderResult();
     const user = userEvent.setup();
