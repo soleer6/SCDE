@@ -1,6 +1,6 @@
 # API inventory (generated)
 
-Source: canonical contract of the local backend `SCDEE-backend`, branch `fix/integracion-real` @ 1a0b35a (2026-10-22), file `docs/files/spectacular/SCDEE API.yaml` (SHA-256 LF 82f08af87dda306fe2ccfa7427f89290a2705fa1f589ca2c54b1005de7216292). Previous source: `anxoCRuam/SCDEE` `backend` @ a8eb9f43.
+Source: canonical contract of the local backend `SCDEE-backend`, branch `fix/integracion-real` @ 5e4f297 (2026-10-23), file `docs/files/spectacular/SCDEE API.yaml` (SHA-256 LF 4733013068511572d98bfcd02749e3bcf609ad3fdad8f4b9624c270effd99a70). Previous source: `anxoCRuam/SCDEE` `backend` @ a8eb9f43.
 Regenerate with `scripts/analyze/endpoints.py` and `scripts/analyze/schemas.py` (need PyYAML). All paths below are relative to `/api/v1`.
 
 **Never use an endpoint or field that is not listed here.** If you need one, write it in docs/coordination/REQUESTS.md.
@@ -36,7 +36,7 @@ GET    /exams/{exam_pk}/instances/                                     [Instance
 POST   /exams/{exam_pk}/instances/create/                              [Instances] req=json:CreateInstanceRequest resp=201:InstanceResponse | Create a new exam instance manually
 POST   /exams/{exam_pk}/models/                                        [Exams] req=json:CreateModelRequest resp=201:ModelDetail | Create model (RF-6.5) 'can_create_exams' required
 POST   /exams/{exam_pk}/publish/                                       [Instances] req= resp=200:PublishResult | Bulk-publish all graded instances of an exam (RF-7.9) 'can_publish_gra
-GET    /exams/{exam_pk}/review/                                        [Reviews] req= resp=200:ReviewResponse | Get review status
+GET    /exams/{exam_pk}/review/                                        [Reviews] req= resp=200:ReviewRead | Get review status
 POST   /exams/{exam_pk}/review/                                        [Reviews] req=json:CreateReviewRequest resp=201:ReviewResponse | Create review window (RF-12.1) 'can_manage_reviews' required
 GET    /instances/{instance_pk}/                                       [Instances] req= resp=200:InstanceDetail | Instance detail (RF-7.3) – response shape depends on user role and rev
 PATCH  /instances/{instance_pk}/                                       [Instances] req=json:PatchedUpdateInstanceRequest resp=200:InstanceResponse | Update instance (RF-7.2)
@@ -673,8 +673,8 @@ ReviewResponse:
    *start_date: string(date-time) ro
    *end_date: string(date-time) ro
    *status: string ro
-   *request_count: integer ro
    *created_at: string(date-time) ro
+   *request_count: integer ro
 RoleEnum: enum ['TEACHER', 'STUDENT']
 RubricCriterionInputRequest:
    *description: string
@@ -816,4 +816,12 @@ ZoneResponse:
    *height: number(double) ro
    *page_profile_id: string(uuid) ro
 ZoneTypeEnum: enum ['OCR_TEXT', 'OCR_NUMBER', 'QR', 'CHECKBOX']
+ReviewRead: anyOf(ReviewResponse|ReviewStatusResponse) — request_count only with effective can_manage_reviews
+ReviewStatusResponse:
+   *id: string(uuid) ro
+   *exam_id: string(uuid) ro
+   *start_date: string(date-time) ro
+   *end_date: string(date-time) ro
+   *status: string ro
+   *created_at: string(date-time) ro
 ```

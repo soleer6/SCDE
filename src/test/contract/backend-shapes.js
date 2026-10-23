@@ -11,6 +11,10 @@
  * models_problems, nullable dates, the zones list, InstanceResponse.grades
  * (gap-1) and problem_id in StudentInstance (gap-2): every shape that used to
  * live here was retired after the contract tests passed without it.
+ *
+ * 23/10/2026: synced with fix/integracion-real 5e4f297 (SHA-256 473301306851…):
+ * GET review answers ReviewRead (anyOf ReviewResponse | ReviewStatusResponse);
+ * request_count only for users with effective can_manage_reviews.
  */
 
 /* Keyed by "METHOD template" (without /api/v1). */
@@ -19,7 +23,7 @@ export const BACKEND_SHAPES = {};
 /* apps/instances/views/instances.py · InstanceDownloadView: the student owner
  * without can_download_pages gets the PDF AES-GCM encrypted as
  * application/octet-stream (only the description says so; `responses` lists
- * application/pdf). Still undeclared in 1a0b35a. */
+ * application/pdf). Still undeclared in 5e4f297. */
 export const BACKEND_CONTENT_TYPES = {
   'GET /instances/{instance_pk}/download/': ['application/octet-stream'],
 };

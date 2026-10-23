@@ -100,6 +100,22 @@ describe('teacher exam view', () => {
     expect(lines).toHaveLength(1 + instancesOf('e-mat-p2').length);
   });
 
+  it('shows the request count only to whoever manages the reviews', async () => {
+    await loginAs('maria.perez@uam.es', 'prof123');
+    const { unmount } = renderAt('/exams/e-mat-p1');
+    const panel = (await screen.findByRole('heading', { name: 'Revisión' }, { timeout: 8000 })).closest('section, .ui-panel');
+    expect(await within(panel).findByText('Solicitudes')).toBeInTheDocument();
+    unmount();
+
+    const exam = db.exams.find((e) => e.id === 'e-mat-p1');
+    const m = db.memberships.find((x) => x.user_id === 'u-maria' && x.subject_id === exam.subject_id);
+    m.permission_overrides = { ...(m.permission_overrides || {}), can_manage_reviews: false };
+    renderAt('/exams/e-mat-p1');
+    const after = (await screen.findByRole('heading', { name: 'Revisión' }, { timeout: 8000 })).closest('section, .ui-panel');
+    expect(await within(after).findByText('Abierta')).toBeInTheDocument();
+    expect(within(after).queryByText('Solicitudes')).not.toBeInTheDocument();
+  });
+
   it('opens the review period once every grade is published, and forgets a refused attempt', async () => {
     instancesOf('e-mat-p2').forEach((i) => {
       i.status = 'PUBLISHED';

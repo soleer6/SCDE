@@ -81,11 +81,13 @@ export const mocks = [
   {
     method: 'GET',
     path: '/exams/:id/review/',
-    handler: ({ params }) => {
-      examOr404(params.id);
+    handler: ({ params, user }) => {
+      const e = examOr404(params.id);
       const r = db.reviews.find((x) => x.exam_id === params.id);
       if (!r) throw mockError(404, 'NOT_FOUND');
-      return reviewOut(r);
+      // ReviewRead: the aggregate only for effective can_manage_reviews (ReviewStatusResponse otherwise).
+      const { request_count, ...status } = reviewOut(r);
+      return hasPerm(user, e.subject_id, 'can_manage_reviews') ? { ...status, request_count } : status;
     },
   },
   {

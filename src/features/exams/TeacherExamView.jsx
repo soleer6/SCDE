@@ -178,7 +178,8 @@ export default function TeacherExamView({ exam, role }) {
                   { label: t('review.status'), value: <Badge tone={review.data.status === 'OPEN' ? 'gold' : undefined}>{t(`review.states.${review.data.status}`, { defaultValue: review.data.status })}</Badge> },
                   { label: t('review.from'), value: formatDateTime(review.data.start_date) },
                   { label: t('review.to'), value: formatDateTime(review.data.end_date) },
-                  { label: t('review.requests'), value: review.data.request_count },
+                  // Absent without can_manage_reviews: not zero, just not visible.
+                  ...(review.data.request_count == null ? [] : [{ label: t('review.requests'), value: review.data.request_count }]),
                 ]}
               />
             ) : (
