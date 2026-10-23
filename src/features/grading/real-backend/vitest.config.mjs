@@ -5,6 +5,8 @@ import react from '@vitejs/plugin-react';
  *   npx vitest run --config src/features/grading/real-backend/vitest.config.mjs
  * Needs the API on http://127.0.0.1:8000 and the synthetic fixture in
  * %LOCALAPPDATA%/SCDE/integration/fixtures-claude.local.json (SCDE_FIXTURE_FILE overrides it).
+ * The closed review window uses fixtures-claude-closed.local.json (SCDE_CLOSED_FIXTURE_FILE),
+ * built by bootstrap_closed_review.py in the same folder.
  * Not part of `npm test`: it writes grades in the fixture organization. */
 export default defineConfig({
   plugins: [react()],

@@ -6,7 +6,8 @@
  * once per fixture: the sending branch runs while none exists, later runs
  * check the persisted request instead (both are reported in the output).
  * A closed window is not reproduced here: closing it is irreversible for the
- * fixture (only Celery Beat closes windows); mock tests cover that UI. */
+ * fixture (only Celery Beat closes windows). closed-review.integration.jsx
+ * covers it with a separate synthetic organization. */
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, configure, render, screen, within } from '@testing-library/react';
