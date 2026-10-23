@@ -7,7 +7,7 @@ import i18n from '../../app/i18n.js';
 import { AuthProvider } from '../../lib/auth/AuthProvider.jsx';
 import { ToastProvider } from '../../ui';
 import AppRouter from '../../app/AppRouter.jsx';
-import { api } from '../../lib/api/client.js';
+import { API_URL, api, request } from '../../lib/api/client.js';
 import { decodeJwt, tokenStore } from '../../lib/api/tokens.js';
 import { db } from '../../lib/mock/db.js';
 import { clearSubjectsCache } from '../workspace/api.js';
@@ -29,6 +29,9 @@ const renderAt = (path) =>
       </AuthProvider>
     </MemoryRouter>,
   );
+
+URL.createObjectURL ??= () => 'blob:scan';
+URL.revokeObjectURL ??= () => {};
 
 const rowOf = async (text) => (await screen.findAllByText(text))[0].closest('tr');
 const inst = (id) => db.instances.find((i) => i.id === id);
@@ -70,6 +73,20 @@ describe('page management contract (mock = backend services)', () => {
     expect(inst('i-e-fis-p1-6').status).toBe('RECEIVED');
   });
 
+  it('serves page images as PNG only to users who may inspect the page', async () => {
+    await loginAs('javier.ruiz@uam.es', 'prof123');
+    const [page] = await api.get('/instances/i-e-fis-p1-1/pages/');
+    expect(page.image_url).toBe(`/api/v1/pages/${page.id}/image/`);
+    const res = await request(`${API_URL}${page.image_url}`, { raw: true });
+    expect(res.headers.get('Content-Type')).toBe('image/png');
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    expect([...bytes.slice(0, 8)]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    // The owner keeps the protected PDF; the original scan is staff-only.
+    await loginAs('elena.rodriguez@estudiante.uam.es', 'est123');
+    await expect(request(`${API_URL}${page.image_url}`, { raw: true })).rejects.toMatchObject({ code: 'PERMISSION_DENIED' });
+    await expect(request(`${API_URL}/api/v1/pages/nope/image/`, { raw: true })).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
   it('rejects assigning a student who already has an instance of the exam', async () => {
     await loginAs('javier.ruiz@uam.es', 'prof123');
     await expect(api.patch('/instances/i-e-fis-p1-6/', { student_id: 'u-elena' })).rejects.toMatchObject({ code: 'DUPLICATE_STUDENT' });
@@ -105,6 +122,10 @@ describe('scan incidents page', () => {
     expect(table).toBeInTheDocument();
 
     await user.click(await rowOf('Páginas por revisar'));
+    // Each page shows its authenticated scan; the thumbnail opens it larger.
+    await user.click(await screen.findByRole('button', { name: 'Ampliar Página 3' }));
+    expect(within(await screen.findByRole('dialog', { name: 'Página 3' })).getByRole('img', { name: 'Escaneo de Página 3' })).toHaveAttribute('src', expect.stringMatching(/^blob:/));
+    await user.keyboard('{Escape}');
     await user.click(await screen.findByRole('button', { name: 'Aceptar' }));
     await waitFor(() => expect(inst('i-e-fis-p1-5').has_issues).toBe(false));
   });

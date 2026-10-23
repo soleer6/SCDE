@@ -1,6 +1,7 @@
 import { db, extendSeed, q } from '../../lib/mock/db.js';
 import { mockError, reply } from '../../lib/mock/router.js';
 import { hasPerm, instanceOut } from '../exams/mockSerializers.js';
+import { mockScanPng } from './mockScan.js';
 
 /* Mirrors apps.instances.views.instances (pages, orphan pages, instance CRUD),
  * apps.instances.services.instance_service (page management) and
@@ -87,7 +88,25 @@ function pageIn(instanceId, pageId) {
   return p;
 }
 
+/** access_control.can_inspect_page: managers for any page (orphans included), resolvers and graders for their instances. */
+const canInspect = (user, page) => {
+  if (user.is_staff || user.is_superadmin) return true;
+  const inst = page.instance_id && q.instance(page.instance_id);
+  return Boolean(inst) && (canResolve(user, inst) || canGrade(user, inst));
+};
+
 export const mocks = [
+  {
+    method: 'GET',
+    path: '/pages/:pid/image/',
+    handler: ({ params, user }) => {
+      const page = db.pages.find((p) => p.id === params.pid);
+      if (!page) throw mockError(404, 'NOT_FOUND');
+      if (!canInspect(user, page)) throw mockError(403, 'PERMISSION_DENIED');
+      const seed = [...page.id].reduce((a, ch) => a + ch.charCodeAt(0), page.page_number);
+      return reply(200, new Blob([mockScanPng(seed)], { type: 'image/png' }), { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+    },
+  },
   {
     method: 'GET',
     path: '/instances/:id/pages/',
