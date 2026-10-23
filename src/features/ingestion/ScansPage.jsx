@@ -6,6 +6,7 @@ import { Badge, Button, DataTable, EmptyState, ErrorState, Field, Input, KeyValu
 import { getOcrEngines, getOrphanPages, ingestFile } from './api.js';
 import { PAGE_TONE, useErrorText } from './model.js';
 import './ingestion.css';
+import PageThumb from './PageThumb.jsx';
 
 /** /scans — manager tools: manual ingest (RF-9.2), OCR engines (RF-9.9), orphan pages (RF-7.14). */
 export default function ScansPage() {
@@ -75,10 +76,11 @@ export default function ScansPage() {
                 rows={orphans.data}
                 empty={<EmptyState title={t('orphans.emptyTitle')} body={t('orphans.emptyBody')} />}
                 columns={[
+                  { key: 'scan', header: t('pages.cols.scan'), render: (p) => <PageThumb page={p} label={p.storage_ref.split('/').pop()} /> },
                   { key: 'ref', header: t('orphans.cols.file'), render: (p) => <code className="in-code">{p.storage_ref.split('/').pop()}</code> },
                   { key: 'status', header: t('pages.cols.state'), render: (p) => <Badge tone={PAGE_TONE[p.status]}>{t(`pageStatus.${p.status}`, { defaultValue: p.status })}</Badge> },
                   { key: 'issue', header: t('cols.issues'), render: (p) => (p.issue_type ? t(`issueTypes.${p.issue_type}`, { defaultValue: p.issue_type }) : '—') },
-                  { key: 'at', header: t('orphans.cols.recognized'), render: (p) => (p.recognized_at ? formatDateTime(p.recognized_at) : '—') },
+                  { key: 'at', header: t('orphans.cols.received'), render: (p) => formatDateTime(p.created_at) },
                 ]}
               />
             )}

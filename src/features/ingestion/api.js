@@ -1,4 +1,4 @@
-import { api, asList } from '../../lib/api/client.js';
+import { API_URL, api, asList, request } from '../../lib/api/client.js';
 
 /* ---------------- Pages of an instance (RF-7.14) ---------------- */
 /* GET /instances/{id}/pages/ -> PageResponse[] (includes DISCARDED pages) */
@@ -35,4 +35,15 @@ export function ingestFile(file) {
   const form = new FormData();
   form.append('file', file);
   return api.upload('/recognition/ingest/', form);
+}
+
+/* ---------------- Page image (staff) ---------------- */
+/* GET /pages/{id}/image/ -> image/png. PageResponse.image_url is that route as a
+ * server-relative path (/api/v1/...) or null when the user may not inspect the
+ * page; it needs the Bearer token, so it is fetched and shown as an object URL.
+ * The caller revokes it. */
+export async function getPageImageUrl(imageUrl, signal) {
+  const path = imageUrl.startsWith('/') ? `${API_URL}${imageUrl}` : imageUrl;
+  const res = await request(path, { raw: true, signal });
+  return URL.createObjectURL(new Blob([await res.arrayBuffer()], { type: 'image/png' }));
 }

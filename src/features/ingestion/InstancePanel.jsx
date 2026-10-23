@@ -7,6 +7,7 @@ import { StatusBadge } from '../workspace/domain.jsx';
 import { studentName } from '../workspace/model.js';
 import { acceptPage, attachOrphan, deleteInstance, discardPage, getInstancePages, movePage, reorderPages, updateInstance } from './api.js';
 import IssueList from './IssueList.jsx';
+import PageThumb from './PageThumb.jsx';
 import { PAGE_TONE, useErrorText } from './model.js';
 
 /** Selected instance: identity (student/model), its scanned pages and page actions. */
@@ -61,6 +62,7 @@ export default function InstancePanel({ exam, instance, instances, orphans, canD
             empty={<p className="u-muted in-pad">{t('pages.empty')}</p>}
             columns={[
               { key: 'n', header: t('pages.cols.number'), align: 'num', render: (p) => p.page_number },
+              { key: 'scan', header: t('pages.cols.scan'), render: (p) => <PageThumb page={p} label={t('pages.label', { n: p.page_number })} /> },
               {
                 key: 'state',
                 header: t('pages.cols.state'),
@@ -111,6 +113,7 @@ export default function InstancePanel({ exam, instance, instances, orphans, canD
             rows={orphans}
             empty={<p className="u-muted in-pad">{t('orphans.empty')}</p>}
             columns={[
+              { key: 'scan', header: t('pages.cols.scan'), render: (p) => <PageThumb page={p} label={p.storage_ref.split('/').pop()} /> },
               { key: 'ref', header: t('orphans.cols.file'), render: (p) => <code className="in-code">{p.storage_ref.split('/').pop()}</code> },
               {
                 key: 'state',
