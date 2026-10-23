@@ -5,6 +5,7 @@ import { formatDateTime } from '../../lib/format.js';
 import { Badge, Button, DataTable, EmptyState, ErrorState, Field, Input, KeyValue, Loader, PageHeader, Panel, useToast } from '../../ui';
 import { getOcrEngines, getOrphanPages, ingestFile } from './api.js';
 import { PAGE_TONE, useErrorText } from './model.js';
+import '../workspace/domain.css'; // .dm-split: this lazy chunk may be the first page loaded
 import './ingestion.css';
 import PageThumb from './PageThumb.jsx';
 

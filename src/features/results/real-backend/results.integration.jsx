@@ -105,11 +105,10 @@ describe('student result and review requests with the real backend', () => {
     // Clean browser: the request is read back and the problem cannot be asked again.
     await signIn(fx, 'publishedStudent');
     mount();
-    const box = await screen.findByRole('checkbox', { name: `${problem.problem_name} · ya solicitada` });
-    expect(box).toBeChecked();
-    expect(box).toBeDisabled();
+    expect(await screen.findByText(/Ya has pedido la revisión de todos los problemas/)).toBeInTheDocument();
     expect(await screen.findByRole('region', { name: 'Tus solicitudes' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Pedir revisión de 0/ })).toBeDisabled();
+    expect(screen.queryByRole('checkbox', { name: new RegExp(problem.problem_name) })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Pedir revisión/ })).not.toBeInTheDocument();
   });
 
   it('keeps another student out of the instance and its requests', async () => {

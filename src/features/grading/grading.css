@@ -5,7 +5,9 @@
   min-width: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  overflow: hidden;
+  /* clip, not hidden: hidden would make this box the sticky toolbar's scroll
+     container and leave a topbar-high gap above it. */
+  overflow: clip;
 }
 .gr-toolbar {
   display: flex;
@@ -228,6 +230,13 @@
 .gr-save.is-error { color: var(--rust); }
 .gr-save.is-saving,
 .gr-save.is-pending { color: var(--amber); }
+
+@media (max-width: 720px) {
+  .gr-stage {
+    min-height: 0;
+    padding: var(--s-3);
+  }
+}
 
 @media (max-width: 1100px) {
   .gr-layout {
