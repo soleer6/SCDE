@@ -20,6 +20,7 @@ import AppRouter from '../../app/AppRouter.jsx';
 import { api } from '../../lib/api/client.js';
 import { tokenStore } from '../../lib/api/tokens.js';
 import { db } from '../../lib/mock/db.js';
+import { observeMockResponses } from '../../lib/mock/router.js';
 import { recalcTotal } from '../exams/mockSerializers.js';
 import { clearSubjectsCache } from '../workspace/api.js';
 
@@ -155,8 +156,18 @@ describe('grading', () => {
     const user = userEvent.setup();
     renderGrading();
     const series = await screen.findByLabelText('Nota de Series');
+    // The save is followed by a re-read of the instance; the other session must
+    // write after it, or that re-read already brings its score (no conflict).
+    let saved = false;
+    let reread = false;
+    const stop = observeMockResponses(({ method, route }) => {
+      if (method === 'PUT') saved = true;
+      else if (saved && method === 'GET' && route === '/instances/:id/') reread = true;
+    });
     await user.type(series, '2{Enter}');
     await waitFor(() => expect(screen.getByText('1/3 problemas')).toBeInTheDocument());
+    await waitFor(() => expect(reread).toBe(true));
+    stop();
 
     // Another session regrades Series behind this page's back.
     Object.assign(db.grades.find((g) => g.instance_id === INSTANCE), { score: 3.75 });
