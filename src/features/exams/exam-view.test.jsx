@@ -118,6 +118,23 @@ describe('teacher exam view', () => {
     expect(Object.keys(rows[0])).toEqual(['nia', 'email', 'total_score']);
   });
 
+  it('narrows the instances by student name or email and combines with the status tabs', async () => {
+    await loginAs('maria.perez@uam.es', 'prof123');
+    renderAt('/exams/e-mat-p2');
+    const user = userEvent.setup();
+    const table = await screen.findByRole('table', { name: 'Instancias del examen' }, { timeout: 8000 });
+    const all = within(table).getAllByRole('row').length - 1;
+    const withEmail = instancesOf('e-mat-p2').find((i) => i.student_id);
+    const email = db.users.find((u) => u.id === withEmail.student_id).email;
+    await user.type(screen.getByRole('searchbox', { name: 'Buscar por nombre o correo' }), email);
+    await waitFor(() => expect(within(screen.getByRole('table', { name: 'Instancias del examen' })).getAllByRole('row').length - 1).toBe(1));
+    await user.clear(screen.getByRole('searchbox', { name: 'Buscar por nombre o correo' }));
+    await user.type(screen.getByRole('searchbox', { name: 'Buscar por nombre o correo' }), 'zzz-no-existe');
+    expect(await screen.findByText('Ninguna instancia en este estado')).toBeInTheDocument();
+    await user.clear(screen.getByRole('searchbox', { name: 'Buscar por nombre o correo' }));
+    await waitFor(() => expect(within(screen.getByRole('table', { name: 'Instancias del examen' })).getAllByRole('row').length - 1).toBe(all));
+  });
+
   it('shows the request count only to whoever manages the reviews', async () => {
     await loginAs('maria.perez@uam.es', 'prof123');
     const { unmount } = renderAt('/exams/e-mat-p1');

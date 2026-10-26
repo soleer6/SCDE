@@ -26,3 +26,11 @@
   font-weight: 700;
   background: var(--bg);
 }
+
+.ex-search {
+  margin: var(--s-3) 0;
+  flex-wrap: wrap;
+}
+.ex-search input[type='search'] {
+  min-width: 240px;
+}

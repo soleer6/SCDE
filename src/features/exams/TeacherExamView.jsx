@@ -6,7 +6,7 @@ import { useAction, useApi } from '../../lib/hooks.js';
 import { formatDate, formatDateTime, formatScore, toNumber } from '../../lib/format.js';
 import { can } from '../../lib/permissions.js';
 import {
-  Badge, Button, ButtonLink, DataTable, Dialog, EmptyState, ErrorState, Field, Input, KeyValue, Loader, PageHeader, Panel, Stats, Tabs, useToast,
+  Badge, Button, ButtonLink, DataTable, Dialog, EmptyState, ErrorState, Field, Input, KeyValue, Loader, PageHeader, Panel, Select, Stats, Tabs, useToast,
 } from '../../ui';
 import { Score, StatusBadge } from '../workspace/domain.jsx';
 import { GRADED_STATES, studentName } from '../workspace/model.js';
@@ -30,6 +30,8 @@ export default function TeacherExamView({ exam, role }) {
   const [filter, setFilter] = useState('all');
   const [reviewOpen, setReviewOpen] = useState(false);
   const [partial, setPartial] = useState(null);
+  const [query, setQuery] = useState('');
+  const [modelFilter, setModelFilter] = useState('');
 
   const instances = useApi(() => getAllExamInstances(exam.id), [exam.id]);
   const review = useApi(() => getReview(exam.id), [exam.id]);
@@ -37,6 +39,11 @@ export default function TeacherExamView({ exam, role }) {
 
   const list = useMemo(() => instances.data ?? [], [instances.data]);
   const counts = useMemo(() => Object.fromEntries(Object.entries(FILTERS).map(([k, f]) => [k, list.filter(f).length])), [list]);
+  const models = useMemo(() => [...new Set(list.map((i) => i.model_label).filter(Boolean))].sort(), [list]);
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return list.filter(FILTERS[filter]).filter((i) => (!modelFilter || i.model_label === modelFilter) && (!q || (i.student_email ?? '').toLowerCase().includes(q) || studentName(i.student_email ?? '').toLowerCase().includes(q)));
+  }, [list, filter, query, modelFilter]);
   const gradedList = list.filter((i) => GRADED_STATES.includes(i.status));
   const avg = gradedList.length ? gradedList.reduce((a, i) => a + (toNumber(i.total_score) ?? 0), 0) / gradedList.length : null;
   const maxScore = exam.models_problems?.[0]?.problems.reduce((a, p) => a + Number(p.max_score), 0);
@@ -140,6 +147,19 @@ export default function TeacherExamView({ exam, role }) {
             onChange={setFilter}
             tabs={Object.keys(FILTERS).map((k) => ({ value: k, label: t(`filters.${k}`), count: counts[k] }))}
           />
+          <div className="ex-search ui-row">
+            <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('filters.search')} aria-label={t('filters.search')} />
+            {models.length > 1 && (
+              <Select value={modelFilter} onChange={(e) => setModelFilter(e.target.value)} aria-label={t('filters.model')}>
+                <option value="">{t('filters.allModels')}</option>
+                {models.map((m) => (
+                  <option key={m} value={m}>
+                    {t('filters.modelOption', { label: m })}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </div>
           {instances.initialLoading ? (
             <Loader />
           ) : instances.error ? (
@@ -147,9 +167,9 @@ export default function TeacherExamView({ exam, role }) {
           ) : (
             <DataTable
               caption={t('instances.caption')}
-              rows={list.filter(FILTERS[filter])}
+              rows={shown}
               onRowClick={(i) => navigate(`/instances/${i.id}/grade`)}
-              empty={<EmptyState title={t(filter === 'all' ? 'instances.emptyAll' : 'instances.empty')} body={filter === 'all' ? t('instances.emptyAllBody') : undefined} />}
+              empty={<EmptyState title={t(filter === 'all' && !query && !modelFilter ? 'instances.emptyAll' : 'instances.empty')} body={filter === 'all' && !query && !modelFilter ? t('instances.emptyAllBody') : undefined} />}
               columns={[
                 {
                   key: 'student',
