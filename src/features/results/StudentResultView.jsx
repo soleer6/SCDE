@@ -37,6 +37,25 @@ export default function StudentResultView({ exam }) {
     focusAfter.current = null;
   }, [settled, instances.data, review.data, requests.data]);
 
+  // The window closes server-side (Celery Beat) some time after end_date: a page kept open re-reads the
+  // review at end_date and, while the server still says OPEN, every 30 s, so the form and the pages
+  // follow the real state instead of failing on submit. Bytes already downloaded cannot be revoked.
+  const { reload: reloadReview } = review;
+  const { reload: reloadInstances } = instances;
+  const { reload: reloadRequests } = requests;
+  const endsAt = review.data?.status === 'OPEN' ? Date.parse(review.data.end_date) : NaN;
+  useEffect(() => {
+    if (!Number.isFinite(endsAt)) return undefined;
+    const wait = endsAt - Date.now();
+    if (wait > 2 ** 31 - 1) return undefined;
+    const id = setTimeout(() => {
+      reloadReview();
+      reloadInstances();
+      reloadRequests();
+    }, wait > 0 ? wait + 1500 : 30000);
+    return () => clearTimeout(id);
+  }, [endsAt, review.data, reloadReview, reloadInstances, reloadRequests]);
+
   const header = (
     <PageHeader
       crumbs={[
@@ -107,7 +126,7 @@ export default function StudentResultView({ exam }) {
                 onStale={() => { focusAfter.current = 'closed'; review.reload(); instances.reload(); }}
               />
             ) : (
-              <p ref={closedRef} tabIndex={-1} className="u-muted">{review.data ? t('review.closed') : t('review.notOpen')}</p>
+              <p ref={closedRef} tabIndex={-1} role="status" className="u-muted">{review.data ? t('review.closed') : t('review.notOpen')}</p>
             )}
             {(requests.data ?? []).length > 0 && (
               <section ref={listRef} tabIndex={-1} aria-label={t('review.requests')}>
