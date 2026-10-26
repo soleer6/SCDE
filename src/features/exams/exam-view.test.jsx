@@ -116,6 +116,26 @@ describe('teacher exam view', () => {
     expect(within(after).queryByText('Solicitudes')).not.toBeInTheDocument();
   });
 
+  it('reports a partial publication and keeps the retry available', async () => {
+    const list = instancesOf('e-mat-p2');
+    list.forEach((i) => {
+      i.status = 'GRADED';
+      i.has_issues = false;
+    });
+    list[0].has_issues = true;
+    await loginAs('maria.perez@uam.es', 'prof123');
+    renderAt('/exams/e-mat-p2');
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /^Publicar \d+ notas/ }, { timeout: 8000 }));
+    const alert = await screen.findByText(/siguen corregidas pero sin publicar/);
+    const box = alert.closest('[role="alert"]');
+    expect(within(box).getByText(/tiene incidencias sin resolver/)).toBeInTheDocument();
+    expect(within(box).getAllByRole('listitem')).toHaveLength(1);
+    expect(list.filter((i) => i.status === 'PUBLISHED')).toHaveLength(list.length - 1);
+    expect(list[0].status).toBe('GRADED');
+    expect(await screen.findByRole('button', { name: /^Publicar 1 nota/ })).toBeInTheDocument();
+  });
+
   it('opens the review period once every grade is published, and forgets a refused attempt', async () => {
     instancesOf('e-mat-p2').forEach((i) => {
       i.status = 'PUBLISHED';

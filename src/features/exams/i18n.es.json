@@ -11,7 +11,13 @@
     "issues": "Resolver incidencias ({{count}})"
   },
   "publish": {
-    "done": "{{count}} notas publicadas. Se ha avisado a cada estudiante."
+    "done": "{{count}} notas publicadas. Se ha avisado a cada estudiante.",
+    "partial": "Publicación parcial: {{published}} publicadas, {{skipped}} sin publicar.",
+    "partialTitle": "Publicación parcial: {{published}} publicadas, {{skipped}} pendientes",
+    "partialBody": "Estas entregas siguen corregidas pero sin publicar. Resuelve el motivo y vuelve a pulsar Publicar.",
+    "reasons": {
+      "HAS_UNRESOLVED_ISSUES": "tiene incidencias sin resolver"
+    }
   },
   "stats": {
     "enrolled": "Convocados",
