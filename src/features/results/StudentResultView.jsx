@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApi } from '../../lib/hooks.js';
 import { formatDate, formatDateTime, formatScore } from '../../lib/format.js';
-import { Badge, DataTable, EmptyState, ErrorState, Loader, PageHeader, Panel } from '../../ui';
+import { Badge, Button, DataTable, EmptyState, ErrorState, Loader, PageHeader, Panel } from '../../ui';
 import { getExamInstances, getReview, asList } from '../exams/api.js';
 import { listAnnotations, readAnnotationPayload } from '../grading/api.js';
 import { readAnnotationLayers } from '../grading/annotationLayers.js';
@@ -88,7 +88,7 @@ export default function StudentResultView({ exam }) {
       <div className="dm-split rs-body">
         <section className="dm-section">
           {inst.pages ? (
-            <StudentPdf instanceId={inst.id} />
+            <StudentPdf instanceId={inst.id} canDownload={Boolean(inst.can_download)} fileName={`${exam.subject_code}-${exam.name}.pdf`} />
           ) : (
             <EmptyState title={t('pdf.hiddenTitle')} body={t(review.data ? 'pdf.hiddenAfter' : 'pdf.hiddenBody')} />
           )}
@@ -150,7 +150,7 @@ function Breakdown({ inst }) {
   );
 }
 
-function StudentPdf({ instanceId }) {
+function StudentPdf({ instanceId, canDownload, fileName }) {
   const { t } = useTranslation('results');
   const { url, error } = usePdfUrl(instanceId);
   const ann = useApi(async () => {
@@ -167,7 +167,16 @@ function StudentPdf({ instanceId }) {
   const annotations = { strokesByPage: {}, layersByPage: ann.data?.layersByPage ?? {}, loading: ann.loading };
   return <>
     {ann.error && <ErrorState error={ann.error} onRetry={ann.reload} />}
-    <PdfStage url={url} annotations={annotations} readOnly />
+    <PdfStage
+      url={url}
+      annotations={annotations}
+      readOnly
+      aside={canDownload && (
+        <Button size="sm" variant="ghost" disabled={!url} onClick={() => Object.assign(document.createElement('a'), { href: url, download: fileName }).click()}>
+          {t('pdf.download')}
+        </Button>
+      )}
+    />
   </>;
 }
 
