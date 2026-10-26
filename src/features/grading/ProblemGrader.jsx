@@ -4,6 +4,7 @@ import { formatScore } from '../../lib/format.js';
 import { Checkbox, Input } from '../../ui';
 import { gradeManual, gradeRubric, toKnownGrade } from './api.js';
 import { GradeOcr } from './HandwritingOcr.jsx';
+import ProblemNote from './ProblemNote.jsx';
 
 /**
  * One problem row. Rubric problems grade by criteria (PUT .../rubric/),
@@ -14,7 +15,7 @@ import { GradeOcr } from './HandwritingOcr.jsx';
  * the current value, so the next save carries the right old_score.
  * Manual-score problems can also be graded from a handwritten number (GradeOcr).
  */
-export default function ProblemGrader({ instanceId, problem, known, disabled, onSaved, onConflict }) {
+export default function ProblemGrader({ instanceId, problem, known, disabled, onSaved, onConflict, currentUserId }) {
   const { t } = useTranslation('grading');
   const { t: tc } = useTranslation();
   const current = known.grades[problem.id];
@@ -133,6 +134,8 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
           }}
         />
       )}
+
+      <ProblemNote instanceId={instanceId} problem={problem} canEdit={!disabled} currentUserId={currentUserId} />
 
       <span className={`gr-problem__state is-${state}`} role={state === 'error' ? 'alert' : undefined} aria-live="polite">
         {state === 'error'

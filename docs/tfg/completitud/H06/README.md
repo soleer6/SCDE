@@ -10,3 +10,11 @@ Verificado con Edge + Django real (fixture H04): un fichero que no es audio se r
 nada; un WAV válido se guarda, el reproductor apunta a bytes RIFF descargables, persiste tras recargar y se
 elimina. La grabación con micrófono real no se ha probado en headless (queda el botón y la ruta de subida).
 Pendiente de H06: comentarios de texto por página/posición/problema y gestión individual de textos.
+
+## Comentarios de texto por problema (RF-10.1/10.3)
+`grading/ProblemNote.jsx`, dentro de cada problema: cada docente tiene un comentario propio por problema
+(TEXT con `problem_id`; crear, editar por PUT, eliminar guardándolo vacío); los de otros docentes se ven en
+solo lectura. El comentario general y las capas de página los ignoran. El alumno los ve en su panel de
+comentarios con el nombre del problema. Verificado con Django real (`text-real.mjs`): crear, leer su contenido
+por `download_url`, persistir tras recargar, editar sin duplicar y eliminar. No incluye comentarios anclados a
+una posición de página (x, y), solo a problema.

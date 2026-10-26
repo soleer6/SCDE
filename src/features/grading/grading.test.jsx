@@ -166,6 +166,25 @@ describe('grading', () => {
     expect(db.annotations.filter((a) => a.annotation_type === 'AUDIO')).toHaveLength(0);
   });
 
+  it('saves, edits and removes a per-problem text comment without touching the general one (RF-10.1/10.3)', async () => {
+    const user = userEvent.setup();
+    renderGrading();
+    const box = await screen.findByLabelText('Comentario del problema Series');
+    await user.type(box, 'Falta justificar el límite');
+    await user.click(screen.getByRole('button', { name: 'Guardar comentario de Series' }));
+    await waitFor(() => expect(db.annotations.filter((a) => a.annotation_type === 'TEXT' && a.problem_id)).toHaveLength(1));
+    expect(db.annotations.find((a) => a.problem_id).content).toBe('Falta justificar el límite');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar comentario de Series' })).toBeDisabled()); // reloaded: nothing pending
+    await user.type(screen.getByLabelText('Comentario del problema Series'), ' (ver teorema)');
+    await user.click(screen.getByRole('button', { name: 'Guardar comentario de Series' }));
+    await waitFor(() => expect(db.annotations.find((a) => a.problem_id).content).toBe('Falta justificar el límite (ver teorema)'));
+    expect(db.annotations.filter((a) => a.annotation_type === 'TEXT' && a.problem_id)).toHaveLength(1);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar comentario de Series' })).toBeDisabled());
+    await user.clear(screen.getByLabelText('Comentario del problema Series'));
+    await user.click(screen.getByRole('button', { name: 'Guardar comentario de Series' }));
+    await waitFor(() => expect(db.annotations.filter((a) => a.problem_id)).toHaveLength(0));
+  });
+
   it('keeps the page mounted while grades save, then finishes and reopens', async () => {
     const user = userEvent.setup();
     renderGrading();

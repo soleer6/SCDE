@@ -180,6 +180,7 @@ export default function GradingPage() {
                 problem={p}
                 known={known}
                 disabled={!editable}
+                currentUserId={session?.id}
                 onSaved={() => inst.reload()}
                 onConflict={refreshGrades}
               />

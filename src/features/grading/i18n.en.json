@@ -131,5 +131,13 @@
       "PERMISSION_DENIED": "You do not have permission for this audio.",
       "UNKNOWN": "The audio could not be saved. Try again."
     }
+  },
+  "note": {
+    "placeholder": "Comment for the student about this problem",
+    "label": "Comment on problem {{name}}",
+    "save": "Save comment on {{name}}",
+    "saved": "Comment saved",
+    "removed": "Comment removed",
+    "error": "The comment could not be saved."
   }
 }

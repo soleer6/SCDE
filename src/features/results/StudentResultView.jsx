@@ -115,7 +115,7 @@ export default function StudentResultView({ exam }) {
         </section>
         <aside className="ui-stack">
           <Breakdown inst={inst} />
-          <TeacherComment instanceId={inst.id} visible={Boolean(inst.pages)} />
+          <TeacherComment instanceId={inst.id} visible={Boolean(inst.pages)} problems={inst.rubric ?? inst.grades ?? []} />
           {inst.pages && <AudioNotes instanceId={inst.id} canEdit={false} />}
           <Panel title={t('review.title')}>
             {reviewOpen ? (
@@ -201,14 +201,14 @@ function StudentPdf({ instanceId, canDownload, fileName }) {
   </>;
 }
 
-function TeacherComment({ instanceId, visible }) {
+function TeacherComment({ instanceId, visible, problems = [] }) {
   const { t } = useTranslation('results');
   const comment = useApi(
     visible
       ? async () => {
           try {
             const list = await listAnnotations(instanceId);
-            return await Promise.all(list.filter((x) => x.annotation_type === 'TEXT' && !x.problem_id).map(async (a) => ({ ...a, text: await readAnnotationPayload(a) })));
+            return await Promise.all(list.filter((x) => x.annotation_type === 'TEXT').map(async (a) => ({ ...a, text: await readAnnotationPayload(a) })));
           } catch (e) {
             if (e.status === 403) return [];
             throw e;
@@ -224,6 +224,7 @@ function TeacherComment({ instanceId, visible }) {
     <Panel title={t('comment.title')}>
       {comment.data.map((a) => <div key={a.id}>
         {a.author_email && <strong>{a.author_email}</strong>}
+        {a.problem_id && <span className="u-muted"> · {(problems.find((x) => x.problem_id === a.problem_id)?.problem_name) ?? ''}</span>}
         <p className="rs-comment">{a.text}</p>
       </div>)}
     </Panel>
