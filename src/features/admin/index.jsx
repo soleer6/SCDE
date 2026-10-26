@@ -7,10 +7,12 @@ const CoursesPage = lazy(() => import('./CoursesPage.jsx'));
 const ConfigPage = lazy(() => import('./ConfigPage.jsx'));
 const AuditPage = lazy(() => import('./AuditPage.jsx'));
 const OrganizationsPage = lazy(() => import('./OrganizationsPage.jsx'));
+const HistoryPage = lazy(() => import('./HistoryPage.jsx'));
 const staff = (session) => session.isStaff || session.isSuperadmin;
 export default {
   id: 'admin', order: 50, mocks, i18n,
   routes: [
+    { path: '/admin/history', element: <HistoryPage />, guard: 'staff' },
     { path: '/admin/organizations', element: <OrganizationsPage />, guard: 'staff' },
     { path: '/admin/users', element: <UsersPage />, guard: 'staff' },
     { path: '/admin/courses', element: <CoursesPage />, guard: 'staff' },
@@ -19,6 +21,7 @@ export default {
   ],
   nav: [
     ...['users', 'courses', 'config', 'audit'].map((name) => ({ to: `/admin/${name}`, label: `admin:${name}`, section: 'manage', when: staff })),
+    { to: '/admin/history', label: 'admin:history', section: 'manage', when: staff },
     { to: '/admin/organizations', label: 'admin:organizations', section: 'manage', when: session => session.isSuperadmin },
   ],
 };

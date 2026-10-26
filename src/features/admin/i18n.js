@@ -1,5 +1,10 @@
 export const i18n = {
   es: {
+    history: 'Histórico de cursos', historyReadOnly: 'Solo lectura', historyHint: 'Consulta cursos, asignaturas, exámenes y entregas sin modificar datos.', historyView: 'Consultar', historyViewNamed: 'Consultar {{name}}',
+    historyLevels: { courses: 'Cursos', subjects: 'Asignaturas', exams: 'Exámenes', instances: 'Entregas' }, historySelected: { course: 'Curso seleccionado', subject: 'Asignatura seleccionada', exam: 'Examen seleccionado' },
+    historySearch: 'Buscar en este nivel', historyPrevious: 'Curso anterior', historyCode: 'Código', historySubject: 'Asignatura', historyExam: 'Examen', historyDate: 'Fecha', historyModels: 'Modelos', historyInstances: 'Entregas', historyStudent: 'Alumno', historyModel: 'Modelo', historyScore: 'Nota total', historyIssues: 'Incidencias', historyWithIssues: 'Con incidencias', historyNoIssues: 'Sin incidencias', historyAllStatuses: 'Todos los estados', historyAllInstances: 'Todas las entregas', historyEmpty: 'No hay resultados en este nivel', historyEmptyHint: 'Prueba otra búsqueda o vuelve al nivel anterior.', historyInstanceDetail: 'Detalle de entrega',
+    historyFields: { id: 'Identificador de entrega', student_email: 'Alumno', model_label: 'Modelo', status: 'Estado', total_score: 'Nota total', has_issues: 'Incidencias', created_at: 'Creación', updated_at: 'Última actualización' },
+    historyStatuses: { ASSEMBLING: 'Ensamblando', RECEIVED: 'Recibida', QUEUED: 'En cola', PENDING_GRADING: 'Pendiente de corrección', GRADED: 'Corregida', PUBLISHED: 'Publicada', IN_REVIEW: 'En revisión', PENDING_REVIEW: 'Pendiente de revisión', FINALIZED: 'Cerrada', ARCHIVED: 'Archivada' },
     organizations: 'Alta de organización', orgCreate: 'Crear organización', orgCreated: 'Organización creada', orgAnother: 'Crear otra organización',
     orgHint: 'Crea la organización y su primer gestor en una sola operación.', orgSuperadminOnly: 'Solo los superadministradores pueden crear organizaciones.',
     orgCredentialsHint: 'El sistema genera la contraseña del gestor y solicita su envío por email.',
@@ -19,6 +24,11 @@ export const i18n = {
     id: 'Identificador de usuario', editCourse: 'Editar curso', export: 'Exportar usuarios', event_type: 'Evento', actor_email: 'Actor', timestamp: 'Fecha', entity_type: 'Entidad', entity_id: 'Identificador', details: 'Detalles', localFilter: 'Filtrar esta página',
   },
   en: {
+    history: 'Course history', historyReadOnly: 'Read-only', historyHint: 'View courses, subjects, exams and submissions without modifying data.', historyView: 'View', historyViewNamed: 'View {{name}}',
+    historyLevels: { courses: 'Courses', subjects: 'Subjects', exams: 'Exams', instances: 'Submissions' }, historySelected: { course: 'Selected course', subject: 'Selected subject', exam: 'Selected exam' },
+    historySearch: 'Search at this level', historyPrevious: 'Previous course', historyCode: 'Code', historySubject: 'Subject', historyExam: 'Exam', historyDate: 'Date', historyModels: 'Models', historyInstances: 'Submissions', historyStudent: 'Student', historyModel: 'Model', historyScore: 'Total grade', historyIssues: 'Issues', historyWithIssues: 'With issues', historyNoIssues: 'No issues', historyAllStatuses: 'All statuses', historyAllInstances: 'All submissions', historyEmpty: 'No results at this level', historyEmptyHint: 'Try another search or go back to the previous level.', historyInstanceDetail: 'Submission detail',
+    historyFields: { id: 'Submission ID', student_email: 'Student', model_label: 'Model', status: 'Status', total_score: 'Total grade', has_issues: 'Issues', created_at: 'Created', updated_at: 'Last updated' },
+    historyStatuses: { ASSEMBLING: 'Assembling', RECEIVED: 'Received', QUEUED: 'Queued', PENDING_GRADING: 'Pending grading', GRADED: 'Graded', PUBLISHED: 'Published', IN_REVIEW: 'In review', PENDING_REVIEW: 'Pending review', FINALIZED: 'Closed', ARCHIVED: 'Archived' },
     organizations: 'Organization registration', orgCreate: 'Create organization', orgCreated: 'Organization created', orgAnother: 'Create another organization',
     orgHint: 'Create the organization and its first manager in a single operation.', orgSuperadminOnly: 'Only super administrators can create organizations.',
     orgCredentialsHint: 'The system generates the manager’s password and queues the welcome email.',

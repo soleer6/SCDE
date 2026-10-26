@@ -15,7 +15,7 @@ afterEach(() => vi.restoreAllMocks());
 it.each(['create', 'edit'])('keeps the course %s dialog open until saving settles and allows recovery', async (mode) => {
   const user = userEvent.setup(); renderPage(<CoursesPage />);
   const originalCourses = structuredClone(db.courses);
-  const row = (await screen.findByText('2025-2026')).closest('tr');
+  const row = (await screen.findByText('2026-2027')).closest('tr');
   const results = screen.getByRole('region', { name: 'Cursos' });
   expect(results).not.toHaveFocus();
   const open = () => mode === 'create'
@@ -35,7 +35,7 @@ it.each(['create', 'edit'])('keeps the course %s dialog open until saving settle
   let rejectSave;
   const request = new Promise((_, reject) => { rejectSave = reject; });
   const operation = vi.spyOn(api, mode === 'create' ? 'post' : 'patch').mockImplementationOnce(() => request);
-  const path = mode === 'create' ? '/courses/' : `/courses/${originalCourses.find((c) => c.label === '2025-2026').id}/`;
+  const path = mode === 'create' ? '/courses/' : `/courses/${originalCourses.find((c) => c.label === '2026-2027').id}/`;
   const form = dialog.getByRole('button', { name: 'Guardar' }).closest('form');
   // Closing in the submit cycle must also wait for the result, before any render.
   act(() => {
@@ -78,12 +78,12 @@ it.each(['create', 'edit'])('keeps the course %s dialog open until saving settle
   expect(await screen.findByText(label)).toBeInTheDocument();
   await waitFor(() => expect(results).toHaveFocus());
   await user.tab();
-  expect(within(results).getAllByRole('button', { name: 'Editar curso' })[0]).toHaveFocus();
+  expect(within(results).getAllByRole('link', { name: 'Consultar' })[0]).toHaveFocus();
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   expect(operation.mock.calls).toEqual([[path, body], [path, body]]);
   expect(db.courses).toHaveLength(originalCourses.length + (mode === 'create' ? 1 : 0));
   const saved = db.courses.find((c) => c.label === label);
-  expect(saved).toMatchObject({ ...body, is_active: mode === 'edit' ? originalCourses.find((c) => c.label === '2025-2026').is_active : false });
+  expect(saved).toMatchObject({ ...body, is_active: mode === 'edit' ? originalCourses.find((c) => c.label === '2026-2027').is_active : false });
 });
 
 it('lists historical courses, searches on the server and paginates', async () => {
@@ -107,7 +107,7 @@ it('lists historical courses, searches on the server and paginates', async () =>
   await screen.findByText('History 25');
   await waitFor(() => expect(results).toHaveFocus());
   await user.tab();
-  expect(within(results).getAllByRole('button', { name: 'Editar curso' })[0]).toHaveFocus();
+  expect(within(results).getAllByRole('link', { name: 'Consultar' })[0]).toHaveFocus();
   let releaseSearch;
   const searchGate = new Promise((resolve) => { releaseSearch = resolve; });
   get.mockImplementationOnce(async (...args) => {

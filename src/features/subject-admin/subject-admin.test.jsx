@@ -801,7 +801,9 @@ it('disables editing and deleting historical subjects while allowing creation in
   const results = screen.getByRole('region', { name: 'Asignaturas' });
   await waitFor(() => expect(results).toHaveFocus());
   await user.tab();
-  expect(within(row).getByRole('link', { name: 'Administrar' })).toHaveFocus();
+  expect(within(row).getByRole('link', { name: 'Consultar' })).toHaveFocus();
+  expect(within(row).queryByRole('link', { name: 'Administrar' })).not.toBeInTheDocument();
+  expect(within(row).getByRole('link', { name: 'Consultar' }).getAttribute('href')).toContain('/admin/history?course_id=c-2526&subject_id=historical');
   expect(within(row).getByRole('button', { name: 'Editar asignatura' })).toBeDisabled();
   expect(within(row).getByRole('button', { name: 'Eliminar asignatura' })).toBeDisabled();
   expect(screen.getByRole('button', { name: 'Crear asignatura' })).toBeEnabled();

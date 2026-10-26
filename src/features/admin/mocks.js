@@ -59,12 +59,30 @@ export const mocks = [
   { method: 'GET', path: '/users/', handler: staff(({ db, query, user }) => {
     return paginate(db.users.filter((u) => u.organization_id === user.organization_id).map(userShape), query);
   }) },
-  { method: 'GET', path: '/search/', handler: staff(({ db, query }) => {
+  { method: 'GET', path: '/search/', handler: staff(({ db, query, user }) => {
     const search = (query.get('search') ?? '').toLowerCase();
     const course = query.get('course_id');
-    const rows = course
-      ? db.subjects.filter((s) => s.course_id === course && `${s.name} ${s.code}`.toLowerCase().includes(search)).map((s) => subjectDetail(s, db))
-      : db.courses.filter((c) => c.label.toLowerCase().includes(search)).map((c) => courseShape(c, db));
+    const subject = query.get('subject_id');
+    const exam = query.get('exam_id');
+    const ownCourses = db.courses.filter(c => (c.organization_id ?? db.organizations[0].id) === user.organization_id);
+    const ownSubjects = db.subjects.filter(s => ownCourses.some(c => c.id === s.course_id));
+    const ownExams = db.exams.filter(e => ownSubjects.some(s => s.id === e.subject_id));
+    let rows;
+    if (exam) rows = db.instances.filter(i => i.exam_id === exam && ownExams.some(e => e.id === i.exam_id)).map(i => ({
+      id: i.id, student_email: db.users.find(u => u.id === i.student_id)?.email ?? null,
+      model_label: db.models.find(m => m.id === i.model_id)?.label ?? null,
+      status: i.status, has_issues: i.has_issues, total_score: i.total_score == null ? null : String(i.total_score),
+      created_at: i.created_at, updated_at: i.updated_at,
+    })).filter(i => `${i.student_email ?? ''} ${i.model_label ?? ''}`.toLowerCase().includes(search))
+      .filter(i => !query.get('status') || i.status === query.get('status'))
+      .filter(i => !['true', 'false'].includes(query.get('has_issues')) || i.has_issues === (query.get('has_issues') === 'true'));
+    else if (subject) rows = ownExams.filter(e => e.subject_id === subject && e.name.toLowerCase().includes(search)).map(e => ({
+      id: e.id, name: e.name, date: e.date ?? null, subject_id: e.subject_id,
+      subject_name: ownSubjects.find(s => s.id === e.subject_id).name, subject_code: ownSubjects.find(s => s.id === e.subject_id).code,
+      model_count: db.models.filter(m => m.exam_id === e.id).length, instance_count: db.instances.filter(i => i.exam_id === e.id).length,
+    }));
+    else if (course) rows = ownSubjects.filter(s => s.course_id === course && `${s.name} ${s.code}`.toLowerCase().includes(search)).map(s => subjectDetail(s, db));
+    else rows = ownCourses.filter(c => c.label.toLowerCase().includes(search)).map(c => courseShape(c, db));
     return paginate(rows, query);
   }) },
   { method: 'GET', path: '/users/export/', handler: staff(({ db, user }) => reply(200, new Blob([JSON.stringify(db.users.filter((u) => u.organization_id === user.organization_id).map((u) => ({ ...userShape(u), dni: u.dni ?? '' })))], { type: 'application/json' }))) },
@@ -93,6 +111,7 @@ export const mocks = [
   }) },
   { method: 'PATCH', path: '/courses/:id/', handler: staff(({ db, body, params }) => {
     const row = requireRecord(db.courses.find((c) => c.id === params.id)); validateCourse({ ...row, ...body });
+    if (!row.is_active) throw mockError(409, 'COURSE_ARCHIVED');
     Object.assign(row, body, { updated_at: now() }); return courseShape(row, db);
   }) },
   { method: 'GET', path: '/config/', handler: staff(({ db }) => db.org_config) },

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Badge, Button, Dialog, Field, Input, PageHeader } from '../../ui';
+import { Badge, Button, ButtonLink, Dialog, Field, Input, PageHeader } from '../../ui';
 import { useApi } from '../../lib/hooks.js';
 import { createCourse, searchCatalog, updateCourse } from './api.js';
 import { Pagination, RecordForm, Records } from './components.jsx';
@@ -56,7 +56,7 @@ export default function CoursesPage() {
       { key: 'is_active', header: t('status'), render: (c) => <Badge tone={c.is_active ? 'accent' : undefined}>{t(c.is_active ? 'current' : 'inactive')}</Badge> },
       { key: 'start_date', header: t('start_date') }, { key: 'end_date', header: t('end_date') },
       { key: 'subject_count', header: t('subjectCount'), align: 'num' },
-      { key: 'actions', header: t('actions'), render: (c) => <Button size="sm" onClick={() => setEditing(c)}>{t('editCourse')}</Button> },
+      { key: 'actions', header: t('actions'), render: (c) => <div className="admin-actions"><ButtonLink size="sm" to={`/admin/history?${new URLSearchParams({ course_id: c.id, course_label: c.label })}`}>{t('historyView')}</ButtonLink><Button size="sm" disabled={!c.is_active} onClick={() => setEditing(c)}>{t('editCourse')}</Button></div> },
     ]} /></section>
     <Pagination data={courses.data} page={page} onChange={(value) => { focusAfterQuery.current = { data: courses.data }; setPage(value); }} />
     <Dialog open={Boolean(editing)} title={t(editing?.id ? 'editCourse' : 'newCourse')} onClose={() => !savingRef.current && setEditing(null)}>
