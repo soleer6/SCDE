@@ -1,16 +1,62 @@
 {
-  "header": { "model": "Model {{label}}", "unidentified": "Unidentified student" },
-  "actions": { "next": "Next to grade", "finish": "Mark as graded", "reopen": "Reopen grading", "back": { "PUBLISHED": "Withdraw publication", "FINALIZED": "Reopen review" } },
-  "toast": { "graded": "Exam marked as graded", "reopened": "Grading reopened", "back": { "PUBLISHED": "Publication withdrawn: the grade is back to graded", "FINALIZED": "Review reopened" } },
-  "confirm": { "cancel": "Cancel", "accept": "Confirm", "body": { "PUBLISHED": "The grade stops being published and the student will not see it until it is published again. No grade is deleted.", "FINALIZED": "The exam goes back to pending review so it can be graded again. No grade is deleted." } },
-  "toolbar": {
-    "label": "Annotation tools", "prev": "Previous page", "next": "Next page",
-    "pen": "Pen", "eraser": "Eraser", "undo": "Undo", "clear": "Clear page",
-    "zoomIn": "Zoom in", "zoomOut": "Zoom out", "width": "Width {{n}}",
-    "inks": { "red": "Red ink", "blue": "Blue ink", "green": "Green ink", "black": "Black ink" }
+  "header": {
+    "model": "Model {{label}}",
+    "unidentified": "Unidentified student"
   },
-  "stage": { "loadingPdf": "Loading exam", "pdfError": "Couldn't load the exam PDF." },
-  "save": { "idle": "No changes", "pending": "Unsaved changes", "saving": "Saving", "saved": "Saved", "error": "Save failed" },
+  "actions": {
+    "next": "Next to grade",
+    "finish": "Mark as graded",
+    "reopen": "Reopen grading",
+    "back": {
+      "PUBLISHED": "Withdraw publication",
+      "FINALIZED": "Reopen review"
+    }
+  },
+  "toast": {
+    "graded": "Exam marked as graded",
+    "reopened": "Grading reopened",
+    "back": {
+      "PUBLISHED": "Publication withdrawn: the grade is back to graded",
+      "FINALIZED": "Review reopened"
+    }
+  },
+  "confirm": {
+    "cancel": "Cancel",
+    "accept": "Confirm",
+    "body": {
+      "PUBLISHED": "The grade stops being published and the student will not see it until it is published again. No grade is deleted.",
+      "FINALIZED": "The exam goes back to pending review so it can be graded again. No grade is deleted."
+    }
+  },
+  "toolbar": {
+    "label": "Annotation tools",
+    "prev": "Previous page",
+    "next": "Next page",
+    "pen": "Pen",
+    "eraser": "Eraser",
+    "undo": "Undo",
+    "clear": "Clear page",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "width": "Width {{n}}",
+    "inks": {
+      "red": "Red ink",
+      "blue": "Blue ink",
+      "green": "Green ink",
+      "black": "Black ink"
+    }
+  },
+  "stage": {
+    "loadingPdf": "Loading exam",
+    "pdfError": "Couldn't load the exam PDF."
+  },
+  "save": {
+    "idle": "No changes",
+    "pending": "Unsaved changes",
+    "saving": "Saving",
+    "saved": "Saved",
+    "error": "Save failed"
+  },
   "annotations": {
     "loadError": "Annotations could not be loaded. Retry before editing.",
     "saveError": "Changes could not be saved. They remain on screen; retry saving.",
@@ -33,15 +79,28 @@
   "problem": {
     "scoreFor": "Grade for {{name}}",
     "conflict": "Another session changed this grade: the saved value is shown. Check it and save again.",
-    "state": { "idle": "Not graded", "saving": "Saving", "saved": "Saved", "error": "Error" }
+    "state": {
+      "idle": "Not graded",
+      "saving": "Saving",
+      "saved": "Saved",
+      "error": "Error"
+    }
   },
   "ocr": {
-    "padHint": "Write here with a pen or the mouse", "clear": "Clear", "close": "Close",
-    "gradeOpen": "Handwritten grade", "gradePad": "Handwritten grade for {{name}}", "gradeSubmit": "Recognise grade",
-    "gradeRead": "Read: {{score}} ({{pct}} % confidence)", "gradeApplied": "Grade applied", "gradeUse": "Use this grade",
+    "padHint": "Write here with a pen or the mouse",
+    "clear": "Clear",
+    "close": "Close",
+    "gradeOpen": "Handwritten grade",
+    "gradePad": "Handwritten grade for {{name}}",
+    "gradeSubmit": "Recognise grade",
+    "gradeRead": "Read: {{score}} ({{pct}} % confidence)",
+    "gradeApplied": "Grade applied",
+    "gradeUse": "Use this grade",
     "gradeUnreadable": "No number was recognised. Try writing it larger.",
     "gradeUnreadableRaw": "No valid grade was recognised (read “{{raw}}”).",
-    "commentOpen": "Write by hand", "commentPad": "Handwritten text for the comment", "commentSubmit": "Transcribe",
+    "commentOpen": "Write by hand",
+    "commentPad": "Handwritten text for the comment",
+    "commentSubmit": "Transcribe",
     "commentAdded": "Text added to the comment ({{pct}} % confidence). Check it before publishing.",
     "commentUnreadable": "No text was recognised.",
     "errors": {
@@ -50,6 +109,27 @@
       "NO_CONTENT": "The annotation has no strokes to recognise.",
       "NOT_STYLUS": "Only freehand annotations can be recognised.",
       "UNSUPPORTED_TYPE": "This annotation type does not support recognition."
+    }
+  },
+  "audio": {
+    "title": "Audio comments",
+    "record": "Record audio",
+    "stop": "Stop ({{time}})",
+    "upload": "Upload audio file",
+    "none": "No audio comments yet.",
+    "saved": "Audio saved",
+    "item": "Audio {{n}} · {{who}}",
+    "itemLabel": "Audio comment {{n}}",
+    "delete": "Delete",
+    "deleteN": "Delete audio {{n}}",
+    "errors": {
+      "MIC_DENIED": "Could not access the microphone. You can upload an audio file.",
+      "NO_AUDIO_DATA": "No audio was received.",
+      "AUDIO_FORMAT_UNREADABLE": "The audio could not be read.",
+      "AUDIO_FORMAT_UNSUPPORTED": "Unsupported audio format (webm, ogg, mp3, m4a or wav).",
+      "AUDIO_DURATION_EXCEEDED": "The audio exceeds the organisation's maximum duration.",
+      "PERMISSION_DENIED": "You do not have permission for this audio.",
+      "UNKNOWN": "The audio could not be saved. Try again."
     }
   }
 }

@@ -1,16 +1,62 @@
 {
-  "header": { "model": "Modelo {{label}}", "unidentified": "Estudiante sin identificar" },
-  "actions": { "next": "Siguiente por corregir", "finish": "Marcar como corregido", "reopen": "Reabrir corrección", "back": { "PUBLISHED": "Retirar publicación", "FINALIZED": "Reabrir revisión" } },
-  "toast": { "graded": "Examen marcado como corregido", "reopened": "Corrección reabierta", "back": { "PUBLISHED": "Publicación retirada: la nota vuelve a corregida", "FINALIZED": "Revisión reabierta" } },
-  "confirm": { "cancel": "Cancelar", "accept": "Confirmar", "body": { "PUBLISHED": "La nota deja de estar publicada y el estudiante dejará de verla hasta que se vuelva a publicar. No se borra ninguna calificación.", "FINALIZED": "El examen vuelve a pendiente de revisión para poder corregirlo de nuevo. No se borra ninguna calificación." } },
-  "toolbar": {
-    "label": "Herramientas de anotación", "prev": "Página anterior", "next": "Página siguiente",
-    "pen": "Lápiz", "eraser": "Goma", "undo": "Deshacer", "clear": "Borrar página",
-    "zoomIn": "Ampliar", "zoomOut": "Reducir", "width": "Grosor {{n}}",
-    "inks": { "red": "Tinta roja", "blue": "Tinta azul", "green": "Tinta verde", "black": "Tinta negra" }
+  "header": {
+    "model": "Modelo {{label}}",
+    "unidentified": "Estudiante sin identificar"
   },
-  "stage": { "loadingPdf": "Cargando examen", "pdfError": "No se ha podido cargar el PDF del examen." },
-  "save": { "idle": "Sin cambios", "pending": "Cambios sin guardar", "saving": "Guardando", "saved": "Guardado", "error": "Error al guardar" },
+  "actions": {
+    "next": "Siguiente por corregir",
+    "finish": "Marcar como corregido",
+    "reopen": "Reabrir corrección",
+    "back": {
+      "PUBLISHED": "Retirar publicación",
+      "FINALIZED": "Reabrir revisión"
+    }
+  },
+  "toast": {
+    "graded": "Examen marcado como corregido",
+    "reopened": "Corrección reabierta",
+    "back": {
+      "PUBLISHED": "Publicación retirada: la nota vuelve a corregida",
+      "FINALIZED": "Revisión reabierta"
+    }
+  },
+  "confirm": {
+    "cancel": "Cancelar",
+    "accept": "Confirmar",
+    "body": {
+      "PUBLISHED": "La nota deja de estar publicada y el estudiante dejará de verla hasta que se vuelva a publicar. No se borra ninguna calificación.",
+      "FINALIZED": "El examen vuelve a pendiente de revisión para poder corregirlo de nuevo. No se borra ninguna calificación."
+    }
+  },
+  "toolbar": {
+    "label": "Herramientas de anotación",
+    "prev": "Página anterior",
+    "next": "Página siguiente",
+    "pen": "Lápiz",
+    "eraser": "Goma",
+    "undo": "Deshacer",
+    "clear": "Borrar página",
+    "zoomIn": "Ampliar",
+    "zoomOut": "Reducir",
+    "width": "Grosor {{n}}",
+    "inks": {
+      "red": "Tinta roja",
+      "blue": "Tinta azul",
+      "green": "Tinta verde",
+      "black": "Tinta negra"
+    }
+  },
+  "stage": {
+    "loadingPdf": "Cargando examen",
+    "pdfError": "No se ha podido cargar el PDF del examen."
+  },
+  "save": {
+    "idle": "Sin cambios",
+    "pending": "Cambios sin guardar",
+    "saving": "Guardando",
+    "saved": "Guardado",
+    "error": "Error al guardar"
+  },
   "annotations": {
     "loadError": "No se han podido cargar las anotaciones. Reintenta antes de editar.",
     "saveError": "No se han guardado los cambios. Se conservan en pantalla; reintenta el guardado.",
@@ -33,15 +79,28 @@
   "problem": {
     "scoreFor": "Nota de {{name}}",
     "conflict": "Otra sesión cambió esta nota: se muestra el valor guardado. Revísalo y vuelve a guardar.",
-    "state": { "idle": "Sin nota", "saving": "Guardando", "saved": "Guardado", "error": "Error" }
+    "state": {
+      "idle": "Sin nota",
+      "saving": "Guardando",
+      "saved": "Guardado",
+      "error": "Error"
+    }
   },
   "ocr": {
-    "padHint": "Escribe aquí con el lápiz o el ratón", "clear": "Borrar", "close": "Cerrar",
-    "gradeOpen": "Nota a mano", "gradePad": "Nota manuscrita de {{name}}", "gradeSubmit": "Reconocer nota",
-    "gradeRead": "Leído: {{score}} (confianza {{pct}} %)", "gradeApplied": "Nota aplicada", "gradeUse": "Usar esta nota",
+    "padHint": "Escribe aquí con el lápiz o el ratón",
+    "clear": "Borrar",
+    "close": "Cerrar",
+    "gradeOpen": "Nota a mano",
+    "gradePad": "Nota manuscrita de {{name}}",
+    "gradeSubmit": "Reconocer nota",
+    "gradeRead": "Leído: {{score}} (confianza {{pct}} %)",
+    "gradeApplied": "Nota aplicada",
+    "gradeUse": "Usar esta nota",
     "gradeUnreadable": "No se ha reconocido ninguna cifra. Prueba a escribirla más grande.",
     "gradeUnreadableRaw": "No se ha reconocido una nota válida (leído «{{raw}}»).",
-    "commentOpen": "Escribir a mano", "commentPad": "Texto manuscrito para el comentario", "commentSubmit": "Transcribir",
+    "commentOpen": "Escribir a mano",
+    "commentPad": "Texto manuscrito para el comentario",
+    "commentSubmit": "Transcribir",
     "commentAdded": "Texto añadido al comentario (confianza {{pct}} %). Revísalo antes de publicar.",
     "commentUnreadable": "No se ha reconocido texto.",
     "errors": {
@@ -50,6 +109,27 @@
       "NO_CONTENT": "La anotación no tiene trazos que reconocer.",
       "NOT_STYLUS": "Solo se pueden reconocer anotaciones a mano alzada.",
       "UNSUPPORTED_TYPE": "Este tipo de anotación no admite reconocimiento."
+    }
+  },
+  "audio": {
+    "title": "Comentarios de audio",
+    "record": "Grabar audio",
+    "stop": "Detener ({{time}})",
+    "upload": "Subir archivo de audio",
+    "none": "Aún no hay comentarios de audio.",
+    "saved": "Audio guardado",
+    "item": "Audio {{n}} · {{who}}",
+    "itemLabel": "Comentario de audio {{n}}",
+    "delete": "Eliminar",
+    "deleteN": "Eliminar audio {{n}}",
+    "errors": {
+      "MIC_DENIED": "No se ha podido acceder al micrófono. Puedes subir un archivo de audio.",
+      "NO_AUDIO_DATA": "No se ha recibido ningún audio.",
+      "AUDIO_FORMAT_UNREADABLE": "No se ha podido leer el audio.",
+      "AUDIO_FORMAT_UNSUPPORTED": "Formato de audio no admitido (webm, ogg, mp3, m4a o wav).",
+      "AUDIO_DURATION_EXCEEDED": "El audio supera la duración máxima de la organización.",
+      "PERMISSION_DENIED": "No tienes permiso para este audio.",
+      "UNKNOWN": "No se ha podido guardar el audio. Inténtalo de nuevo."
     }
   }
 }
