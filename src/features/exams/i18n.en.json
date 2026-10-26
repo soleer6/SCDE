@@ -201,6 +201,8 @@
       "loading": "Loading zones…",
       "pagesLabel": "Blank PDF pages",
       "page": "P. {{n}}",
+      "pdfError": "The blank PDF could not be loaded; you can still use the numeric coordinates.",
+      "sheetLabel": "Preview of page {{n}} with its zones",
       "noProfile": "Page {{n}} has no zones configured yet.",
       "enable": "Configure zones for page {{n}}",
       "none": "This page has no zones yet.",

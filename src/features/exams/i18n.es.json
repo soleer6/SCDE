@@ -201,6 +201,8 @@
       "loading": "Cargando zonas…",
       "pagesLabel": "Páginas del PDF en blanco",
       "page": "Pág. {{n}}",
+      "pdfError": "No se ha podido cargar el PDF en blanco; puedes seguir con las coordenadas numéricas.",
+      "sheetLabel": "Vista previa de la página {{n}} con sus zonas",
       "noProfile": "La página {{n}} aún no tiene zonas configuradas.",
       "enable": "Configurar zonas de la página {{n}}",
       "none": "Esta página no tiene zonas todavía.",

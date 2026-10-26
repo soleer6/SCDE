@@ -179,6 +179,17 @@ export const authoringMocks = [
     },
   },
   {
+    method: 'GET',
+    path: '/models/:id/blank-pdf/',
+    handler: async ({ params, user }) => {
+      const m = model404(params.id);
+      need(user, subjectOfModel(m), 'can_create_exams');
+      if (!m.blank_pdf_pages) throw mockError(404, 'NOT_FOUND');
+      const res = await fetch('/mock-pdfs/exam_101.pdf');
+      return reply(200, await res.blob(), { 'Content-Type': 'application/pdf' });
+    },
+  },
+  {
     method: 'POST',
     path: '/models/:id/qr-pdf/',
     handler: async ({ params, user }) => {

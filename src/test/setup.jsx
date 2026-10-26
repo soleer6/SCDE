@@ -5,6 +5,14 @@ import { configure } from '@testing-library/react';
 import { afterAll, expect, vi } from 'vitest';
 import { recordMutations } from './contract/mutations.js';
 
+// pdf.js needs DOMMatrix, which jsdom lacks: PDF views render a stub in every test
+// (files that need other behaviour override it with their own vi.mock).
+vi.mock('react-pdf', () => ({
+  pdfjs: { GlobalWorkerOptions: {} },
+  Document: ({ children }) => <div data-testid="pdf-doc">{children}</div>,
+  Page: () => <div data-testid="pdf-page" />,
+}));
+
 // Flow tests lazy-load route chunks; under load (parallel agents, dev server)
 // the default 1s wait is flaky. Observed in iteration 2 (see docs/tfg/04-iterations.md).
 configure({ asyncUtilTimeout: 8000 });
