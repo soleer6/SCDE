@@ -8,6 +8,7 @@ import { listAnnotations, readAnnotationPayload } from '../grading/api.js';
 import { readAnnotationLayers } from '../grading/annotationLayers.js';
 import { usePdfUrl } from '../grading/usePdfUrl.js';
 import PdfStage from '../grading/PdfStage.jsx';
+import AudioNotes from '../grading/AudioNotes.jsx';
 import { LifecycleRail, Score, StatusBadge } from '../workspace/domain.jsx';
 import { listMyReviewRequests } from './api.js';
 import ReviewRequestForm from './ReviewRequestForm.jsx';
@@ -96,6 +97,7 @@ export default function StudentResultView({ exam }) {
         <aside className="ui-stack">
           <Breakdown inst={inst} />
           <TeacherComment instanceId={inst.id} visible={Boolean(inst.pages)} />
+          {inst.pages && <AudioNotes instanceId={inst.id} canEdit={false} />}
           <Panel title={t('review.title')}>
             {reviewOpen ? (
               <ReviewRequestForm

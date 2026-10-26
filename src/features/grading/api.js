@@ -34,6 +34,18 @@ export const gradeRubric = (id, problemId, criterionIds, oldScore = null) =>
 /* Annotations (apps.annotations). Payload is stored server-side and read back via download_url. */
 export const listAnnotations = (id) => api.get(`/instances/${id}/annotations/`).then(asList);
 export const createAnnotation = (id, body) => api.post(`/instances/${id}/annotations/`, body);
+/* POST multipart { annotation_type: AUDIO, file, page_number, x, y } -> AnnotationResponse
+ * (400 NO_AUDIO_DATA / AUDIO_FORMAT_UNREADABLE / AUDIO_FORMAT_UNSUPPORTED / AUDIO_DURATION_EXCEEDED). */
+export function createAudioAnnotation(id, blob, { page = 1, problemId } = {}) {
+  const form = new FormData();
+  form.append('annotation_type', 'AUDIO');
+  form.append('file', blob, blob.name || 'audio.webm');
+  form.append('page_number', String(page));
+  form.append('x', '0');
+  form.append('y', '0');
+  if (problemId) form.append('problem_id', problemId);
+  return api.upload(`/instances/${id}/annotations/`, form);
+}
 export const updateAnnotation = (annotationId, body) => api.put(`/annotations/${annotationId}/`, body);
 export const deleteAnnotation = (annotationId) => api.del(`/annotations/${annotationId}/`);
 

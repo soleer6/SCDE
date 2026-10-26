@@ -302,3 +302,18 @@
 .gr-ocr__toggle {
   align-self: flex-start;
 }
+
+.gr-audio__tools {
+  flex-wrap: wrap;
+  margin-bottom: var(--s-3);
+}
+.gr-audio__list {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gr-audio__list audio {
+  width: 100%;
+}

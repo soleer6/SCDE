@@ -38,7 +38,7 @@ function canSee(user, inst) {
  * hands out data: URLs as the presigned download_url. */
 const annotationOut = (a) => ({
   id: a.id, instance_id: a.instance_id, annotation_type: a.annotation_type, storage_ref: `annotations/${a.id}`,
-  download_url: `data:text/plain;charset=utf-8,${encodeURIComponent(a.content ?? '')}`,
+  download_url: a.annotation_type === 'AUDIO' ? (a.audio && URL.createObjectURL ? URL.createObjectURL(a.audio) : 'data:audio/webm;base64,') : `data:text/plain;charset=utf-8,${encodeURIComponent(a.content ?? '')}`,
   page_number: a.page_number, x: a.x, y: a.y, problem_id: a.problem_id, author_id: a.author_id,
   author_email: q.user(a.author_id)?.email ?? '', is_grade_annotation: a.is_grade_annotation, created_at: a.created_at, updated_at: a.updated_at,
 });
@@ -179,12 +179,15 @@ export const mocks = [
       const inst = instOr404(params.id);
       if (!canGrade(user, inst)) throw mockError(403, 'PERMISSION_DENIED');
       if (!['TEXT', 'STYLUS', 'AUDIO'].includes(body?.annotation_type)) throw mockError(400, 'VALIDATION_ERROR', { annotation_type: ['INVALID'] });
-      if (!body.payload) throw mockError(400, 'VALIDATION_ERROR', { payload: ['FIELD_REQUIRED'] });
+      if (body.annotation_type === 'AUDIO') {
+        if (!body.file || typeof body.file === 'string') throw mockError(400, 'NO_AUDIO_DATA');
+        if (body.file.size > 5 * 1024 * 1024) throw mockError(400, 'AUDIO_DURATION_EXCEEDED');
+      } else if (!body.payload) throw mockError(400, 'VALIDATION_ERROR', { payload: ['FIELD_REQUIRED'] });
       if (body.problem_id && !db.problems.some((p) => p.id === body.problem_id && p.exam_model_id === inst.model_id)) throw mockError(400, 'PROBLEM_NOT_IN_MODEL');
       if (body.is_grade_annotation && !body.problem_id) throw mockError(400, 'GRADE_ANNOTATION_REQUIRES_PROBLEM');
       const now = new Date().toISOString();
       const a = {
-        id: db.uid('an'), instance_id: inst.id, annotation_type: body.annotation_type, content: body.payload,
+        id: db.uid('an'), instance_id: inst.id, annotation_type: body.annotation_type, content: body.payload ?? '', audio: body.file,
         page_number: Number(body.page_number ?? 1), x: Number(body.x ?? 0), y: Number(body.y ?? 0), problem_id: body.problem_id ?? null,
         author_id: user.id, is_grade_annotation: Boolean(body.is_grade_annotation), created_at: now, updated_at: now,
       };

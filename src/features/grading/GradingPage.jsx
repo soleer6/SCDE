@@ -12,6 +12,7 @@ import { getInstance, serverGrades, transitionInstance } from './api.js';
 import { usePdfUrl } from './usePdfUrl.js';
 import { useAnnotations } from './useAnnotations.js';
 import { useKnownGrades } from './useKnownGrades.js';
+import AudioNotes from './AudioNotes.jsx';
 import PdfStage from './PdfStage.jsx';
 import ProblemGrader from './ProblemGrader.jsx';
 import { CommentOcr } from './HandwritingOcr.jsx';
@@ -184,6 +185,8 @@ export default function GradingPage() {
               />
             ))}
           </Panel>
+
+          <AudioNotes instanceId={i.id} canEdit={editable} currentUserId={session?.id} />
 
           <Panel title={t('side.comment')}>
             <Field hint={t('side.commentHint')}>

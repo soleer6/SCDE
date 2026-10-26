@@ -154,6 +154,18 @@ describe('grading', () => {
     expect(await screen.findByRole('button', { name: 'Reabrir corrección' })).toBeInTheDocument();
   });
 
+  it('uploads an audio comment, lists it with a player and lets the author delete it (RF-10.1-10.4)', async () => {
+    const user = userEvent.setup();
+    renderGrading();
+    const input = (await screen.findByText('Subir archivo de audio')).querySelector('input');
+    await user.upload(input, new File(['RIFFxxxx'], 'nota.wav', { type: 'audio/wav' }));
+    expect(await screen.findByLabelText('Comentario de audio 1')).toBeInTheDocument();
+    expect(db.annotations.filter((a) => a.annotation_type === 'AUDIO')).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: 'Eliminar audio 1' }));
+    await waitFor(() => expect(screen.queryByLabelText('Comentario de audio 1')).not.toBeInTheDocument());
+    expect(db.annotations.filter((a) => a.annotation_type === 'AUDIO')).toHaveLength(0);
+  });
+
   it('keeps the page mounted while grades save, then finishes and reopens', async () => {
     const user = userEvent.setup();
     renderGrading();
