@@ -60,6 +60,55 @@ beforeEach(async () => {
 });
 
 describe('grading', () => {
+  it('persists negative problem scores, floors the total and reloads the saved penalty', async () => {
+    const user = userEvent.setup();
+    const view = renderGrading();
+    await user.type(await screen.findByLabelText('Nota de Series'), '-1,5');
+    await user.tab();
+    await waitFor(() => expect(db.grades.find((g) => g.instance_id === INSTANCE)?.score).toBe(-1.5));
+    expect(db.instances.find((i) => i.id === INSTANCE).total_score).toBe(0);
+
+    view.unmount();
+    // A clean browser must hydrate the penalty from the server, not its cache.
+    localStorage.removeItem(`scde.grades.${INSTANCE}`);
+    renderGrading();
+    expect(await screen.findByLabelText('Nota de Series')).toHaveValue('-1.5');
+    const input = screen.getByLabelText('Nota de Series');
+    await user.clear(input);
+    await user.type(input, '-0,5');
+    await user.tab();
+    await waitFor(() => expect(db.grades.find((g) => g.instance_id === INSTANCE)?.score).toBe(-0.5));
+    expect(db.instances.find((i) => i.id === INSTANCE).total_score).toBe(0);
+
+    await user.type(screen.getByLabelText('Nota de Integral impropia'), '2');
+    await user.tab();
+    await waitFor(() => expect(db.instances.find((i) => i.id === INSTANCE).total_score).toBe(1.5));
+
+    const restored = screen.getByLabelText('Nota de Series');
+    await user.clear(restored);
+    await user.type(restored, '5');
+    await user.tab();
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    await user.clear(restored);
+    await user.type(restored, '-0,5');
+    await user.tab();
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+  });
+
+  it('keeps negative rubric criteria while flooring the total', async () => {
+    const user = userEvent.setup();
+    const id = 'i-e-prg-pr1-4';
+    const criterion = db.criteria.find((c) => c.id === 'rc-p-e-prg-pr1-1-1');
+    criterion.score = -2;
+    renderGrading(id);
+    const boxes = await screen.findAllByRole('checkbox', { name: 'Planteamiento correcto' });
+    await user.click(boxes[0]);
+    await waitFor(() => expect(db.grades.find((g) => g.instance_id === id)?.score).toBe(-2));
+    expect(db.instances.find((i) => i.id === id).total_score).toBe(0);
+    expect(screen.queryByText('+-2')).not.toBeInTheDocument();
+    expect(screen.getAllByText('-2').length).toBeGreaterThan(0);
+  });
+
   it('keeps the page mounted while grades save, then finishes and reopens', async () => {
     const user = userEvent.setup();
     renderGrading();
