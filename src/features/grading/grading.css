@@ -126,6 +126,8 @@
   pointer-events: none;
 }
 
+.gr-comment-text { white-space: pre-wrap; }
+
 /* ---------- Grading layout ---------- */
 .gr-layout {
   display: grid;

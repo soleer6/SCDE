@@ -42,11 +42,19 @@ Formato: contexto → decisión → consecuencias. (G) = generalizable a otros b
 - `src/lib/permissions.js` copia `DEFAULT_PERMISSIONS` para mostrar/ocultar acciones.
   Nunca sustituye la autorización del backend; los 403 se muestran con `ErrorState`.
 
-### ADR-7 · Anotaciones: un STYLUS por página + un TEXT general (P)
+### ADR-7 · Anotaciones: capas por autor y registro, con un STYLUS editable por página (P)
 - El backend guarda anotaciones individuales con payload opaco. Se eligió una
   anotación STYLUS por página (`{v:1, strokes:[...]}`, coordenadas 0-1 y grosor relativo
   al ancho) y una TEXT sin problema como comentario. Autoguardado con *debounce* 1,2 s.
   Alternativa descartada: una anotación por trazo (cientos de peticiones por examen).
+- Actualización 26/10 (H03): la capa editable y el comentario general pertenecen
+  al autor autenticado. Se conservan todos los registros anteriores en capas
+  independientes de solo lectura; la goma no afecta a otro registro. La última
+  anotación propia por página (fecha/id, no velocidad de descarga) es la editable.
+  Guardados serializados por instancia/autor, borrador conservado tras error y
+  reintento explícito; cambiar al siguiente o terminar espera al guardado.
+  El alumnado ve todas las capas/comentarios que autorice el backend. La fuga
+  de autorización descubierta en el backend queda separada como H25/#20.
 
 ### ADR-8 · Caché local de notas conocidas (P, provisional)
 - Necesaria por el hueco 1 (no hay lectura de notas por problema). Ver 03.

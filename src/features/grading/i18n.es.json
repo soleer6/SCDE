@@ -10,6 +10,13 @@
   },
   "stage": { "loadingPdf": "Cargando examen", "pdfError": "No se ha podido cargar el PDF del examen." },
   "save": { "idle": "Sin cambios", "pending": "Cambios sin guardar", "saving": "Guardando", "saved": "Guardado", "error": "Error al guardar" },
+  "annotations": {
+    "loadError": "No se han podido cargar las anotaciones. Reintenta antes de editar.",
+    "saveError": "No se han guardado los cambios. Se conservan en pantalla; reintenta el guardado.",
+    "ownLayer": "Deshacer y borrar actúan solo sobre tu capa actual.",
+    "otherComments": "Otros comentarios guardados",
+    "author": "Docente"
+  },
   "side": {
     "total": "Nota total",
     "progress": "{{done}}/{{total}} problemas",

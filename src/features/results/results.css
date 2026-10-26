@@ -22,6 +22,9 @@
 .rs-body {
   margin-top: var(--s-6);
 }
+.rs-body > .dm-section {
+  min-width: 0;
+}
 .rs-pad {
   padding: var(--s-4);
 }
