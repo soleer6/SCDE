@@ -4,6 +4,7 @@
   },
   "actions": {
     "export": "Export grades",
+    "exportJson": "Export JSON",
     "publish": "Publish {{count}} grades",
     "openReview": "Open review",
     "configure": "Set up",

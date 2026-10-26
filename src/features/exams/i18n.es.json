@@ -4,6 +4,7 @@
   },
   "actions": {
     "export": "Exportar notas",
+    "exportJson": "Exportar JSON",
     "publish": "Publicar {{count}} notas",
     "openReview": "Abrir revisión",
     "configure": "Configurar",

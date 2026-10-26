@@ -29,8 +29,8 @@ export const getReview = (id) =>
 export const createReview = (id, body) => api.post(`/exams/${id}/review/`, body);
 /* GET /exams/{id}/coverage/ -> CoverageResponse */
 export const getCoverage = (id) => api.get(`/exams/${id}/coverage/`);
-/* GET /exams/{id}/export/?format=csv|json -> file */
-export const exportGrades = (id, format = 'csv') => api.blob(`/exams/${id}/export/`, { format });
+/* GET /exams/{id}/export/?export_format=csv|json -> file (not `format`: DRF reads it as a renderer suffix and answers 404) */
+export const exportGrades = (id, format = 'csv') => api.blob(`/exams/${id}/export/`, { export_format: format });
 
 /* ---------------- Authoring (RF-6.x) ---------------- */
 /* POST /subjects/{id}/exams/ { name, date? } -> ExamFull */
