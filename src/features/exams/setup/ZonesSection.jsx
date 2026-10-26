@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { useTranslation } from 'react-i18next';
 import { useAction, useApi } from '../../../lib/hooks.js';
@@ -126,6 +126,33 @@ function ProfileEditor({ profile, pdf, pagesWithProfile, onChanged, onError }) {
   const toast = useToast();
   const remove = useAction((id) => deleteZone(id));
   const zones = profile.zones.map((z) => ({ ...z, box: fromPdfBox(z, profile) }));
+  const [f, setF] = useState(EMPTY);
+  const drag = useRef(null);
+  const draft = draftBox(f);
+
+  // Drawing on the sheet only fills the numeric form (the single source of truth); the keyboard path is unchanged.
+  const at = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    const clamp = (v) => Math.min(Math.max(v, 0), 1);
+    return { x: clamp((e.clientX - r.left) / r.width), y: clamp((e.clientY - r.top) / r.height) };
+  };
+  const onDown = (e) => {
+    const p = at(e);
+    if (!p) return;
+    drag.current = p;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+  const onMove = (e) => {
+    const a = drag.current;
+    const b = a && at(e);
+    if (!b) return;
+    const round = (v) => String(Math.round(v * 1000) / 10);
+    setF((s) => ({ ...s, x: round(Math.min(a.x, b.x)), y: round(Math.min(a.y, b.y)), width: round(Math.abs(b.x - a.x)), height: round(Math.abs(b.y - a.y)) }));
+  };
+  const onUp = () => {
+    drag.current = null;
+  };
 
   const onDelete = async (z) => {
     try {
@@ -139,8 +166,9 @@ function ProfileEditor({ profile, pdf, pagesWithProfile, onChanged, onError }) {
 
   return (
     <div className="zones-body">
-      <div className="zones-sheet" style={{ aspectRatio: `${profile.page_width || 595} / ${profile.page_height || 842}` }} role="img" aria-label={t('setup.zones.sheetLabel', { n: profile.page_number })}>
+      <div className="zones-sheet" style={{ aspectRatio: `${profile.page_width || 595} / ${profile.page_height || 842}` }} role="img" aria-label={t('setup.zones.sheetLabel', { n: profile.page_number })} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
         <SheetPdf pdf={pdf} pageNumber={profile.page_number} />
+        {draft && <span className="zones-rect zones-rect--draft" style={{ left: `${draft.x * 100}%`, top: `${draft.y * 100}%`, width: `${draft.width * 100}%`, height: `${draft.height * 100}%` }} />}
         {zones.map((z) => (
           <span
             key={z.id}
@@ -168,18 +196,24 @@ function ProfileEditor({ profile, pdf, pagesWithProfile, onChanged, onError }) {
             ))}
           </ul>
         )}
-        <NewZoneForm profile={profile} pagesWithProfile={pagesWithProfile} onCreated={onChanged} onError={onError} />
+        <NewZoneForm f={f} setF={setF} profile={profile} pagesWithProfile={pagesWithProfile} onCreated={onChanged} onError={onError} />
       </div>
     </div>
   );
 }
 
+/** Fractions 0-1 of the rectangle typed/drawn in the form (percentages), or null while incomplete. */
+function draftBox(f) {
+  const n = (k) => (f[k] === '' ? NaN : Number(String(f[k]).replace(',', '.')) / 100);
+  const b = { x: n('x'), y: n('y'), width: n('width'), height: n('height') };
+  return Object.values(b).every(Number.isFinite) && b.width > 0 && b.height > 0 && b.x + b.width <= 1 && b.y + b.height <= 1 ? b : null;
+}
+
 const EMPTY = { zone_type: 'OCR_TEXT', attribute: '', x: '', y: '', width: '', height: '' };
 
-function NewZoneForm({ profile, pagesWithProfile, onCreated, onError }) {
+function NewZoneForm({ f, setF, profile, pagesWithProfile, onCreated, onError }) {
   const { t } = useTranslation('exams');
   const toast = useToast();
-  const [f, setF] = useState(EMPTY);
   const [allPages, setAllPages] = useState(false);
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
   const num = (k) => Number(String(f[k]).replace(',', '.')) / 100;

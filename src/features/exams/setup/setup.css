@@ -116,6 +116,18 @@
   box-shadow: var(--shadow-sheet);
   overflow: hidden;
 }
+.zones-sheet {
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+.zones-rect--draft {
+  pointer-events: none;
+  border-style: dashed;
+  color: var(--ink-red);
+  border-color: var(--ink-red);
+  background: transparent;
+}
 .zones-pdf {
   position: absolute;
   inset: 0;
