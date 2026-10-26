@@ -52,30 +52,28 @@ export const mocks = [
     handler: ({ params, user, db: d }) => {
       const e = examOr404(params.id);
       if (!hasPerm(user, e.subject_id, 'can_publish_grades')) throw mockError(403, 'PERMISSION_DENIED');
-      const all = d.instances.filter((i) => i.exam_id === e.id);
+      // Mirrors instance_service.publish_exam: only GRADED instances are considered; those with issues are skipped.
+      const all = d.instances.filter((i) => i.exam_id === e.id && i.status === 'GRADED');
       let published = 0;
       let skipped = 0;
       const errors = [];
       all.forEach((i) => {
-        if (i.status === 'GRADED') {
-          i.status = 'PUBLISHED';
-          published++;
-          if (i.student_id) {
-            d.notifications.unshift({
-              id: d.uid('n'), user_id: i.student_id, notification_type: 'GRADES_PUBLISHED', title: 'Notas publicadas',
-              message: `Ya puedes consultar tu nota de ${q.subject(e.subject_id).name} · ${e.name}.`, status: 'UNREAD',
-              metadata: { exam_id: e.id }, created_at: new Date().toISOString(),
-            });
-          }
-        } else if (i.status === 'PUBLISHED') {
+        if (i.has_issues) {
           skipped++;
-          errors.push({ instance_id: i.id, reason: 'ALREADY_PUBLISHED' });
-        } else {
-          skipped++;
-          errors.push({ instance_id: i.id, reason: 'NOT_GRADED' });
+          errors.push({ instance_id: i.id, reason: 'HAS_UNRESOLVED_ISSUES' });
+          return;
+        }
+        i.status = 'PUBLISHED';
+        published++;
+        if (i.student_id) {
+          d.notifications.unshift({
+            id: d.uid('n'), user_id: i.student_id, notification_type: 'GRADES_PUBLISHED', title: 'Notas publicadas',
+            message: `Ya puedes consultar tu nota de ${q.subject(e.subject_id).name} · ${e.name}.`, status: 'UNREAD',
+            metadata: { exam_id: e.id }, created_at: new Date().toISOString(),
+          });
         }
       });
-      return { published, skipped, total: all.length, errors };
+      return { published, skipped, total: published + skipped, errors };
     },
   },
   {

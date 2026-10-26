@@ -11,7 +11,13 @@
     "issues": "Resolve issues ({{count}})"
   },
   "publish": {
-    "done": "{{count}} grades published. Each student has been notified."
+    "done": "{{count}} grades published. Each student has been notified.",
+    "partial": "Partial publication: {{published}} published, {{skipped}} not published.",
+    "partialTitle": "Partial publication: {{published}} published, {{skipped}} pending",
+    "partialBody": "These submissions are still graded but unpublished. Fix the reason and press Publish again.",
+    "reasons": {
+      "HAS_UNRESOLVED_ISSUES": "has unresolved issues"
+    }
   },
   "stats": {
     "enrolled": "Enrolled",

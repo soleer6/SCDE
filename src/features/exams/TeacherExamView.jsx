@@ -29,6 +29,7 @@ export default function TeacherExamView({ exam, role }) {
   const navigate = useNavigate();
   const [filter, setFilter] = useState('all');
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [partial, setPartial] = useState(null);
 
   const instances = useApi(() => getAllExamInstances(exam.id), [exam.id]);
   const review = useApi(() => getReview(exam.id), [exam.id]);
@@ -51,7 +52,10 @@ export default function TeacherExamView({ exam, role }) {
   const onPublish = async () => {
     try {
       const r = await publish.run();
-      toast.success(t('publish.done', { count: r.published }));
+      // The backend publishes what it can: instances with unresolved issues or save errors stay GRADED.
+      setPartial(r.errors?.length ? r : null);
+      if (r.errors?.length) toast.error(t('publish.partial', { published: r.published, skipped: r.errors.length }));
+      else toast.success(t('publish.done', { count: r.published }));
       instances.reload();
     } catch (e) {
       toast.error(t(`errors.${e.code}`, { ns: 'common', defaultValue: e.code }));
@@ -98,6 +102,25 @@ export default function TeacherExamView({ exam, role }) {
           </>
         }
       />
+
+      {partial && (
+        <Panel title={t('publish.partialTitle', { published: partial.published, skipped: partial.errors.length })} className="ex-partial">
+          <div role="alert">
+            <p>{t('publish.partialBody')}</p>
+            <ul>
+              {partial.errors.map((e) => {
+                const inst = list.find((i) => i.id === e.instance_id);
+                const who = inst?.student_email ? studentName(inst.student_email) : e.instance_id;
+                return (
+                  <li key={e.instance_id}>
+                    <strong>{who}</strong> · {t(`publish.reasons.${e.reason}`, { defaultValue: e.reason })}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </Panel>
+      )}
 
       <Stats
         items={[
