@@ -20,3 +20,11 @@ Hallazgo con el backend real: el frontend enviaba `?format=` y DRF lo interpreta
 renderizador (CSV → 404, JSON → devolvía CSV). El parámetro correcto es `export_format`. Corregido en
 `exams/api.js` y en el mock; botón nuevo "Exportar JSON". `h12-export-real.mjs` descarga ambos
 ficheros con Django real (fixture H15). Pendiente de H12: filtros combinables por alumno/grupo/modelo y búsqueda.
+
+## H16 (parcial) — retrocesos de estado con confirmación
+`GradingPage` ofrece según estado: PENDING_GRADING→GRADED, GRADED→PENDING_GRADING, PENDING_REVIEW→GRADED
+(marcar corregido tras revisar) y, con diálogo de confirmación que explica que no se borra ninguna
+calificación, PUBLISHED→GRADED (retirar publicación) y FINALIZED→PENDING_REVIEW (reabrir revisión), como
+`VALID_TRANSITIONS` del backend. `h16-real.mjs`: con Django real, cancelar no cambia nada y confirmar deja
+la instancia en GRADED. La eliminación de instancia (RF-7.10) ya existe en `ingestion/InstancePanel`
+con confirmación; no se ha ejecutado contra datos reales.

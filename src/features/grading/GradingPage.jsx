@@ -1,8 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApi, useAction } from '../../lib/hooks.js';
-import { Badge, Button, ErrorState, Field, Loader, PageHeader, Panel, Textarea, useToast } from '../../ui';
+import { Badge, Button, Dialog, ErrorState, Field, Loader, PageHeader, Panel, Textarea, useToast } from '../../ui';
 import { useAuth } from '../../lib/auth/AuthProvider.jsx';
 import { getAllExamInstances, getExam } from '../exams/api.js';
 import { getMyTasks, useMySubjects } from '../workspace/api.js';
@@ -15,6 +15,9 @@ import { useKnownGrades } from './useKnownGrades.js';
 import PdfStage from './PdfStage.jsx';
 import ProblemGrader from './ProblemGrader.jsx';
 import { CommentOcr } from './HandwritingOcr.jsx';
+
+/** Retrocesos del ciclo de vida (RF-7.5) que afectan al alumno: piden confirmación. */
+const CONFIRMED_MOVES = { PUBLISHED: 'GRADED', FINALIZED: 'PENDING_REVIEW' };
 
 const EDITABLE = ['PENDING_GRADING', 'GRADED', 'PENDING_REVIEW'];
 
@@ -33,6 +36,7 @@ export default function GradingPage() {
   const annotations = useAnnotations(instanceId, { readOnly: !EDITABLE.includes(inst.data?.status) });
   const server = useMemo(() => serverGrades(inst.data), [inst.data]);
   const known = useKnownGrades(instanceId, server);
+  const [confirm, setConfirm] = useState(false);
   const transition = useAction((target) => transitionInstance(instanceId, target));
 
   // GET /my-tasks/?exam_id= lists, per instance, the problems the rules assign to this corrector
@@ -105,6 +109,16 @@ export default function GradingPage() {
                 {t('actions.finish')}
               </Button>
             )}
+            {i.status === 'PENDING_REVIEW' && (
+              <Button variant="solid" onClick={() => move('GRADED', 'toast.graded')} loading={transition.pending} disabled={!problems.length || gradedCount < problems.length}>
+                {t('actions.finish')}
+              </Button>
+            )}
+            {CONFIRMED_MOVES[i.status] && (
+              <Button onClick={() => setConfirm(true)} loading={transition.pending}>
+                {t(`actions.back.${i.status}`)}
+              </Button>
+            )}
             {i.status === 'GRADED' && (
               <Button variant="primary" onClick={() => move('PENDING_GRADING', 'toast.reopened')} loading={transition.pending}>
                 {t('actions.reopen')}
@@ -113,6 +127,28 @@ export default function GradingPage() {
           </>
         }
       />
+      <Dialog
+        open={confirm}
+        title={CONFIRMED_MOVES[i.status] ? t(`actions.back.${i.status}`) : ''}
+        onClose={() => setConfirm(false)}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setConfirm(false)}>{t('confirm.cancel')}</Button>
+            <Button
+              variant="solid"
+              loading={transition.pending}
+              onClick={async () => {
+                await move(CONFIRMED_MOVES[i.status], `toast.back.${i.status}`);
+                setConfirm(false);
+              }}
+            >
+              {t('confirm.accept')}
+            </Button>
+          </>
+        }
+      >
+        <p>{CONFIRMED_MOVES[i.status] ? t(`confirm.body.${i.status}`) : null}</p>
+      </Dialog>
       <div className="gr-railbar">
         <LifecycleRail status={i.status} compact />
       </div>

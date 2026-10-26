@@ -1,7 +1,8 @@
 {
   "header": { "model": "Model {{label}}", "unidentified": "Unidentified student" },
-  "actions": { "next": "Next to grade", "finish": "Mark as graded", "reopen": "Reopen grading" },
-  "toast": { "graded": "Exam marked as graded", "reopened": "Grading reopened" },
+  "actions": { "next": "Next to grade", "finish": "Mark as graded", "reopen": "Reopen grading", "back": { "PUBLISHED": "Withdraw publication", "FINALIZED": "Reopen review" } },
+  "toast": { "graded": "Exam marked as graded", "reopened": "Grading reopened", "back": { "PUBLISHED": "Publication withdrawn: the grade is back to graded", "FINALIZED": "Review reopened" } },
+  "confirm": { "cancel": "Cancel", "accept": "Confirm", "body": { "PUBLISHED": "The grade stops being published and the student will not see it until it is published again. No grade is deleted.", "FINALIZED": "The exam goes back to pending review so it can be graded again. No grade is deleted." } },
   "toolbar": {
     "label": "Annotation tools", "prev": "Previous page", "next": "Next page",
     "pen": "Pen", "eraser": "Eraser", "undo": "Undo", "clear": "Clear page",

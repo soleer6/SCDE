@@ -1,7 +1,8 @@
 {
   "header": { "model": "Modelo {{label}}", "unidentified": "Estudiante sin identificar" },
-  "actions": { "next": "Siguiente por corregir", "finish": "Marcar como corregido", "reopen": "Reabrir corrección" },
-  "toast": { "graded": "Examen marcado como corregido", "reopened": "Corrección reabierta" },
+  "actions": { "next": "Siguiente por corregir", "finish": "Marcar como corregido", "reopen": "Reabrir corrección", "back": { "PUBLISHED": "Retirar publicación", "FINALIZED": "Reabrir revisión" } },
+  "toast": { "graded": "Examen marcado como corregido", "reopened": "Corrección reabierta", "back": { "PUBLISHED": "Publicación retirada: la nota vuelve a corregida", "FINALIZED": "Revisión reabierta" } },
+  "confirm": { "cancel": "Cancelar", "accept": "Confirmar", "body": { "PUBLISHED": "La nota deja de estar publicada y el estudiante dejará de verla hasta que se vuelva a publicar. No se borra ninguna calificación.", "FINALIZED": "El examen vuelve a pendiente de revisión para poder corregirlo de nuevo. No se borra ninguna calificación." } },
   "toolbar": {
     "label": "Herramientas de anotación", "prev": "Página anterior", "next": "Página siguiente",
     "pen": "Lápiz", "eraser": "Goma", "undo": "Deshacer", "clear": "Borrar página",
