@@ -55,12 +55,17 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
   const commitManual = (value = draft) => {
     if (value === '' || disabled) return;
     const n = Number(String(value).replace(',', '.'));
-    if (Number.isNaN(n) || n < 0 || n > max) {
+    // RF-11.1 allows penalties below zero; only the instance total is floored.
+    if (!Number.isFinite(n) || n > max) {
       setState('error');
       setErrCode(n > max ? 'SCORE_EXCEEDS_MAX' : 'INVALID');
       return;
     }
-    if (current && Number(current.score) === n) return;
+    if (current && Number(current.score) === n) {
+      setState('saved');
+      setErrCode(null);
+      return;
+    }
     save((old) => gradeManual(instanceId, problem.id, n, old));
   };
 
@@ -104,7 +109,7 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
                 disabled={disabled || state === 'saving'}
                 onChange={() => toggleCriterion(c.id)}
               />
-              <span className="u-muted u-num">+{formatScore(c.score)}</span>
+              <span className="u-muted u-num">{Number(c.score) >= 0 ? '+' : ''}{formatScore(c.score)}</span>
             </li>
           ))}
         </ul>

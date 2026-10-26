@@ -157,7 +157,7 @@ export function gradeOut(g) {
 /** apps.instances.services.instance_service.recalculate_total_score */
 export function recalcTotal(inst) {
   const gs = db.grades.filter((g) => g.instance_id === inst.id);
-  inst.total_score = gs.length ? gs.reduce((a, g) => a + Number(g.score), 0) : null;
+  inst.total_score = gs.length ? Math.max(0, gs.reduce((a, g) => a + Number(g.score), 0)) : null;
   inst.updated_at = new Date().toISOString();
 }
 

@@ -143,7 +143,7 @@ export const mocks = [
       if (!problem) throw mockError(404, 'NOT_FOUND');
       if (!canGrade(user, inst, problem.id)) throw mockError(403, 'PERMISSION_DENIED');
       const score = Number(body?.score);
-      if (Number.isNaN(score) || score < 0) throw mockError(400, 'VALIDATION_ERROR', { score: ['INVALID'] });
+      if (body?.score == null || String(body.score).trim() === '' || !Number.isFinite(score)) throw mockError(400, 'VALIDATION_ERROR', { score: ['INVALID'] });
       return gradeOut(applyGrade({ inst, problem, score, oldScore: body?.old_score ?? null, user }));
     },
   },
