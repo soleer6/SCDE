@@ -3,7 +3,7 @@
  * without problems, and grades hydrated from the server (clean browser,
  * VERSION_CONFLICT from another session, rubric selections). */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -137,6 +137,21 @@ describe('grading', () => {
     expect(await screen.findByLabelText('Nota de Integral impropia')).toBeInTheDocument();
     expect(screen.queryByLabelText('Nota de Series')).not.toBeInTheDocument();
     expect(screen.getByText('0/2 problemas')).toBeInTheDocument();
+  });
+
+  it('withdraws a publication only after confirming (RF-7.5 backward move)', async () => {
+    const inst = db.instances.find((i) => i.id === INSTANCE);
+    inst.status = 'PUBLISHED';
+    const user = userEvent.setup();
+    renderGrading();
+    await user.click(await screen.findByRole('button', { name: 'Retirar publicación' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Retirar publicación' });
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    expect(inst.status).toBe('PUBLISHED');
+    await user.click(screen.getByRole('button', { name: 'Retirar publicación' }));
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Confirmar' }));
+    await waitFor(() => expect(inst.status).toBe('GRADED'));
+    expect(await screen.findByRole('button', { name: 'Reabrir corrección' })).toBeInTheDocument();
   });
 
   it('keeps the page mounted while grades save, then finishes and reopens', async () => {
