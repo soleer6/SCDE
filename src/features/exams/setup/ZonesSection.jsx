@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Document, Page, pdfjs } from 'react-pdf';
 import { useTranslation } from 'react-i18next';
 import { useAction, useApi } from '../../../lib/hooks.js';
 import { Badge, Button, Checkbox, ErrorState, Field, Input, Loader, Select, useToast } from '../../../ui';
-import { createPageProfile, createZone, deleteZone, listPageProfiles } from '../api.js';
+import { createPageProfile, createZone, deleteZone, getBlankPdfUrl, listPageProfiles } from '../api.js';
 import { fromPdfBox, toPdfBox } from './zoneGeometry.js';
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
 
 const ZONE_TYPES = ['QR', 'OCR_TEXT', 'OCR_NUMBER', 'CHECKBOX'];
 const pct = (v) => `${Math.round(v * 1000) / 10}`;
@@ -16,6 +19,7 @@ export default function ZonesSection({ modelId, pages, onError }) {
   const { t } = useTranslation('exams');
   const profiles = useApi(() => listPageProfiles(modelId), [modelId]);
   const [page, setPage] = useState(1);
+  const pdfUrl = useBlankPdfUrl(modelId);
 
   if (profiles.initialLoading) return <Loader label={t('setup.zones.loading')} />;
   if (profiles.error) return <ErrorState error={profiles.error} onRetry={profiles.reload} />;
@@ -42,11 +46,57 @@ export default function ZonesSection({ modelId, pages, onError }) {
         })}
       </div>
       {profile ? (
-        <ProfileEditor key={profile.id} profile={profile} pagesWithProfile={[...byPage.keys()]} onChanged={profiles.reload} onError={onError} />
+        <ProfileEditor key={profile.id} profile={profile} pdf={pdfUrl} pagesWithProfile={[...byPage.keys()]} onChanged={profiles.reload} onError={onError} />
       ) : (
         <EnablePage modelId={modelId} page={page} onCreated={profiles.reload} onError={onError} />
       )}
     </section>
+  );
+}
+
+/** Blank PDF of the model as an object URL (null while loading or if it fails: the
+ * numeric editor keeps working without the preview). */
+function useBlankPdfUrl(modelId) {
+  const [state, setState] = useState({ url: null, failed: false });
+  useEffect(() => {
+    let alive = true;
+    let made = null;
+    getBlankPdfUrl(modelId)
+      .then((url) => {
+        made = url;
+        if (alive) setState({ url, failed: false });
+        else URL.revokeObjectURL(url);
+      })
+      .catch(() => alive && setState({ url: null, failed: true }));
+    return () => {
+      alive = false;
+      if (made) URL.revokeObjectURL(made);
+    };
+  }, [modelId]);
+  return state;
+}
+
+function SheetPdf({ pdf, pageNumber }) {
+  const { t } = useTranslation('exams');
+  const [broken, setBroken] = useState(false);
+  const [width, setWidth] = useState(0);
+  const [node, setNode] = useState(null);
+  useEffect(() => {
+    if (!node) return undefined;
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(([e]) => setWidth(e.contentRect.width));
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, [node]);
+  if (pdf.failed || broken) return <p className="zones-pdf-error u-rust">{t('setup.zones.pdfError')}</p>;
+  return (
+    <div className="zones-pdf" ref={setNode}>
+      {pdf.url && width > 0 && (
+        <Document file={pdf.url} onLoadError={() => setBroken(true)} loading={null} error={null}>
+          <Page pageNumber={pageNumber} width={width} renderTextLayer={false} renderAnnotationLayer={false} />
+        </Document>
+      )}
+    </div>
   );
 }
 
@@ -71,7 +121,7 @@ function EnablePage({ modelId, page, onCreated, onError }) {
   );
 }
 
-function ProfileEditor({ profile, pagesWithProfile, onChanged, onError }) {
+function ProfileEditor({ profile, pdf, pagesWithProfile, onChanged, onError }) {
   const { t } = useTranslation('exams');
   const toast = useToast();
   const remove = useAction((id) => deleteZone(id));
@@ -89,7 +139,8 @@ function ProfileEditor({ profile, pagesWithProfile, onChanged, onError }) {
 
   return (
     <div className="zones-body">
-      <div className="zones-sheet" style={{ aspectRatio: `${profile.page_width || 595} / ${profile.page_height || 842}` }} aria-hidden="true">
+      <div className="zones-sheet" style={{ aspectRatio: `${profile.page_width || 595} / ${profile.page_height || 842}` }} role="img" aria-label={t('setup.zones.sheetLabel', { n: profile.page_number })}>
+        <SheetPdf pdf={pdf} pageNumber={profile.page_number} />
         {zones.map((z) => (
           <span
             key={z.id}

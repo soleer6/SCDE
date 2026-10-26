@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: ['./src/test/setup.js'],
+    setupFiles: ['./src/test/setup.jsx'],
     testTimeout: 30000,
     env: { VITE_MOCK_API: 'true', VITE_MOCK_LATENCY: '0' },
   },

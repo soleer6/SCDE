@@ -49,6 +49,12 @@ export function uploadBlankPdf(modelId, file) {
   form.append('file', file);
   return api.upload(`/models/${modelId}/blank-pdf/`, form, 'PUT');
 }
+/* GET /models/{id}/blank-pdf/ -> original blank PDF (application/pdf, no-store, can_create_exams).
+ * Returns an object URL; the caller revokes it. */
+export async function getBlankPdfUrl(modelId) {
+  const blob = await api.blob(`/models/${modelId}/blank-pdf/`);
+  return URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+}
 /* POST /models/{id}/qr-pdf/ -> PDF with QR codes (Blob) */
 export const generateQrPdf = async (modelId) => (await request(`/models/${modelId}/qr-pdf/`, { method: 'POST', raw: true })).blob();
 /* ---------------- Page profiles and recognition zones (RF-6.8) ----------------
