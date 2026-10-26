@@ -1,5 +1,10 @@
 export const i18n = {
   es: {
+    organizations: 'Alta de organización', orgCreate: 'Crear organización', orgCreated: 'Organización creada', orgAnother: 'Crear otra organización',
+    orgHint: 'Crea la organización y su primer gestor en una sola operación.', orgSuperadminOnly: 'Solo los superadministradores pueden crear organizaciones.',
+    orgCredentialsHint: 'El sistema genera la contraseña del gestor y solicita su envío por email.',
+    orgManagerEmail: 'Email del gestor inicial', orgManagerFirstName: 'Nombre del gestor inicial', orgManagerLastName: 'Apellidos del gestor inicial',
+    orgFields: { name: 'Nombre de la organización', subdomain: 'Subdominio', plan: 'Plan', id: 'Identificador de organización' }, orgPlans: { FREE: 'Gratuito', PREMIUM: 'Premium' },
     auditDateHint: 'Las fechas usan la hora local de este dispositivo. Desde debe ser anterior o igual a Hasta; puedes dejar cualquiera de los límites vacío.',
     importUsers: 'Importar usuarios', importFile: 'Archivo CSV o JSON', importSubmit: 'Importar archivo', importDone: 'Importación completada', importErrorsHint: 'Algunas filas no se han importado. Descarga los errores para corregirlas y vuelve a enviarlas.', downloadErrors: 'Descargar errores', userImportHint: 'CSV con cabecera first_name,last_name,email,dni,nia o JSON con una lista de objetos con esos campos. Cada fila se procesa por separado.',
     importCounts: { created: 'Creados', reactivated: 'Reactivados', updated: 'Actualizados', total_processed: 'Filas procesadas', total_errors: 'Filas con errores' },
@@ -14,6 +19,11 @@ export const i18n = {
     id: 'Identificador de usuario', editCourse: 'Editar curso', export: 'Exportar usuarios', event_type: 'Evento', actor_email: 'Actor', timestamp: 'Fecha', entity_type: 'Entidad', entity_id: 'Identificador', details: 'Detalles', localFilter: 'Filtrar esta página',
   },
   en: {
+    organizations: 'Organization registration', orgCreate: 'Create organization', orgCreated: 'Organization created', orgAnother: 'Create another organization',
+    orgHint: 'Create the organization and its first manager in a single operation.', orgSuperadminOnly: 'Only super administrators can create organizations.',
+    orgCredentialsHint: 'The system generates the manager’s password and queues the welcome email.',
+    orgManagerEmail: 'Initial manager’s email', orgManagerFirstName: 'Initial manager’s first name', orgManagerLastName: 'Initial manager’s last name',
+    orgFields: { name: 'Organization name', subdomain: 'Subdomain', plan: 'Plan', id: 'Organization ID' }, orgPlans: { FREE: 'Free', PREMIUM: 'Premium' },
     auditDateHint: 'Dates use this device’s local time. From must be before or equal to Until; either limit can be left empty.',
     importUsers: 'Import users', importFile: 'CSV or JSON file', importSubmit: 'Import file', importDone: 'Import completed', importErrorsHint: 'Some rows could not be imported. Download the errors, correct those rows and submit them again.', downloadErrors: 'Download errors', userImportHint: 'CSV with first_name,last_name,email,dni,nia headers, or a JSON array of objects using those fields. Each row is processed independently.',
     importCounts: { created: 'Created', reactivated: 'Reactivated', updated: 'Updated', total_processed: 'Rows processed', total_errors: 'Rows with errors' },

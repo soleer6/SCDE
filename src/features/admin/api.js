@@ -2,6 +2,7 @@ import { api } from '../../lib/api/client.js';
 
 export const getUsers = (query) => api.get('/users/', query);
 export const createUser = (body) => api.post('/users/', body);
+export const createOrganization = (body) => api.post('/organizations/', body);
 export const updateUser = (id, body) => api.patch(`/users/${id}/`, body);
 export const resetPassword = (id) => api.post(`/users/${id}/reset-password/`);
 export const getCurrentCourse = () => api.get('/courses/current/');

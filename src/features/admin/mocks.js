@@ -1,5 +1,6 @@
 import { mockError, paginate, reply } from '../../lib/mock/router.js';
 import { importRowError, readImportFile } from './import-files.js';
+import { organizationMocks } from './organizations-mocks.js';
 
 export function requireStaff(user) {
   if (!user?.is_active || !(user.is_staff || user.is_superadmin)) throw mockError(403, 'PERMISSION_DENIED');
@@ -53,6 +54,7 @@ async function importUsers({ db, form, user }) {
   return result;
 }
 export const mocks = [
+  ...organizationMocks,
   { method: 'POST', path: '/users/import/', handler: staff(importUsers) },
   { method: 'GET', path: '/users/', handler: staff(({ db, query, user }) => {
     return paginate(db.users.filter((u) => u.organization_id === user.organization_id).map(userShape), query);
