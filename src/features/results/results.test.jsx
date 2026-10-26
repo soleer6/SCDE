@@ -79,6 +79,18 @@ describe('student result', () => {
     expect(container.querySelector('.gr-ink:not(.is-readonly)')).toBeNull();
   });
 
+  it('offers the PDF download only when the exam allows it (RF-7.11)', async () => {
+    const { unmount } = renderResult();
+    await screen.findByTestId('pdf-doc', {}, { timeout: 8000 });
+    expect(screen.queryByRole('button', { name: 'Descargar PDF' })).not.toBeInTheDocument();
+    unmount();
+
+    const exam = db.exams.find((e) => e.id === db.instances.find((i) => i.id === INSTANCE).exam_id);
+    exam.student_permissions = { ...exam.student_permissions, can_download_pages: true };
+    renderResult();
+    expect(await screen.findByRole('button', { name: 'Descargar PDF' }, { timeout: 8000 })).toBeInTheDocument();
+  });
+
   it('shows the scanned exam instead of the download error', async () => {
     renderResult();
     expect(await screen.findByTestId('pdf-doc', {}, { timeout: 8000 })).toBeInTheDocument();
