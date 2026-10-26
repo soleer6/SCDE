@@ -1,0 +1,25 @@
+import { chromium } from 'playwright-core';
+import { readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
+import { join } from 'node:path';
+import assert from 'node:assert/strict';
+const fx=JSON.parse(readFileSync(join(process.env.LOCALAPPDATA,'SCDE/integration/fixtures-claude-h05.local.json'),'utf8'));
+const app='http://localhost:5173';
+const sh=(phase,secs)=>execSync(`docker exec -e PHASE=${phase} -e SECS=${secs} scde-integration-api-1 python manage.py shell -c "exec(open('/runtime/h08_set_end.py').read())"`,{encoding:'utf8'}).trim();
+console.log(sh('open',14));
+const b=await chromium.launch({channel:'msedge',headless:true});
+const errors=[];
+const p=await (await b.newContext({locale:'es-ES',viewport:{width:1366,height:900}})).newPage();
+p.on('pageerror',e=>errors.push(e.message));
+await p.goto(app+'/login');await p.locator('input[type=email]').fill(fx.requester);await p.locator('input[type=password]').fill(fx.password);await p.locator('button[type=submit]').click();
+await p.waitForURL(u=>!u.pathname.startsWith('/login'));
+await p.goto(`${app}/exams/${fx.examId}`);
+await p.getByRole('button',{name:/Pedir revisión/}).or(p.getByText(/Revisión abierta hasta/)).first().waitFor();
+assert.ok(await p.getByText(/Revisión abierta hasta/).count()>=1);
+await p.waitForTimeout(18000); // past end_date: server still OPEN, page keeps polling
+assert.ok(await p.getByText(/Revisión abierta hasta/).count()>=1,'still open until the server closes it');
+console.log(sh('close',0).replace(/\n/g,' | '));
+await p.getByText('El periodo de revisión ha terminado').waitFor({timeout:50000});
+await p.screenshot({path:join(process.env.TEMP,'scde-pw','h08-closed-live.png'),fullPage:true});
+assert.equal(await p.getByRole('button',{name:/Pedir revisión/}).count(),0);
+assert.deepEqual(errors,[]);console.log('H08 OK');await b.close();

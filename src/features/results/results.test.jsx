@@ -136,6 +136,22 @@ describe('student review requests', () => {
     expect(screen.getByRole('region', { name: 'Tus solicitudes' })).toBeInTheDocument();
   });
 
+  it('follows the window closing on its own while the page stays open (RF-12.3)', async () => {
+    const review = db.reviews.find((r) => r.exam_id === 'e-mat-p1');
+    review.end_date = new Date(Date.now() - 1000).toISOString(); // already past: waits for the server to close it
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      renderResult();
+      expect(await screen.findByLabelText('Límites', {}, { timeout: 8000 })).toBeInTheDocument();
+      review.status = 'CLOSED';
+      await vi.advanceTimersByTimeAsync(31000);
+      expect(await screen.findByText('El periodo de revisión ha terminado')).toBeInTheDocument();
+      expect(screen.queryByLabelText('Límites')).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('replaces the form and moves the focus when the window closed meanwhile', async () => {
     renderResult();
     const user = userEvent.setup();
