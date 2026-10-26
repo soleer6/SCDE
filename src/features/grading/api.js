@@ -1,4 +1,5 @@
 import { api, asList, request } from '../../lib/api/client.js';
+import { ApiError } from '../../lib/api/errors.js';
 import { decryptPdf } from './pdfCrypto.js';
 
 /* GET /instances/{id}/ -> InstanceResponse (teacher/staff) | StudentInstance (owner) */
@@ -44,9 +45,9 @@ export const ocrGradeAnnotation = (annotationId) => api.post(`/annotations/${ann
 
 /** Reads an annotation payload (text) from its presigned download_url. */
 export async function readAnnotationPayload(annotation) {
-  if (!annotation.download_url) return '';
+  if (!annotation.download_url) throw new ApiError('NOT_FOUND', 404);
   const res = await fetch(annotation.download_url);
-  if (!res.ok) return '';
+  if (!res.ok) throw new ApiError(res.status === 403 ? 'PERMISSION_DENIED' : 'UNKNOWN', res.status);
   return res.text();
 }
 

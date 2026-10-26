@@ -28,7 +28,7 @@ export default function GradingPage() {
   const exam = useApi(examId ? () => getExam(examId) : null, [examId]);
   const siblings = useApi(examId ? () => getAllExamInstances(examId, { status: 'PENDING_GRADING' }) : null, [examId]);
   const { url: pdfUrl, error: pdfError } = usePdfUrl(instanceId);
-  const annotations = useAnnotations(instanceId);
+  const annotations = useAnnotations(instanceId, { readOnly: !EDITABLE.includes(inst.data?.status) });
   const server = useMemo(() => serverGrades(inst.data), [inst.data]);
   const known = useKnownGrades(instanceId, server);
   const transition = useAction((target) => transitionInstance(instanceId, target));
@@ -59,6 +59,7 @@ export default function GradingPage() {
 
   const move = async (target, msgKey) => {
     try {
+      if (!await annotations.flush()) return;
       await transition.run(target);
       toast.success(t(msgKey));
       inst.reload();
@@ -82,7 +83,7 @@ export default function GradingPage() {
           <>
             <StatusBadge status={i.status} />
             {next && (
-              <Button onClick={() => navigate(`/instances/${next.id}/grade`)}>{t('actions.next')}</Button>
+              <Button onClick={async () => { if (await annotations.flush()) navigate(`/instances/${next.id}/grade`); }} disabled={annotations.loading || annotations.loadFailed}>{t('actions.next')}</Button>
             )}
             {i.status === 'PENDING_GRADING' && (
               <Button variant="solid" onClick={() => move('GRADED', 'toast.graded')} loading={transition.pending} disabled={!problems.length || gradedCount < problems.length}>
@@ -101,11 +102,13 @@ export default function GradingPage() {
         <LifecycleRail status={i.status} compact />
       </div>
 
+      {annotations.error && <ErrorState error={annotations.error} title={t(annotations.loadFailed ? 'annotations.loadError' : 'annotations.saveError')} onRetry={annotations.retry} />}
+
       <div className="gr-layout">
         {pdfError ? (
           <ErrorState error={pdfError} title={t('stage.pdfError')} />
         ) : (
-          <PdfStage url={pdfUrl} annotations={annotations} readOnly={!editable} aside={<SaveState state={annotations.saveState} />} />
+          <PdfStage url={pdfUrl} annotations={annotations} readOnly={!editable || annotations.loading || annotations.loadFailed} aside={<SaveState state={annotations.saveState} />} />
         )}
 
         <aside className="gr-side">
@@ -139,12 +142,12 @@ export default function GradingPage() {
                   aria-label={t('side.comment')}
                   value={annotations.comment}
                   onChange={(ev) => annotations.setComment(ev.target.value)}
-                  disabled={!editable || annotations.loading}
+                  disabled={!editable || annotations.loading || annotations.loadFailed}
                   placeholder={t('side.commentPlaceholder')}
                 />
               )}
             </Field>
-            {editable && !annotations.loading && (
+            {editable && !annotations.loading && !annotations.loadFailed && (
               <CommentOcr
                 instanceId={i.id}
                 onText={(text) => annotations.setComment(annotations.comment ? `${annotations.comment}\n${text}` : text)}
@@ -152,7 +155,15 @@ export default function GradingPage() {
             )}
           </Panel>
 
+          {annotations.comments.length > 0 && <Panel title={t('annotations.otherComments')}>
+            {annotations.comments.map((comment) => <div key={comment.id}>
+              <strong>{comment.authorEmail || t('annotations.author')}</strong>
+              <p className="gr-comment-text">{comment.text}</p>
+            </div>)}
+          </Panel>}
+
           {!editable && <Badge plain>{t('side.locked', { status: tc(`status.${i.status}`) })}</Badge>}
+          {editable && <p className="u-muted">{t('annotations.ownLayer')}</p>}
           {known.unknownTotal(i.total_score, problems) && <p className="u-muted">{t('side.unknownGrades')}</p>}
           <p className="u-muted">{t('side.shortcuts')}</p>
         </aside>

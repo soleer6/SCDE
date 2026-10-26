@@ -10,6 +10,13 @@
   },
   "stage": { "loadingPdf": "Loading exam", "pdfError": "Couldn't load the exam PDF." },
   "save": { "idle": "No changes", "pending": "Unsaved changes", "saving": "Saving", "saved": "Saved", "error": "Save failed" },
+  "annotations": {
+    "loadError": "Annotations could not be loaded. Retry before editing.",
+    "saveError": "Changes could not be saved. They remain on screen; retry saving.",
+    "ownLayer": "Undo and clear affect only your current layer.",
+    "otherComments": "Other saved comments",
+    "author": "Teacher"
+  },
   "side": {
     "total": "Total grade",
     "progress": "{{done}}/{{total}} problems",

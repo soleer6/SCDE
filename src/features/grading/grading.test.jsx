@@ -2,7 +2,7 @@
  * each grade reloads the instance, finishing and reopening, an exam model
  * without problems, and grades hydrated from the server (clean browser,
  * VERSION_CONFLICT from another session, rubric selections). */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -18,6 +18,7 @@ import { AuthProvider } from '../../lib/auth/AuthProvider.jsx';
 import { ToastProvider } from '../../ui';
 import AppRouter from '../../app/AppRouter.jsx';
 import { api } from '../../lib/api/client.js';
+import { ApiError } from '../../lib/api/errors.js';
 import { tokenStore } from '../../lib/api/tokens.js';
 import { db } from '../../lib/mock/db.js';
 import { observeMockResponses } from '../../lib/mock/router.js';
@@ -58,8 +59,29 @@ beforeEach(async () => {
   await i18n.changeLanguage('es');
   await loginAs('maria.perez@uam.es', 'prof123');
 });
+afterEach(() => vi.restoreAllMocks());
 
 describe('grading', () => {
+  it('stays on the exam when saving before navigation fails and retries the draft', async () => {
+    const user = userEvent.setup();
+    renderGrading();
+    const comment = await screen.findByRole('textbox', { name: 'Comentario para el estudiante' });
+    await waitFor(() => expect(comment).toBeEnabled());
+    const title = screen.getByRole('heading', { level: 1 }).textContent;
+    const post = vi.spyOn(api, 'post').mockRejectedValueOnce(new ApiError('UNKNOWN', 503));
+    await user.type(comment, 'Borrador antes de navegar');
+    await user.click(screen.getByRole('button', { name: 'Siguiente por corregir' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Se conservan en pantalla');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(title);
+    expect(comment).toHaveValue('Borrador antes de navegar');
+    post.mockRestore();
+    await user.click(screen.getByRole('button', { name: 'Reintentar', exact: true }));
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Siguiente por corregir' }));
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).not.toBe(title));
+    expect(db.annotations.find((a) => a.instance_id === INSTANCE && a.annotation_type === 'TEXT').content).toBe('Borrador antes de navegar');
+  });
+
   it('persists negative problem scores, floors the total and reloads the saved penalty', async () => {
     const user = userEvent.setup();
     const view = renderGrading();

@@ -141,6 +141,9 @@ export default function PdfStage({ url, annotations, readOnly = false, aside }) 
           >
             <div className="gr-sheet" style={{ width: pageWidth }}>
               <Page pageNumber={page} width={pageWidth} renderTextLayer={false} renderAnnotationLayer={false} />
+              {annotations && !annotations.loading && (annotations.layersByPage?.[page] ?? []).map((layer) => (
+                <InkCanvas key={layer.id} strokes={layer.strokes} readOnly />
+              ))}
               {annotations && !annotations.loading && (
                 <InkCanvas
                   strokes={annotations.strokesByPage[page] ?? []}

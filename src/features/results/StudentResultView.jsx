@@ -5,7 +5,7 @@ import { formatDate, formatDateTime, formatScore } from '../../lib/format.js';
 import { Badge, DataTable, EmptyState, ErrorState, Loader, PageHeader, Panel } from '../../ui';
 import { getExamInstances, getReview, asList } from '../exams/api.js';
 import { listAnnotations, readAnnotationPayload } from '../grading/api.js';
-import { isPadAnnotation, parseInk } from '../grading/ocr.js';
+import { readAnnotationLayers } from '../grading/annotationLayers.js';
 import { usePdfUrl } from '../grading/usePdfUrl.js';
 import PdfStage from '../grading/PdfStage.jsx';
 import { LifecycleRail, Score, StatusBadge } from '../workspace/domain.jsx';
@@ -156,25 +156,19 @@ function StudentPdf({ instanceId }) {
   const ann = useApi(async () => {
     try {
       const list = await listAnnotations(instanceId);
-      const byPage = {};
-      await Promise.all(
-        list
-          .filter((a) => a.annotation_type === 'STYLUS' && !isPadAnnotation(a))
-          .map(async (a) => {
-            const strokes = parseInk(await readAnnotationPayload(a)); // null: pad payload
-            if (strokes) byPage[a.page_number] = strokes;
-          }),
-      );
-      return byPage;
+      return await readAnnotationLayers(list);
     } catch (e) {
-      if (e.status === 403) return {}; // annotations hidden by exam permissions
+      if (e.status === 403) return { layersByPage: {} }; // annotations hidden by exam permissions
       throw e;
     }
   }, [instanceId]);
 
   if (error) return <ErrorState error={error} title={t('pdf.error')} />;
-  const annotations = { strokesByPage: ann.data ?? {}, loading: ann.loading, undo() {}, clearPage() {}, addStroke() {} };
-  return <PdfStage url={url} annotations={annotations} readOnly />;
+  const annotations = { strokesByPage: {}, layersByPage: ann.data?.layersByPage ?? {}, loading: ann.loading };
+  return <>
+    {ann.error && <ErrorState error={ann.error} onRetry={ann.reload} />}
+    <PdfStage url={url} annotations={annotations} readOnly />
+  </>;
 }
 
 function TeacherComment({ instanceId, visible }) {
@@ -184,19 +178,24 @@ function TeacherComment({ instanceId, visible }) {
       ? async () => {
           try {
             const list = await listAnnotations(instanceId);
-            const a = list.find((x) => x.annotation_type === 'TEXT' && !x.problem_id);
-            return a ? readAnnotationPayload(a) : '';
-          } catch {
-            return '';
+            return await Promise.all(list.filter((x) => x.annotation_type === 'TEXT' && !x.problem_id).map(async (a) => ({ ...a, text: await readAnnotationPayload(a) })));
+          } catch (e) {
+            if (e.status === 403) return [];
+            throw e;
           }
         }
       : null,
     [instanceId, visible],
   );
-  if (!visible || !comment.data) return null;
+  if (!visible) return null;
+  if (comment.error) return <ErrorState error={comment.error} onRetry={comment.reload} />;
+  if (!comment.data?.length) return null;
   return (
     <Panel title={t('comment.title')}>
-      <p className="rs-comment">{comment.data}</p>
+      {comment.data.map((a) => <div key={a.id}>
+        {a.author_email && <strong>{a.author_email}</strong>}
+        <p className="rs-comment">{a.text}</p>
+      </div>)}
     </Panel>
   );
 }

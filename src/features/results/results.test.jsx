@@ -64,6 +64,21 @@ beforeEach(async () => {
 });
 
 describe('student result', () => {
+  it('shows comments and independent ink layers from both teachers', async () => {
+    await loginAs('maria.perez@uam.es', 'prof123');
+    for (const [index, author] of ['u-maria', 'u-javier'].entries()) {
+      const text = await api.post(`/instances/${INSTANCE}/annotations/`, { annotation_type: 'TEXT', payload: `Comentario docente ${index + 1}`, page_number: 1, x: 0, y: 0 });
+      const ink = await api.post(`/instances/${INSTANCE}/annotations/`, { annotation_type: 'STYLUS', payload: JSON.stringify({ strokes: [{ points: [{ x: 0.1, y: 0.2 }, { x: 0.3, y: 0.4 }], color: 'red', width: 0.003 }] }), page_number: 1, x: 0, y: 0 });
+      db.annotations.filter((a) => [text.id, ink.id].includes(a.id)).forEach((a) => { a.author_id = author; });
+    }
+    await loginAs('elena.rodriguez@estudiante.uam.es', 'est123');
+    const { container } = renderResult();
+    expect(await screen.findByText('Comentario docente 1')).toBeInTheDocument();
+    expect(await screen.findByText('Comentario docente 2')).toBeInTheDocument();
+    await waitFor(() => expect(container.querySelectorAll('.gr-ink.is-readonly')).toHaveLength(3));
+    expect(container.querySelector('.gr-ink:not(.is-readonly)')).toBeNull();
+  });
+
   it('shows the scanned exam instead of the download error', async () => {
     renderResult();
     expect(await screen.findByTestId('pdf-doc', {}, { timeout: 8000 })).toBeInTheDocument();
