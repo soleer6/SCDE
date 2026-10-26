@@ -28,6 +28,10 @@
   },
   "filters": {
     "label": "Filtrar instancias",
+    "search": "Buscar por nombre o correo",
+    "model": "Modelo",
+    "allModels": "Todos los modelos",
+    "modelOption": "Modelo {{label}}",
     "all": "Todas",
     "todo": "Por corregir",
     "graded": "Corregidas",

@@ -28,6 +28,10 @@
   },
   "filters": {
     "label": "Filter instances",
+    "search": "Search by name or email",
+    "model": "Model",
+    "allModels": "All models",
+    "modelOption": "Model {{label}}",
     "all": "All",
     "todo": "To grade",
     "graded": "Graded",
