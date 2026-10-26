@@ -62,11 +62,11 @@ export default function TeacherExamView({ exam, role }) {
     }
   };
 
-  const onExport = async () => {
+  const onExport = async (format) => {
     try {
-      const blob = await exportGrades(exam.id, 'csv');
+      const blob = await exportGrades(exam.id, format);
       const url = URL.createObjectURL(blob);
-      const a = Object.assign(document.createElement('a'), { href: url, download: `${exam.subject_code}-${exam.name}.csv` });
+      const a = Object.assign(document.createElement('a'), { href: url, download: `${exam.subject_code}-${exam.name}.${format}` });
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
@@ -88,7 +88,8 @@ export default function TeacherExamView({ exam, role }) {
           <>
             {canSetup && <ButtonLink to={`/exams/${exam.id}/setup`}>{t('actions.configure')}</ButtonLink>}
             {canResolve && issueCount > 0 && <ButtonLink to={`/exams/${exam.id}/issues`}>{t('actions.issues', { count: issueCount })}</ButtonLink>}
-            {canExport && <Button onClick={onExport}>{t('actions.export')}</Button>}
+            {canExport && <Button onClick={() => onExport('csv')}>{t('actions.export')}</Button>}
+            {canExport && <Button onClick={() => onExport('json')}>{t('actions.exportJson')}</Button>}
             {canReview && allPublished && !review.data && (
               <Button variant="primary" onClick={() => setReviewOpen(true)}>
                 {t('actions.openReview')}

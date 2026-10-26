@@ -100,6 +100,24 @@ describe('teacher exam view', () => {
     expect(lines).toHaveLength(1 + instancesOf('e-mat-p2').length);
   });
 
+  it('downloads the grades as JSON on request', async () => {
+    await loginAs('maria.perez@uam.es', 'prof123');
+    let blob;
+    vi.spyOn(URL, 'createObjectURL').mockImplementation((b) => {
+      blob = b;
+      return 'blob:grades';
+    });
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function noNavigation() {});
+    renderAt('/exams/e-mat-p2');
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'Exportar JSON' }));
+    await waitFor(() => expect(click).toHaveBeenCalledTimes(1));
+    expect(click.mock.contexts[0].download).toBe('MAT101-Parcial 2.json');
+    const rows = JSON.parse(await readText(blob));
+    expect(rows).toHaveLength(instancesOf('e-mat-p2').length);
+    expect(Object.keys(rows[0])).toEqual(['nia', 'email', 'total_score']);
+  });
+
   it('shows the request count only to whoever manages the reviews', async () => {
     await loginAs('maria.perez@uam.es', 'prof123');
     const { unmount } = renderAt('/exams/e-mat-p1');

@@ -14,3 +14,9 @@ Cada caso usa una organización sintética nueva (`bootstrap_*.py`, ejecutar con
 - H15 (`h15-real.mjs`): dos notas GRADED, una con incidencia. Publicar → 1 publicada
   (`PUBLISHED`), 1 sigue `GRADED`; el panel lista la entrega con "tiene incidencias
   sin resolver" y el botón de publicar sigue disponible.
+
+## H12 (parcial) — exportación CSV y JSON
+Hallazgo con el backend real: el frontend enviaba `?format=` y DRF lo interpreta como sufijo de
+renderizador (CSV → 404, JSON → devolvía CSV). El parámetro correcto es `export_format`. Corregido en
+`exams/api.js` y en el mock; botón nuevo "Exportar JSON". `h12-export-real.mjs` descarga ambos
+ficheros con Django real (fixture H15). Pendiente de H12: filtros combinables por alumno/grupo/modelo y búsqueda.

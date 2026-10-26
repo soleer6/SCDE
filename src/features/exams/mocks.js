@@ -143,7 +143,7 @@ export const mocks = [
           const u = q.user(i.student_id);
           return { nia: u.nia, email: u.email, total_score: i.total_score == null ? '' : Number(i.total_score).toFixed(2) };
         });
-      if (query.get('format') === 'json') return rows;
+      if (query.get('export_format') === 'json') return rows;
       const csv = ['nia,email,total_score', ...rows.map((r) => `${r.nia},${r.email},${r.total_score}`)].join('\n');
       return reply(200, new Blob([csv], { type: 'text/csv' }), { 'Content-Type': 'text/csv' });
     },
