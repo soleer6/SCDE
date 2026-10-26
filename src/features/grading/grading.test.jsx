@@ -131,6 +131,14 @@ describe('grading', () => {
     expect(screen.getAllByText('-2').length).toBeGreaterThan(0);
   });
 
+  it('shows a single-problem corrector only the problems assigned to them (RF-5.7/8.5)', async () => {
+    await loginAs('javier.ruiz@uam.es', 'prof123'); // TEACHER of MAT101, rule: problems 2 and 3 of the exam
+    renderGrading();
+    expect(await screen.findByLabelText('Nota de Integral impropia')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Nota de Series')).not.toBeInTheDocument();
+    expect(screen.getByText('0/2 problemas')).toBeInTheDocument();
+  });
+
   it('keeps the page mounted while grades save, then finishes and reopens', async () => {
     const user = userEvent.setup();
     renderGrading();

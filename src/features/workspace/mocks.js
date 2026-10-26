@@ -90,13 +90,14 @@ export const mocks = [
           const assigned = viaRule ? problems.filter((p) => rules.some((r) => r.problems.includes(p.id))) : problems;
           const graded = db.grades.filter((g) => g.instance_id === inst.id).map((g) => g.problem_id);
           const ungraded = assigned.filter((p) => !graded.includes(p.id)).map((p) => p.id);
-          if (!ungraded.length) return;
+          // get_corrector_tasks: with exam_id every assigned instance is returned (graded included).
+          if (!examFilter && !ungraded.length) return;
           tasks.push({
             instance_id: inst.id,
             exam_name: `${q.subject(exam.subject_id).code} · ${exam.name}`,
             student_email: q.user(inst.student_id)?.email ?? null,
             ungraded_problems: ungraded,
-            problems_sent: [],
+            problems_sent: (examFilter ? assigned : assigned.filter((p) => ungraded.includes(p.id))).map((p) => p.id),
             total_problems: assigned.length,
           });
         });

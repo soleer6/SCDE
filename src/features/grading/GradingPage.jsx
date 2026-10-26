@@ -3,7 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApi, useAction } from '../../lib/hooks.js';
 import { Badge, Button, ErrorState, Field, Loader, PageHeader, Panel, Textarea, useToast } from '../../ui';
+import { useAuth } from '../../lib/auth/AuthProvider.jsx';
 import { getAllExamInstances, getExam } from '../exams/api.js';
+import { getMyTasks, useMySubjects } from '../workspace/api.js';
 import { LifecycleRail, Score, StatusBadge } from '../workspace/domain.jsx';
 import { studentName } from '../workspace/model.js';
 import { getInstance, serverGrades, transitionInstance } from './api.js';
@@ -33,10 +35,23 @@ export default function GradingPage() {
   const known = useKnownGrades(instanceId, server);
   const transition = useAction((target) => transitionInstance(instanceId, target));
 
+  // GET /my-tasks/?exam_id= lists, per instance, the problems the rules assign to this corrector
+  // (problems_sent). Staff and coordinators grade everything; a corrector sees only their own problems.
+  const { session } = useAuth();
+  const { roleOf } = useMySubjects();
+  const subjectId = exam.data?.subject_id;
+  const tasks = useApi(examId ? () => getMyTasks(examId) : null, [examId]);
+  const sees = useMemo(() => {
+    const mine = (tasks.data?.grading_tasks ?? []).filter((x) => x.instance_id === instanceId);
+    if (session?.isStaff || session?.isSuperadmin || roleOf(subjectId) === 'COORDINATOR' || !mine.length) return null;
+    return new Set(mine.flatMap((x) => x.problems_sent));
+  }, [tasks.data, instanceId, session, roleOf, subjectId]);
+
   const problems = useMemo(() => {
     const model = exam.data?.models_problems?.find((m) => m.model_id === inst.data?.model_id) ?? exam.data?.models_problems?.[0];
-    return model?.problems ?? [];
-  }, [exam.data, inst.data]);
+    const all = model?.problems ?? [];
+    return sees ? all.filter((p) => sees.has(p.id)) : all;
+  }, [exam.data, inst.data, sees]);
 
   // Only the first load (or a new instance) shows the loader: reloading after each grade must not unmount the PDF and the problem rows.
   if (inst.error) return <ErrorState error={inst.error} onRetry={inst.reload} />;
