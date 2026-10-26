@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../lib/auth/AuthProvider.jsx';
 import { ButtonLink } from '../../ui';
 import { getUnreadCount } from './api.js';
+import './notifications.css';
 
 export default function NotificationsBell() {
   const { t } = useTranslation('notifications');
@@ -28,5 +29,8 @@ export default function NotificationsBell() {
     window.addEventListener('scde:notifications-read', refresh);
     return () => { alive = false; clearInterval(timer); document.removeEventListener('visibilitychange', visibility); window.removeEventListener('scde:notifications-read', refresh); };
   }, [session]);
-  return <ButtonLink to="/notifications" size="sm" aria-label={count == null ? t('unavailable') : t('unread', { count })}>{t('title')} · {count ?? '—'}</ButtonLink>;
+  return <ButtonLink to="/notifications" size="sm" title={t('title')} aria-label={count == null ? t('unavailable') : t('unread', { count })}>
+    <span className="notifications-bell-label">{t('title')} · </span>
+    <span>{count ?? '—'}</span>
+  </ButtonLink>;
 }

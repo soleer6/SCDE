@@ -5,6 +5,7 @@ import { useApi } from '../../lib/hooks.js';
 import { RecordForm } from '../admin/components.jsx';
 import { getProfile, updateProfile } from './api.js';
 import { useAuth } from '../../lib/auth/AuthProvider.jsx';
+import SubjectRoles from './SubjectRoles.jsx';
 
 export default function ProfilePage() {
   const { t } = useTranslation('profile');
@@ -38,6 +39,7 @@ export default function ProfilePage() {
         { name: 'email', label: t('email'), type: 'email', autoComplete: 'email', required: true },
         { name: 'email_notifications_enabled', label: t('notifications'), type: 'checkbox' },
       ]} onSave={saveProfile} />
+      <SubjectRoles />
     </>}
   </div>;
 }

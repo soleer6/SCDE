@@ -25,6 +25,39 @@ it('treats an empty selection as marking all own unread notifications, as Django
   expect(db.notifications.find(n => n.id === 'n-3').status).toBe('UNREAD');
 });
 
+it('combines status/type across pages and marks all own types, preserving archived and other recipients', async () => {
+  const template = db.notifications.find(n => n.id === 'n-1');
+  db.notifications.push(...Array.from({ length: 30 }, (_, i) => ({ ...template, id: `bulk-${i}`, title: `Pendiente ${i}` })));
+  db.notifications.push({ ...template, id: 'history', title: 'Histórica', status: 'ARCHIVED' });
+  const user = userEvent.setup();
+  renderPage(<><NotificationsBell /><NotificationsPage /></>);
+  await screen.findByRole('link', { name: '32 notificaciones sin leer' });
+  await user.selectOptions(screen.getByLabelText('Estado de notificación'), 'UNREAD');
+  await user.selectOptions(screen.getByLabelText('Tipo de notificación'), 'GRADES_PUBLISHED');
+  await screen.findByText(/31 registros/);
+  await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+  await screen.findByText(/Página 2/);
+  await user.selectOptions(screen.getByLabelText('Tipo de notificación'), 'REVIEW_OPENED');
+  await screen.findByText('Revisión abierta', { selector: 'p' });
+  expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled();
+  expect(screen.queryByText('Pendiente 0')).not.toBeInTheDocument();
+  // The account-wide action includes notifications excluded by the active filter.
+  const patch = vi.spyOn(api, 'patch').mockRejectedValueOnce(new ApiError('PERMISSION_DENIED', 403));
+  await user.click(screen.getByRole('button', { name: 'Marcar todas como leídas' }));
+  await screen.findByRole('alert');
+  expect(db.notifications.filter(n => n.user_id === template.user_id && n.status === 'UNREAD')).toHaveLength(32);
+  await user.click(screen.getByRole('button', { name: 'Reintentar' }));
+  await screen.findByRole('link', { name: '0 notificaciones sin leer' });
+  await screen.findByText('No tienes notificaciones');
+  expect(patch).toHaveBeenLastCalledWith('/notifications/read/', { notification_ids: [] });
+  expect(db.notifications.find(n => n.id === 'n-3').status).toBe('UNREAD');
+  expect(db.notifications.find(n => n.id === 'history').status).toBe('ARCHIVED');
+  await user.selectOptions(screen.getByLabelText('Estado de notificación'), 'ARCHIVED');
+  await user.selectOptions(screen.getByLabelText('Tipo de notificación'), '');
+  await screen.findByText('Histórica');
+  expect(screen.getByText('Archivada', { selector: 'span' })).toBeInTheDocument();
+});
+
 function deferred() {
   let resolve, reject;
   const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
@@ -124,7 +157,7 @@ it('clears the previous account count while loading a new session and ignores pe
 it('marks the current page and updates the bell, without touching another user', async () => {
   const user = userEvent.setup(); renderPage(<><NotificationsBell /><NotificationsPage /></>);
   await screen.findByRole('link', { name: '2 notificaciones sin leer' });
-  await screen.findByText('Notas publicadas');
+  await screen.findByText('Notas publicadas', { selector: 'p' });
   await user.click(screen.getByRole('button', { name: 'Marcar esta página como leída' }));
   expect(await screen.findByRole('link', { name: '0 notificaciones sin leer' })).toBeInTheDocument();
   expect(db.notifications.find((n) => n.id === 'n-3').status).toBe('UNREAD');

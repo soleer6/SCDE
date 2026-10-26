@@ -5,6 +5,7 @@ import { api } from '../../lib/api/client.js';
 import { db } from '../../lib/mock/db.js';
 import { loginAs, renderPage, resetDemo } from '../admin/test-utils.jsx';
 import ProfilePage from './ProfilePage.jsx';
+import { ApiError } from '../../lib/api/errors.js';
 
 const { updateSession } = vi.hoisted(() => ({ updateSession: vi.fn() }));
 vi.mock('../../lib/auth/AuthProvider.jsx', async (importOriginal) => {
@@ -13,9 +14,50 @@ vi.mock('../../lib/auth/AuthProvider.jsx', async (importOriginal) => {
 });
 
 beforeEach(async () => { updateSession.mockClear(); await resetDemo(); await loginAs('elena.rodriguez@estudiante.uam.es', 'est123'); });
+it('shows only own active-course memberships with the role and group of each subject', async () => {
+  const own = db.memberships.find(m => m.user_id === 'u-elena');
+  db.subjects.push({ ...db.subjects.find(s => s.id === own.subject_id), id: 'old-subject', code: 'OLD', course_id: 'c-2526' });
+  db.memberships.push({ ...own, id: 'old-membership', subject_id: 'old-subject' });
+  renderPage(<ProfilePage />);
+  await screen.findByRole('region', { name: 'Mis asignaturas y roles' });
+  await screen.findAllByText('Estudiante', { selector: 'td' });
+  expect(screen.queryByText('OLD')).not.toBeInTheDocument();
+  expect(screen.queryByText('Coordinador', { selector: 'td' })).not.toBeInTheDocument();
+  const memberships = await api.get('/my-subjects/');
+  expect(memberships.length).toBeGreaterThan(0);
+  for (const subject of memberships) {
+    expect(screen.getByText(subject.code, { selector: 'td' })).toBeInTheDocument();
+    expect(subject).not.toHaveProperty('user_id');
+  }
+});
+
+it('recovers subject-role loading separately without losing the editable profile', async () => {
+  const get = api.get.bind(api);
+  const spy = vi.spyOn(api, 'get').mockImplementation((path, ...args) => path === '/my-subjects/'
+    ? Promise.reject(new ApiError('PERMISSION_DENIED', 403)) : get(path, ...args));
+  const user = userEvent.setup();
+  try {
+    renderPage(<ProfilePage />);
+    const email = await screen.findByLabelText('Email');
+    await user.clear(email);
+    await user.type(email, 'borrador@uam.es');
+    await screen.findByRole('alert');
+    spy.mockImplementation(get);
+    await user.click(screen.getByRole('button', { name: 'Reintentar' }));
+    await screen.findAllByText('Estudiante', { selector: 'td' });
+    expect(email).toHaveValue('borrador@uam.es');
+  } finally { spy.mockRestore(); }
+});
+
+it('shows an empty subject-role list for an account without memberships', async () => {
+  await loginAs();
+  renderPage(<ProfilePage />);
+  await screen.findByText('No tienes asignaturas en el curso activo');
+});
 it('updates only the allowed profile fields for a student', async () => {
   const user = userEvent.setup(); renderPage(<ProfilePage />);
   const input = await screen.findByLabelText('Email');
+  await screen.findAllByText('Estudiante', { selector: 'td' });
   expect(input).not.toHaveFocus();
   expect(screen.queryByRole('status')).not.toBeInTheDocument();
   fireEvent.change(input, { target: { value: 'elena.nueva@uam.es' } });
