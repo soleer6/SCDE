@@ -12,7 +12,7 @@ export function hasPerm(user, subjectId, key) {
   const m = q.membership(user.id, subjectId);
   if (!m) return false;
   const base = DEFAULT_PERMISSIONS[m.role] ?? {};
-  return Boolean({ ...base, ...(m.permission_overrides || {}) }[key]);
+  return (m.permission_overrides?.[key] ?? db.org_config.role_permission_defaults?.[m.role]?.[key] ?? base[key]) === true;
 }
 
 export const roleIn = (user, subjectId) => q.membership(user?.id, subjectId)?.role ?? null;

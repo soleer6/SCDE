@@ -14,11 +14,12 @@ export default function ExamPage() {
   const { examId } = useParams();
   const { session } = useAuth();
   const exam = useApi(() => getExam(examId), [examId]);
-  const { roleOf, loading } = useMySubjects();
+  const { roleOf, membershipOf, loading, initialLoading: permissionsLoading, error: permissionsError, reload: reloadPermissions } = useMySubjects();
 
-  if (exam.initialLoading || loading) return <Loader page />;
+  if (exam.initialLoading || permissionsLoading) return <Loader page />;
+  if (permissionsError) return <ErrorState error={permissionsError} onRetry={reloadPermissions} />;
   if (exam.error) return <ErrorState error={exam.error} onRetry={exam.reload} />;
   const role = roleOf(exam.data.subject_id);
   if (role === 'STUDENT' && !session?.isStaff) return <StudentResultView exam={exam.data} />;
-  return <TeacherExamView exam={exam.data} role={role} reloadExam={exam.reload} />;
+  return <TeacherExamView exam={exam.data} membership={membershipOf(exam.data.subject_id)} permissionsReady={!loading} reloadExam={exam.reload} />;
 }

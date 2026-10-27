@@ -1,6 +1,5 @@
-/* Mirror of backend apps/subjects/models/permissions.py DEFAULT_PERMISSIONS.
- * Used for UI affordances only (hiding buttons); the backend still enforces.
- * Effective permissions with overrides: GET /memberships/{id}/permissions/. */
+/* Defaults are used by the mock server only. UI decisions require the current
+ * /my-subjects/ membership and its effective_permissions, never role defaults. */
 
 export const ROLES = { COORDINATOR: 'COORDINATOR', TEACHER: 'TEACHER', STUDENT: 'STUDENT' };
 
@@ -21,9 +20,10 @@ export const DEFAULT_PERMISSIONS = {
 export const PERMISSION_KEYS = Object.keys(DEFAULT_PERMISSIONS.COORDINATOR);
 
 /** is_staff (org manager) bypasses subject permissions, as in the backend. */
-export function can(session, role, perm) {
+export function can(session, membership, perm) {
+  if (!PERMISSION_KEYS.includes(perm)) return false;
   if (session?.isStaff || session?.isSuperadmin) return true;
-  return Boolean(DEFAULT_PERMISSIONS[role]?.[perm]);
+  return Boolean(membership?.membership_id) && membership?.effective_permissions?.[perm] === true;
 }
 
 export const isTeachingRole = (role) => role === ROLES.COORDINATOR || role === ROLES.TEACHER;

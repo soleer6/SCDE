@@ -20,19 +20,20 @@ export default function ExamSetupPage() {
   const { t } = useTranslation('exams');
   const { session } = useAuth();
   const exam = useApi(() => getExam(examId), [examId]);
-  const { roleOf, loading } = useMySubjects();
+  const { membershipOf, loading, error: permissionsError, reload: reloadPermissions } = useMySubjects();
   const [tab, setTab] = useState('structure');
 
   // Only the first load shows the loader: reloading after a save must not unmount the tabs.
   if (exam.initialLoading || loading) return <Loader page />;
+  if (permissionsError) return <ErrorState error={permissionsError} onRetry={reloadPermissions} />;
   if (exam.error) return <ErrorState error={exam.error} onRetry={exam.reload} />;
   const e = exam.data;
-  const role = roleOf(e.subject_id);
+  const membership = membershipOf(e.subject_id);
   const perms = {
-    exams: can(session, role, 'can_create_exams'),
-    rubric: can(session, role, 'can_create_rubric'),
-    members: can(session, role, 'can_manage_members'),
-    correctors: can(session, role, 'can_assign_correctors'),
+    exams: can(session, membership, 'can_create_exams'),
+    rubric: can(session, membership, 'can_create_rubric'),
+    members: can(session, membership, 'can_manage_members'),
+    correctors: can(session, membership, 'can_assign_correctors'),
   };
   if (!perms.exams && !perms.rubric && !perms.correctors) {
     return <EmptyState title={t('setup.denied')} action={<ButtonLink to={`/exams/${e.id}`}>{t('setup.back')}</ButtonLink>} />;

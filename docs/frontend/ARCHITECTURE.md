@@ -11,7 +11,8 @@ src/
     auth/               AuthProvider (session = login user + JWT claims)
     mock/               router.js (handler registry), db.js (seed), auth.js (mock JWT)
     hooks.js            useApi / useAction
-    permissions.js      mirror of backend DEFAULT_PERMISSIONS (UI hints only)
+    permissions.js      UI reads current MySubject.effective_permissions; defaults only for mocks
+    permissionEvents.js invalidates discovery on session/context, edits and 403
     format.js           score/date helpers
   features/<id>/        one folder per functional area, auto-discovered
     index.jsx           { id, order, routes, nav, mocks, i18n, slots }
@@ -30,7 +31,11 @@ Slots rendered by the shell: `topbar.end` (e.g. notifications bell).
   `is_staff`/`is_superadmin` come only from JWT claims. Refresh rotates both tokens.
 - **Roles are per subject** (`MySubject.role` ∈ COORDINATOR | TEACHER | STUDENT); there
   is no global professor/student role. `is_staff` = organization manager.
-- Permissions per membership (DEFAULT_PERMISSIONS + overrides). Staff bypasses.
+- Permissions per membership come from `GET /my-subjects/`: `membership_id` and
+  complete boolean `effective_permissions`. Unknown/absent keys deny access.
+  Staff bypasses after discovery has loaded; role defaults are mock data only.
+  Reads use no-store and revalidate on session/route, focus/visibility, permission
+  edits and 403. Loading/error hides actions; superseded responses are ignored.
 - Instance lifecycle: ASSEMBLING → RECEIVED → QUEUED → PENDING_GRADING → GRADED →
   PUBLISHED → IN_REVIEW → (PENDING_REVIEW → GRADED) | FINALIZED → ARCHIVED.
 - Grades per problem with optimistic concurrency (`old_score`, 409 VERSION_CONFLICT).

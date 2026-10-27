@@ -10,11 +10,14 @@ export const mocks = [
     path: '/my-subjects/',
     handler: ({ user }) => {
       const course = q.activeCourse();
-      if (!course) return [];
+      if (!course || !user.organization_id || !user.is_active) return [];
       return db.memberships
         .filter((m) => m.user_id === user.id && m.is_active)
         .map((m) => ({ m, s: q.subject(m.subject_id) }))
-        .filter(({ s }) => s?.course_id === course.id)
+        .filter(({ m, s }) => s?.course_id === course.id
+          && (!m.organization_id || m.organization_id === user.organization_id)
+          && (!s.organization_id || s.organization_id === user.organization_id)
+          && (!course.organization_id || course.organization_id === user.organization_id))
         .sort((a, b) => a.s.name.localeCompare(b.s.name))
         .map(({ m, s }) => ({
           id: s.id,
@@ -23,7 +26,7 @@ export const mocks = [
           semester: s.semester,
           role: m.role,
           membership_id: m.id,
-          effective_permissions: Object.fromEntries(PERMISSION_KEYS.filter((k) => k !== 'can_manage_members').map((k) => [k,
+          effective_permissions: Object.fromEntries(PERMISSION_KEYS.map((k) => [k,
             Boolean(user.is_staff || user.is_superadmin || (m.permission_overrides?.[k]
               ?? db.org_config.role_permission_defaults?.[m.role]?.[k] ?? DEFAULT_PERMISSIONS[m.role]?.[k]))])),
           group_label: db.groups.find((g) => g.id === m.group_id)?.label ?? '',

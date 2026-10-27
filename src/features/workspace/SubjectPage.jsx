@@ -18,7 +18,8 @@ export default function SubjectPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
-  const { roleOf, loading: rolesLoading } = useMySubjects();
+  const { roleOf, membershipOf, loading: rolesLoading, error: permissionsError, reload: reloadPermissions } = useMySubjects();
+  const membership = membershipOf(subjectId);
   const role = roleOf(subjectId);
   const teaching = isTeachingRole(role) || session?.isStaff;
 
@@ -42,10 +43,11 @@ export default function SubjectPage() {
   }, [subjectId, teaching, rolesLoading]);
 
   if (subject.initialLoading || rolesLoading) return <Loader page />;
+  if (permissionsError) return <ErrorState error={permissionsError} onRetry={reloadPermissions} />;
   if (subject.error) return <ErrorState error={subject.error} onRetry={subject.reload} />;
   const s = subject.data;
-  const canManage = can(session, role, 'can_manage_members') || can(session, role, 'can_manage_groups');
-  const canCreate = can(session, role, 'can_create_exams');
+  const canManage = can(session, membership, 'can_manage_members') || can(session, membership, 'can_manage_groups');
+  const canCreate = can(session, membership, 'can_create_exams');
 
   const columns = [
     { key: 'name', header: t('cols.exam') },

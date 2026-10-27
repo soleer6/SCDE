@@ -31,8 +31,8 @@ export const mocks = [
       const claims = decodeMockToken(body?.refresh_token || '');
       if (!claims || claims.token_type !== 'refresh') throw mockError(401, 'INVALID_TOKEN');
       const user = db.users.find((u) => u.id === claims.user_id);
-      if (!user) throw mockError(401, 'INVALID_TOKEN');
-      return issueMockTokens(user);
+      if (!user?.is_active) throw mockError(401, 'INVALID_TOKEN');
+      return { ...issueMockTokens(user), user: null };
     },
   },
   { method: 'POST', path: '/auth/logout/', auth: false, handler: () => reply(204) },

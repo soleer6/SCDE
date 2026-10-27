@@ -26,19 +26,20 @@ export default function IssuesPage() {
   const { t } = useTranslation('ingestion');
   const { session } = useAuth();
   const exam = useApi(() => getExam(examId), [examId]);
-  const { roleOf, loading } = useMySubjects();
+  const { membershipOf, loading, error: permissionsError, reload: reloadPermissions } = useMySubjects();
 
   if (exam.initialLoading || loading) return <Loader page />;
+  if (permissionsError) return <ErrorState error={permissionsError} onRetry={reloadPermissions} />;
   if (exam.error) return <ErrorState error={exam.error} onRetry={exam.reload} />;
   const e = exam.data;
-  const role = roleOf(e.subject_id);
-  if (!can(session, role, 'can_resolve_issues')) {
+  const membership = membershipOf(e.subject_id);
+  if (!can(session, membership, 'can_resolve_issues')) {
     return <EmptyState title={t('issues.denied')} body={t('issues.deniedBody')} action={<ButtonLink to={`/exams/${e.id}`}>{t('issues.back')}</ButtonLink>} />;
   }
-  return <IssuesView exam={e} role={role} />;
+  return <IssuesView exam={e} membership={membership} />;
 }
 
-function IssuesView({ exam, role }) {
+function IssuesView({ exam, membership }) {
   const { t } = useTranslation('ingestion');
   const { session } = useAuth();
   const toast = useToast();
@@ -131,7 +132,7 @@ function IssuesView({ exam, role }) {
               instance={selected}
               instances={list}
               orphans={isManager ? orphans.data ?? [] : null}
-              canDelete={can(session, role, 'can_view_all_instances')}
+              canDelete={can(session, membership, 'can_view_all_instances')}
               onChanged={refresh}
               onDeleted={() => {
                 setSelectedId(null);

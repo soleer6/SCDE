@@ -22,7 +22,7 @@ const FILTERS = {
   issues: (i) => i.has_issues || ['ASSEMBLING', 'RECEIVED', 'QUEUED'].includes(i.status),
 };
 
-export default function TeacherExamView({ exam, role }) {
+export default function TeacherExamView({ exam, membership, permissionsReady = false }) {
   const { t } = useTranslation('exams');
   const { session } = useAuth();
   const toast = useToast();
@@ -48,12 +48,12 @@ export default function TeacherExamView({ exam, role }) {
   const avg = gradedList.length ? gradedList.reduce((a, i) => a + (toNumber(i.total_score) ?? 0), 0) / gradedList.length : null;
   const maxScore = exam.models_problems?.[0]?.problems.reduce((a, p) => a + Number(p.max_score), 0);
 
-  const canPublish = can(session, role, 'can_publish_grades');
-  const canReview = can(session, role, 'can_manage_reviews');
-  const canExport = can(session, role, 'can_export_grades');
-  const canResolve = can(session, role, 'can_resolve_issues');
+  const canPublish = permissionsReady && can(session, membership, 'can_publish_grades');
+  const canReview = permissionsReady && can(session, membership, 'can_manage_reviews');
+  const canExport = permissionsReady && can(session, membership, 'can_export_grades');
+  const canResolve = permissionsReady && can(session, membership, 'can_resolve_issues');
   const issueCount = list.filter((i) => i.has_issues).length;
-  const canSetup = ['can_create_exams', 'can_create_rubric', 'can_assign_correctors'].some((p) => can(session, role, p));
+  const canSetup = permissionsReady && ['can_create_exams', 'can_create_rubric', 'can_assign_correctors'].some((p) => can(session, membership, p));
   const allPublished = list.length > 0 && list.every((i) => ['PUBLISHED', 'ARCHIVED'].includes(i.status));
 
   const onPublish = async () => {
@@ -234,7 +234,7 @@ export default function TeacherExamView({ exam, role }) {
       </div>
 
       {/* Mounted only while open, so a refused attempt and its dates do not survive closing. */}
-      {reviewOpen && (
+      {canReview && reviewOpen && (
         <ReviewDialog
           open
           onClose={() => setReviewOpen(false)}

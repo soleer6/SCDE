@@ -1,0 +1,10 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom', include: ['src/features/workspace/real-backend/*.integration.jsx'],
+    fileParallelism: false, testTimeout: 60000,
+    env: { VITE_MOCK_API: 'false', VITE_API_URL: 'http://127.0.0.1:8000' },
+  },
+});

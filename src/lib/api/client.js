@@ -14,6 +14,7 @@
 import { tokenStore } from './tokens.js';
 import { ApiError, toApiError } from './errors.js';
 import { mockFetch } from '../mock/router.js';
+import { invalidatePermissions } from '../permissionEvents.js';
 
 export const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 export const API_BASE = `${API_URL}/api/v1`;
@@ -21,6 +22,7 @@ export const USE_MOCK = import.meta.env.VITE_MOCK_API === 'true';
 
 let refreshing = null; // single-flight refresh promise
 const unauthorizedListeners = new Set();
+const deniedRequests = new Set();
 
 /** Subscribe to "session is no longer valid" (refresh failed). Returns unsubscribe. */
 export function onUnauthorized(fn) {
@@ -46,6 +48,7 @@ async function refreshTokens() {
         if (!res.ok) return false;
         const data = await res.json();
         tokenStore.set(data.access_token, data.refresh_token);
+        invalidatePermissions();
         return true;
       } catch {
         return false;
@@ -75,7 +78,7 @@ function buildUrl(path, query) {
  * @param {object} opts  { method, body, query, form (FormData), raw (return Response), auth=true }
  */
 export async function request(path, opts = {}) {
-  const { method = 'GET', body, query, form, raw = false, auth = true, signal } = opts;
+  const { method = 'GET', body, query, form, raw = false, auth = true, signal, cache } = opts;
   const url = buildUrl(path, query);
 
   const send = () => {
@@ -89,7 +92,7 @@ export async function request(path, opts = {}) {
     }
     const token = tokenStore.getAccess();
     if (auth && token) headers.Authorization = `Bearer ${token}`;
-    return transport(url, { method, headers, body: payload, signal });
+    return transport(url, { method, headers, body: payload, signal, ...(cache && { cache }) });
   };
 
   let res;
@@ -110,7 +113,14 @@ export async function request(path, opts = {}) {
     }
   }
 
+  const denialKey = `${tokenStore.getAccess()}:${path}`;
+  if (res.status === 403 && path !== '/my-subjects/' && !deniedRequests.has(denialKey)) {
+    deniedRequests.add(denialKey);
+    invalidatePermissions();
+  }
   if (!res.ok) throw await toApiError(res);
+  deniedRequests.delete(denialKey);
+  if (method !== 'GET' && /^\/(memberships|config|subjects|courses)(\/|$)/.test(path)) invalidatePermissions();
   if (raw) return res;
   if (res.status === 204) return null;
   const text = await res.text();

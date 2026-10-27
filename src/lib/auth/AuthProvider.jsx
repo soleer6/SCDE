@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api, onUnauthorized } from '../api/client.js';
 import { decodeJwt, tokenStore } from '../api/tokens.js';
+import { invalidatePermissions } from '../permissionEvents.js';
 
 const AuthContext = createContext(null);
 const USER_KEY = 'scde.user';
@@ -37,6 +38,7 @@ export function AuthProvider({ children }) {
       /* ignore */
     }
     setSession(null);
+    invalidatePermissions();
   }, []);
 
   useEffect(() => onUnauthorized(clear), [clear]);
@@ -47,6 +49,7 @@ export function AuthProvider({ children }) {
     const s = buildSession(data.user, data.access_token);
     localStorage.setItem(USER_KEY, JSON.stringify(s));
     setSession(s);
+    invalidatePermissions();
     return s;
   }, []);
 
