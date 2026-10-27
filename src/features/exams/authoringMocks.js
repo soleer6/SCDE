@@ -71,6 +71,24 @@ const ruleOut = (r) => ({ ...r });
 
 export const authoringMocks = [
   {
+    method: 'PATCH',
+    path: '/models/:id/',
+    handler: ({ params, user, body }) => {
+      const model = model404(params.id);
+      const exam = exam404(model.exam_id);
+      const subject = q.subject(exam.subject_id);
+      const organizationId = exam.organization_id ?? subject?.organization_id ?? db.courses.find((c) => c.id === subject?.course_id)?.organization_id ?? db.organizations[0]?.id;
+      if (!user.is_superadmin && organizationId !== user.organization_id) throw mockError(404, 'NOT_FOUND');
+      need(user, exam.subject_id, 'can_create_exams');
+      const label = typeof body?.label === 'string' ? body.label.trim() : '';
+      if (!/^[A-Za-z0-9]{1,10}$/.test(label)) throw mockError(400, 'VALIDATION_ERROR', { label: ['INVALID'] });
+      if (db.courses.find((c) => c.id === subject.course_id)?.is_active === false) throw mockError(409, 'COURSE_ARCHIVED');
+      if (db.models.some((m) => m.exam_id === exam.id && m.id !== model.id && m.label === label)) throw mockError(409, 'MODEL_LABEL_EXISTS');
+      if (model.label !== label) { model.label = label; model.updated_at = now(); }
+      return modelOut(model);
+    },
+  },
+  {
     method: 'POST',
     path: '/subjects/:id/exams/',
     handler: ({ params, user, body, db: d }) => {

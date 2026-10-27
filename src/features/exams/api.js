@@ -43,6 +43,8 @@ export const deleteExam = (id) => api.del(`/exams/${id}/`);
 export const createModel = (examId, body) => api.post(`/exams/${examId}/models/`, body);
 /* GET /models/{id}/ -> ModelDetail */
 export const getModel = (id) => api.get(`/models/${id}/`);
+/* PATCH /models/{id}/ { label } -> ModelDetail (RF-6.6, can_create_exams). */
+export const updateModel = (id, body) => api.patch(`/models/${id}/`, body);
 /* PUT /models/{id}/blank-pdf/ multipart { file } -> BlankPDFUploadResponse */
 export function uploadBlankPdf(modelId, file) {
   const form = new FormData();

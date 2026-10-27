@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAction, useApi } from '../../../lib/hooks.js';
 import { formatScore } from '../../../lib/format.js';
@@ -6,6 +6,7 @@ import { Badge, Button, DataTable, EmptyState, Field, Input, Panel, Select, useT
 import { createModel, createProblem, generateQrPdf, getModel, uploadBlankPdf } from '../api.js';
 import RubricDialog from './RubricDialog.jsx';
 import ZonesSection from './ZonesSection.jsx';
+import RenameModelDialog from './RenameModelDialog.jsx';
 
 /** Models (variants) of the exam, their blank PDF and their problems + rubrics. */
 export default function StructureTab({ exam, perms, onChanged }) {
@@ -36,6 +37,8 @@ function ModelBlock({ model, perms, onChanged }) {
   const detail = useApi(perms.exams ? () => getModel(model.model_id) : null, [model.model_id]);
   const fileRef = useRef(null);
   const [rubricFor, setRubricFor] = useState(null);
+  const [renaming, setRenaming] = useState(false);
+  const closeRename = useCallback(() => setRenaming(false), []);
   const upload = useAction((file) => uploadBlankPdf(model.model_id, file));
   const qr = useAction(() => generateQrPdf(model.model_id));
   const total = model.problems.reduce((a, p) => a + Number(p.max_score), 0);
@@ -74,6 +77,7 @@ function ModelBlock({ model, perms, onChanged }) {
       actions={
         perms.exams && (
           <>
+            <Button size="sm" onClick={() => setRenaming(true)}>{t('setup.structure.rename')}</Button>
             {detail.data && (pages ? <Badge tone="green">{t('setup.structure.pdfPages', { count: pages })}</Badge> : <Badge tone="gold">{t('setup.structure.noPdf')}</Badge>)}
             <input ref={fileRef} type="file" accept="application/pdf" hidden onChange={onFile} />
             <Button size="sm" onClick={() => fileRef.current?.click()} loading={upload.pending}>
@@ -120,6 +124,7 @@ function ModelBlock({ model, perms, onChanged }) {
       </div>
       {perms.exams && pages > 0 && <ZonesSection modelId={model.model_id} pages={pages} onError={fail} />}
       <RubricDialog problem={rubricFor} onClose={() => setRubricFor(null)} onSaved={onChanged} />
+      {perms.exams && renaming && <RenameModelDialog model={model} onClose={closeRename} onSaved={(saved) => { detail.setData(saved); onChanged(); }} />}
     </Panel>
   );
 }

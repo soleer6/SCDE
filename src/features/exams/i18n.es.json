@@ -142,7 +142,11 @@
       "copyFrom": "Copiar estructura de",
       "copyNone": "No copiar",
       "addModel": "Crear modelo",
-      "modelAdded": "Modelo creado"
+      "modelAdded": "Modelo creado",
+      "rename": "Renombrar modelo",
+      "renameTitle": "Renombrar modelo {{label}}",
+      "labelRules": "Usa de 1 a 10 letras (A-Z, a-z) o números.",
+      "modelRenamed": "Modelo renombrado"
     },
     "rubric": {
       "title": "Rúbrica · {{name}}",

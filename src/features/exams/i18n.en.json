@@ -142,7 +142,11 @@
       "copyFrom": "Copy structure from",
       "copyNone": "Don't copy",
       "addModel": "Create model",
-      "modelAdded": "Model created"
+      "modelAdded": "Model created",
+      "rename": "Rename model",
+      "renameTitle": "Rename model {{label}}",
+      "labelRules": "Use 1 to 10 letters (A-Z, a-z) or numbers.",
+      "modelRenamed": "Model renamed"
     },
     "rubric": {
       "title": "Rubric · {{name}}",

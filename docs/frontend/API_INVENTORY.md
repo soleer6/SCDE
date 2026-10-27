@@ -1,6 +1,6 @@
 # API inventory (generated)
 
-Source: canonical contract of the local backend `SCDEE-backend`, branch `fix/integracion-real` @ 5e4f297 (2026-10-23), file `docs/files/spectacular/SCDEE API.yaml` (SHA-256 LF 4733013068511572d98bfcd02749e3bcf609ad3fdad8f4b9624c270effd99a70). Previous source: `anxoCRuam/SCDEE` `backend` @ a8eb9f43.
+Source: canonical contract of the local backend `SCDEE-backend`, branch `fix/integracion-real` @ 6ca40e7 (2026-10-26), file `docs/files/spectacular/SCDEE API.yaml` (SHA-256 LF dade4ce3922f3365b7d5402d37cbd91b9a8436fc5683aeaca9ca35f58d67063a). Previous source: `anxoCRuam/SCDEE` `backend` @ a8eb9f43.
 Regenerate with `scripts/analyze/endpoints.py` and `scripts/analyze/schemas.py` (need PyYAML). All paths below are relative to `/api/v1`.
 
 **Never use an endpoint or field that is not listed here.** If you need one, write it in docs/coordination/REQUESTS.md.
@@ -58,6 +58,8 @@ PATCH  /instances/{instance_pk}/transition/                            [Instance
 GET    /memberships/{membership_pk}/permissions/                       [Subjects] req= resp=200:EffectivePermissions | Get own or managed membership permissions (RF-5.5); absence means fals
 PATCH  /memberships/{membership_pk}/permissions/                       [Subjects] req=json:PatchedUpdatePermissionsRequest resp=200:EffectivePermissions | Update permission overrides (RF-5.3) ('can_delegate_perms' required)
 GET    /models/{model_pk}/                                             [Exams] req= resp=200:ModelDetail | Get model detail – list page profiles with zones 'can_create_exams' re
+PATCH  /models/{model_pk}/                                             [Exams] req=json:PatchedUpdateModelRequest resp=200:ModelDetail | Update model label (RF-6.6) 'can_create_exams' required
+GET    /models/{model_pk}/blank-pdf/                                   [Exams] req= resp=200:string | Download blank PDF for the zone editor
 PUT    /models/{model_pk}/blank-pdf/                                   [Exams] req=form-data:BlankPDFUploadRequestRequest resp=200:BlankPDFUploadResponse | Upload blank PDF (RF-6.7) 'can_create_exams' required
 GET    /models/{model_pk}/page-profiles/                               [Exams] req= resp=200:array | List page profiles 'can_create_exams' required
 POST   /models/{model_pk}/page-profiles/                               [Exams] req=json:CreatePageProfileRequest resp=201:PageProfileResponse | Create page profile (RF-6.8) 'can_create_exams' required
@@ -293,9 +295,12 @@ ErrorResponse401_INVALID_TOKEN_INVALID_TOKEN_TYPE_TOKEN_EXPIRED_TOKEN_REVOKED:
 ErrorResponse403PERMISSIONDENIEDErrorCodeEnum: enum ['PERMISSION_DENIED']
 ErrorResponse403_PERMISSION_DENIED:
    *error_code: ErrorResponse403PERMISSIONDENIEDErrorCodeEnum
+ErrorResponse404NOTFOUNDErrorCodeEnum: enum ['NOT_FOUND']
 ErrorResponse404NOTFOUNDPAGENOTORPHANErrorCodeEnum: enum ['NOT_FOUND', 'PAGE_NOT_ORPHAN']
 ErrorResponse404NOTFOUNDTARGETNOTFOUNDErrorCodeEnum: enum ['NOT_FOUND', 'TARGET_NOT_FOUND']
 ErrorResponse404PAGENOTORPHANTARGETNOTFOUNDErrorCodeEnum: enum ['PAGE_NOT_ORPHAN', 'TARGET_NOT_FOUND']
+ErrorResponse404_NOT_FOUND:
+   *error_code: ErrorResponse404NOTFOUNDErrorCodeEnum
 ErrorResponse404_NOT_FOUND_PAGE_NOT_ORPHAN:
    *error_code: ErrorResponse404NOTFOUNDPAGENOTORPHANErrorCodeEnum
 ErrorResponse404_NOT_FOUND_TARGET_NOT_FOUND:
@@ -304,6 +309,7 @@ ErrorResponse404_PAGE_NOT_ORPHAN_TARGET_NOT_FOUND:
    *error_code: ErrorResponse404PAGENOTORPHANTARGETNOTFOUNDErrorCodeEnum
 ErrorResponse409COURSEARCHIVEDErrorCodeEnum: enum ['COURSE_ARCHIVED']
 ErrorResponse409COURSEARCHIVEDHASINSTANCESErrorCodeEnum: enum ['COURSE_ARCHIVED', 'HAS_INSTANCES']
+ErrorResponse409COURSEARCHIVEDMODELLABELEXISTSErrorCodeEnum: enum ['COURSE_ARCHIVED', 'MODEL_LABEL_EXISTS']
 ErrorResponse409COURSEARCHIVEDMODELLABELEXISTSSOURCEMODELNOTFOUNDErrorCodeEnum: enum ['COURSE_ARCHIVED', 'MODEL_LABEL_EXISTS', 'SOURCE_MODEL_NOT_FOUND']
 ErrorResponse409DIFFERENTEXAMDIFFERENTORGANIZATIONPAGENOTORPHANErrorCodeEnum: enum ['DIFFERENT_EXAM', 'DIFFERENT_ORGANIZATION', 'PAGE_NOT_ORPHAN']
 ErrorResponse409DIFFERENTEXAMErrorCodeEnum: enum ['DIFFERENT_EXAM']
@@ -317,6 +323,8 @@ ErrorResponse409_COURSE_ARCHIVED:
    *error_code: ErrorResponse409COURSEARCHIVEDErrorCodeEnum
 ErrorResponse409_COURSE_ARCHIVED_HAS_INSTANCES:
    *error_code: ErrorResponse409COURSEARCHIVEDHASINSTANCESErrorCodeEnum
+ErrorResponse409_COURSE_ARCHIVED_MODEL_LABEL_EXISTS:
+   *error_code: ErrorResponse409COURSEARCHIVEDMODELLABELEXISTSErrorCodeEnum
 ErrorResponse409_COURSE_ARCHIVED_MODEL_LABEL_EXISTS_SOURCE_MODEL_NOT_FOUND:
    *error_code: ErrorResponse409COURSEARCHIVEDMODELLABELEXISTSSOURCEMODELNOTFOUNDErrorCodeEnum
 ErrorResponse409_DIFFERENT_EXAM:
@@ -601,6 +609,8 @@ PatchedUpdateGroupRequest:
 PatchedUpdateInstanceRequest:
     student_id: string(uuid)
     model_id: string(uuid)
+PatchedUpdateModelRequest:
+    label: string
 PatchedUpdatePermissionsRequest:
     permissions: object
 PatchedUpdateProfileRequest:
@@ -657,6 +667,7 @@ PublishResult:
    *errors: [PublishError] ro
 RefreshRequestRequest:
    *refresh_token: string
+ReviewRead: anyOf(ReviewResponse|ReviewStatusResponse) — request_count only with effective can_manage_reviews
 ReviewRequestResponse:
    *id: string(uuid) ro
    *instance_id: string(uuid) ro
@@ -675,6 +686,13 @@ ReviewResponse:
    *status: string ro
    *created_at: string(date-time) ro
    *request_count: integer ro
+ReviewStatusResponse:
+   *id: string(uuid) ro
+   *exam_id: string(uuid) ro
+   *start_date: string(date-time) ro
+   *end_date: string(date-time) ro
+   *status: string ro
+   *created_at: string(date-time) ro
 RoleEnum: enum ['TEACHER', 'STUDENT']
 RubricCriterionInputRequest:
    *description: string
@@ -816,12 +834,6 @@ ZoneResponse:
    *height: number(double) ro
    *page_profile_id: string(uuid) ro
 ZoneTypeEnum: enum ['OCR_TEXT', 'OCR_NUMBER', 'QR', 'CHECKBOX']
-ReviewRead: anyOf(ReviewResponse|ReviewStatusResponse) — request_count only with effective can_manage_reviews
-ReviewStatusResponse:
-   *id: string(uuid) ro
-   *exam_id: string(uuid) ro
-   *start_date: string(date-time) ro
-   *end_date: string(date-time) ro
-   *status: string ro
-   *created_at: string(date-time) ro
 ```
+
+PATCH `/models/{model_pk}/`: required `label`, pattern `^[A-Za-z0-9]+$`, maxLength 10; effective `can_create_exams`. Errors: 400 validation, 403 denied, 404 missing/other tenant, 409 `COURSE_ARCHIVED` / `MODEL_LABEL_EXISTS`. Returns full `ModelDetail`.
