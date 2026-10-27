@@ -1,9 +1,9 @@
 # API inventory (generated)
 
-Source: canonical contract of the local backend `SCDEE-backend`, branch `fix/integracion-real` @ 065a5e6 (2026-10-27), file `docs/files/spectacular/SCDEE API.yaml` (SHA-256 LF dcccfdb262cc5609d0c86f60f43adc7393f594cf2627bc8c9ee1a3f09ef4be31). Previous source: `anxoCRuam/SCDEE` `backend` @ a8eb9f43.
-Regenerate with `scripts/analyze/endpoints.py` and `scripts/analyze/schemas.py` (need PyYAML). All paths below are relative to `/api/v1`.
+Source: canonical contract of local `SCDEE-backend`, `fix/integracion-real` @ 67a60b5 (evidence 9fbaff8, 2026-10-27), `docs/files/spectacular/SCDEE API.yaml` (SHA-256 LF 6fd67bc4c9efcf6693c304ad791647358147c2b69b17a9fc5d91ca07659474d4). Includes H01/H17/H18/H21/H25 and PATCH models.
+Regenerate with `scripts/analyze/endpoints.py` and `scripts/analyze/schemas.py` (PyYAML). Paths relative to `/api/v1`.
 
-**Never use an endpoint or field that is not listed here.** If you need one, write it in docs/coordination/REQUESTS.md.
+**Never use an endpoint or field that is not listed here.** Request additions in docs/coordination/REQUESTS.md.
 
 ## Endpoints
 ```
@@ -272,11 +272,17 @@ EffectivePermissions:
    *has_overrides: boolean ro
    *is_staff_bypass: boolean ro
 ErrorResponse400DUPLICATESTUDENTEXPECTEDPAGESREQUIREDMODELNOTFOUNDNOTFOUNDSTUDENTNOT_ErrorCodeEnum: enum ['DUPLICATE_STUDENT', 'EXPECTED_PAGES_REQUIRED', 'MODEL_NOT_FOUND', 'NOT_FOUND', 'STUDENT_NOT_FOUND']
+ErrorResponse400EMPTYSTYLUSPAYLOADINVALIDSTYLUSPAYLOADNOCONTENTNOPROBLEMASSOCIATEDUNSErrorCodeEnum: enum ['EMPTY_STYLUS_PAYLOAD', 'INVALID_STYLUS_PAYLOAD', 'NO_CONTENT', 'NO_PROBLEM_ASSOCIATED', 'UNSUPPORTED_TYPE']
+ErrorResponse400EMPTYSTYLUSPAYLOADINVALIDSTYLUSPAYLOADNOTSTYLUSNOCONTENTErrorCodeEnum: enum ['EMPTY_STYLUS_PAYLOAD', 'INVALID_STYLUS_PAYLOAD', 'NOT_STYLUS', 'NO_CONTENT']
 ErrorResponse400INVALIDCOORDINATESINVALIDDIMENSIONSINVALIDPAGENUMBERINVALIDZONETYPEZONErrorCodeEnum: enum ['INVALID_COORDINATES', 'INVALID_DIMENSIONS', 'INVALID_PAGE_NUMBER', 'INVALID_ZONE_TYPE', 'ZONE_EXCEEDS_PAGE_HEIGHT', 'ZONE_EXCEEDS_PAGE_WIDTH']
 ErrorResponse400INVALIDPDFNOFILEPROVIDEDErrorCodeEnum: enum ['INVALID_PDF', 'NO_FILE_PROVIDED']
 ErrorResponse400NOFILEPROVIDEDErrorCodeEnum: enum ['NO_FILE_PROVIDED']
 ErrorResponse400_DUPLICATE_STUDENT_EXPECTED_PAGES_REQUIRED_MODEL_NOT_FOUND_NOT_FOUND_STUDENT_NOT_:
    *error_code: ErrorResponse400DUPLICATESTUDENTEXPECTEDPAGESREQUIREDMODELNOTFOUNDNOTFOUNDSTUDENTNOT_ErrorCodeEnum
+ErrorResponse400_EMPTY_STYLUS_PAYLOAD_INVALID_STYLUS_PAYLOAD_NOT_STYLUS_NO_CONTENT:
+   *error_code: ErrorResponse400EMPTYSTYLUSPAYLOADINVALIDSTYLUSPAYLOADNOTSTYLUSNOCONTENTErrorCodeEnum
+ErrorResponse400_EMPTY_STYLUS_PAYLOAD_INVALID_STYLUS_PAYLOAD_NO_CONTENT_NO_PROBLEM_ASSOCIATED_UNS:
+   *error_code: ErrorResponse400EMPTYSTYLUSPAYLOADINVALIDSTYLUSPAYLOADNOCONTENTNOPROBLEMASSOCIATEDUNSErrorCodeEnum
 ErrorResponse400_INVALID_COORDINATES_INVALID_DIMENSIONS_INVALID_PAGE_NUMBER_INVALID_ZONE_TYPE_ZON:
    *error_code: ErrorResponse400INVALIDCOORDINATESINVALIDDIMENSIONSINVALIDPAGENUMBERINVALIDZONETYPEZONErrorCodeEnum
 ErrorResponse400_INVALID_PDF_NO_FILE_PROVIDED:
@@ -292,7 +298,16 @@ ErrorResponse401_INVALID_CREDENTIALS_ORG_INACTIVE_USER_INACTIVE:
    *error_code: ErrorResponse401INVALIDCREDENTIALSORGINACTIVEUSERINACTIVEErrorCodeEnum
 ErrorResponse401_INVALID_TOKEN_INVALID_TOKEN_TYPE_TOKEN_EXPIRED_TOKEN_REVOKED:
    *error_code: ErrorResponse401INVALIDTOKENINVALIDTOKENTYPETOKENEXPIREDTOKENREVOKEDErrorCodeEnum
+ErrorResponse403COURSEARCHIVEDNOTAUTHORPERMISSIONDENIEDErrorCodeEnum: enum ['COURSE_ARCHIVED', 'NOT_AUTHOR', 'PERMISSION_DENIED']
+ErrorResponse403COURSEARCHIVEDPERMISSIONDENIEDErrorCodeEnum: enum ['COURSE_ARCHIVED', 'PERMISSION_DENIED']
+ErrorResponse403NOTAUTHORErrorCodeEnum: enum ['NOT_AUTHOR']
 ErrorResponse403PERMISSIONDENIEDErrorCodeEnum: enum ['PERMISSION_DENIED']
+ErrorResponse403_COURSE_ARCHIVED_NOT_AUTHOR_PERMISSION_DENIED:
+   *error_code: ErrorResponse403COURSEARCHIVEDNOTAUTHORPERMISSIONDENIEDErrorCodeEnum
+ErrorResponse403_COURSE_ARCHIVED_PERMISSION_DENIED:
+   *error_code: ErrorResponse403COURSEARCHIVEDPERMISSIONDENIEDErrorCodeEnum
+ErrorResponse403_NOT_AUTHOR:
+   *error_code: ErrorResponse403NOTAUTHORErrorCodeEnum
 ErrorResponse403_PERMISSION_DENIED:
    *error_code: ErrorResponse403PERMISSIONDENIEDErrorCodeEnum
 ErrorResponse404NOTFOUNDErrorCodeEnum: enum ['NOT_FOUND']
@@ -346,6 +361,9 @@ ErrorResponse409_SCORE_EXCEEDS_MAX_VERSION_CONFLICT:
 ErrorResponse429RATELIMITEXCEEDEDErrorCodeEnum: enum ['RATE_LIMIT_EXCEEDED']
 ErrorResponse429_RATE_LIMIT_EXCEEDED:
    *error_code: ErrorResponse429RATELIMITEXCEEDEDErrorCodeEnum
+ErrorResponse503OCRUNAVAILABLEErrorCodeEnum: enum ['OCR_UNAVAILABLE']
+ErrorResponse503_OCR_UNAVAILABLE:
+   *error_code: ErrorResponse503OCRUNAVAILABLEErrorCodeEnum
 ExamBasic:
    *id: string(uuid) ro
    *name: string ro
@@ -464,6 +482,8 @@ MySubject:
    *code: string ro
    *semester: string ro
    *role: string ro
+   *membership_id: string(uuid) ro
+   *effective_permissions: object ro
    *group_label: string ro
    *coordinator_email: string ro
 MyTasksResponse:
@@ -484,6 +504,7 @@ OCRGradeResponse:
    *recognized_value: string? ro
    *confidence: number(double) ro
    *auto_applied: boolean ro
+   *apply_error_code: string? ro
    *raw_value: string ro
 OCRStylusResponse:
    *recognized_text: string? ro
@@ -500,6 +521,10 @@ OrgConfig:
     temp_url_expiration_minutes: integer
     role_permission_defaults: ?
     grade_export_columns: ?
+OrganizationConflict:
+   *error_code: OrganizationConflictErrorCodeEnum
+    errors: object
+OrganizationConflictErrorCodeEnum: enum ['EMAIL_ALREADY_EXISTS', 'NIA_ALREADY_EXISTS', 'USER_CREATION_FAILED', 'SUBDOMAIN_ALREADY_EXISTS', 'ORGANIZATION_CREATION_FAILED']
 OrganizationResponse:
    *id: string(uuid) ro
    *name: string ro
@@ -836,7 +861,8 @@ ZoneResponse:
 ZoneTypeEnum: enum ['OCR_TEXT', 'OCR_NUMBER', 'QR', 'CHECKBOX']
 ```
 
-
 PATCH `/models/{model_pk}/`: required `label`, pattern `^[A-Za-z0-9]+$`, maxLength 10; effective `can_create_exams`. Errors: 400 validation, 403 denied, 404 missing/other tenant, 409 `COURSE_ARCHIVED` / `MODEL_LABEL_EXISTS`. Returns full `ModelDetail`.
 
 GET `/instances/{instance_pk}/annotations/`: authorization precedes filtering/URL generation. 403 `PERMISSION_DENIED`, 404 `NOT_FOUND` for missing/other tenant. Active membership in the exact subject; student owner, published instance and `can_view_annotations`. OPEN requires IN_REVIEW and start_date <= now < end_date. CLOSED/COMPLETED also requires `can_view_pages_after_review`. Teachers need assignment (model/group filters) or effective view-all permission; coordinators/managers retain tenant-scoped access. Existing signed URLs remain bearer capabilities until expiry.
+
+H14 OCR: POST `/annotations/{annotation_pk}/ocr/` transcribes saved STYLUS; `/ocr-grade/` recognizes TEXT/STYLUS with problem. Errors 400 INVALID_STYLUS_PAYLOAD / EMPTY_STYLUS_PAYLOAD / NO_CONTENT / NO_PROBLEM_ASSOCIATED / UNSUPPORTED_TYPE / NOT_STYLUS as applicable; 403 NOT_AUTHOR (grade also COURSE_ARCHIVED), 404 NOT_FOUND (also other tenant), 503 OCR_UNAVAILABLE. STYLUS payload remains a JSON string: page {v:1,strokes:[{points}]} in 0-1, pad [[{x,y}]] in 0-100. OCRGradeResponse.apply_error_code nullable: NO_RECOGNIZED_VALUE, LOW_CONFIDENCE, INVALID_SCORE, SCORE_EXCEEDS_MAX, VERSION_CONFLICT. auto_applied=true requires GET instance.grades, never a second manual write. Creation with is_grade_annotation=true attempts OCR before 201 without returning its result. Keep gap-9 pad pending coordinated UI/backend and human handwriting evidence.

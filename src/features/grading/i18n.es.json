@@ -108,8 +108,21 @@
       "NO_PROBLEM_ASSOCIATED": "La nota manuscrita tiene que ir asociada a un problema.",
       "NO_CONTENT": "La anotación no tiene trazos que reconocer.",
       "NOT_STYLUS": "Solo se pueden reconocer anotaciones a mano alzada.",
-      "UNSUPPORTED_TYPE": "Este tipo de anotación no admite reconocimiento."
-    }
+      "UNSUPPORTED_TYPE": "Este tipo de anotación no admite reconocimiento.",
+      "INVALID_STYLUS_PAYLOAD": "Los trazos no tienen un formato válido.",
+      "EMPTY_STYLUS_PAYLOAD": "No hay tinta que reconocer.",
+      "OCR_UNAVAILABLE": "El reconocimiento no está disponible. Reinténtalo.",
+      "LOW_CONFIDENCE": "Revisa la cifra antes de usarla.",
+      "NO_RECOGNIZED_VALUE": "No se ha reconocido un número.",
+      "INVALID_SCORE": "La nota reconocida no es válida.",
+      "SCORE_EXCEEDS_MAX": "La nota supera el máximo del problema.",
+      "VERSION_CONFLICT": "La nota ha cambiado. Recárgala antes de guardar.",
+      "REFRESH_FAILED": "La nota se ha guardado, pero no se ha podido releer. Recarga antes de continuar.",
+      "NOT_FOUND": "La anotación ya no está disponible.",
+      "COURSE_ARCHIVED": "No se pueden cambiar notas de un curso archivado."
+    },
+    "recognizeExisting": "Reconocer anotación guardada",
+    "refreshFailed": "La nota se ha guardado, pero no se ha podido releer. Recarga antes de continuar."
   },
   "audio": {
     "title": "Comentarios de audio",

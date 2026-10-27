@@ -30,8 +30,10 @@ export function GradeOcr({ instanceId, problem, onApplied, onUse }) {
     setResult(null);
     try {
       const r = await recognizeGrade(instanceId, problem.id, strokes);
-      if (r.autoApplied && r.score !== null) onApplied(r.score);
       setResult(r);
+      if (r.autoApplied) {
+        try { await onApplied(); } catch { setResult({ ...r, error: 'REFRESH_FAILED' }); }
+      }
       return true;
     } catch (e) {
       setResult({ error: e.code });
@@ -72,6 +74,7 @@ export function GradeOcr({ instanceId, problem, onApplied, onUse }) {
           ) : (
             <>
               <span>{t('ocr.gradeRead', { score: formatScore(result.score), pct: pctOf(result.confidence) })}</span>
+              {result.applyErrorCode && <span className="u-muted">{errorText(result.applyErrorCode)}</span>}
               {result.autoApplied ? (
                 <span className="u-green">{t('ocr.gradeApplied')}</span>
               ) : (

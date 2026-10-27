@@ -108,8 +108,21 @@
       "NO_PROBLEM_ASSOCIATED": "A handwritten grade must be linked to a problem.",
       "NO_CONTENT": "The annotation has no strokes to recognise.",
       "NOT_STYLUS": "Only freehand annotations can be recognised.",
-      "UNSUPPORTED_TYPE": "This annotation type does not support recognition."
-    }
+      "UNSUPPORTED_TYPE": "This annotation type does not support recognition.",
+      "INVALID_STYLUS_PAYLOAD": "The strokes have an invalid format.",
+      "EMPTY_STYLUS_PAYLOAD": "There is no ink to recognize.",
+      "OCR_UNAVAILABLE": "Recognition is unavailable. Please retry.",
+      "LOW_CONFIDENCE": "Check the value before using it.",
+      "NO_RECOGNIZED_VALUE": "No number was recognized.",
+      "INVALID_SCORE": "The recognized score is invalid.",
+      "SCORE_EXCEEDS_MAX": "The score exceeds the problem maximum.",
+      "VERSION_CONFLICT": "The score has changed. Reload it before saving.",
+      "REFRESH_FAILED": "The score was saved but could not be reloaded. Refresh before continuing.",
+      "NOT_FOUND": "The annotation is no longer available.",
+      "COURSE_ARCHIVED": "Grades in an archived course cannot be changed."
+    },
+    "recognizeExisting": "Recognize saved annotation",
+    "refreshFailed": "The score was saved but could not be reloaded. Refresh before continuing."
   },
   "audio": {
     "title": "Audio comments",

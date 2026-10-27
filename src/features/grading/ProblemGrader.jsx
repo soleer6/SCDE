@@ -5,6 +5,7 @@ import { Checkbox, Input } from '../../ui';
 import { gradeManual, gradeRubric, toKnownGrade } from './api.js';
 import { GradeOcr } from './HandwritingOcr.jsx';
 import ProblemNote from './ProblemNote.jsx';
+import SavedGradeOcr from './SavedGradeOcr.jsx';
 
 /**
  * One problem row. Rubric problems grade by criteria (PUT .../rubric/),
@@ -76,6 +77,16 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
     save((old) => gradeRubric(instanceId, problem.id, [...selected], old));
   };
 
+  const refreshApplied = async () => {
+    // OCR may race another teacher: the reading is not the persisted grade.
+    const fresh = await onConflict();
+    const latest = fresh?.[problem.id];
+    if (latest) known.remember(problem.id, latest);
+    setDraft(latest?.score != null ? String(Number(latest.score)) : '');
+    setState(latest ? 'saved' : 'idle');
+    setErrCode(null);
+  };
+
   return (
     <div className={`gr-problem ${state === 'saving' ? 'is-active' : ''}`}>
       <div className="gr-problem__head">
@@ -120,20 +131,16 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
         <GradeOcr
           instanceId={instanceId}
           problem={problem}
-          onApplied={(score) => {
-            // The backend already saved it: only refresh what this browser knows (old_score).
-            known.remember(problem.id, { score: score.toFixed(2) });
-            setDraft(String(score));
-            setState('saved');
-            setErrCode(null);
-            onSaved?.();
-          }}
+          onApplied={refreshApplied}
           onUse={(score) => {
             setDraft(String(score));
             commitManual(String(score));
           }}
         />
       )}
+
+      {!rubric.length && !disabled && <SavedGradeOcr instanceId={instanceId} problem={problem} currentUserId={currentUserId}
+        onApplied={refreshApplied} onUse={(score) => { setDraft(String(score)); commitManual(String(score)); }} />}
 
       <ProblemNote instanceId={instanceId} problem={problem} canEdit={!disabled} currentUserId={currentUserId} />
 

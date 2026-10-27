@@ -51,7 +51,7 @@ export const deleteAnnotation = (annotationId) => api.del(`/annotations/${annota
 
 /* POST /annotations/{id}/ocr/ -> OCRStylusResponse { recognized_text, confidence } (RF-9.13) */
 export const ocrAnnotation = (annotationId) => api.post(`/annotations/${annotationId}/ocr/`);
-/* POST /annotations/{id}/ocr-grade/ -> OCRGradeResponse { recognized_value, confidence, auto_applied, raw_value } (RF-9.12).
+/* POST /annotations/{id}/ocr-grade/ -> OCRGradeResponse { recognized_value, confidence, auto_applied, apply_error_code, raw_value } (RF-9.12).
  * Needs problem_id; above the server threshold the grade is applied (auto_applied). */
 export const ocrGradeAnnotation = (annotationId) => api.post(`/annotations/${annotationId}/ocr-grade/`);
 

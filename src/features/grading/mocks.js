@@ -2,6 +2,7 @@ import { db, q } from '../../lib/mock/db.js';
 import { mockError, reply } from '../../lib/mock/router.js';
 import { encryptPdf } from './pdfCrypto.js';
 import { authorizeAnnotationRead } from './annotationAccess.js';
+import { validatedInk } from './ocrPayload.mock.js';
 import { canGradeInstance as canGrade, gradeOut, hasPerm, instanceOut, recalcTotal, studentCan, studentInstanceOut } from '../exams/mockSerializers.js';
 
 /* Mirrors apps.instances.models.instances.VALID_TRANSITIONS */
@@ -66,35 +67,41 @@ function applyGrade({ inst, problem, score, oldScore, user, rubric }) {
  * the number of strokes, confident (0.92) up to 3 strokes and doubtful (0.55)
  * beyond. Auto-apply above 0.8 mirrors GRADE_OCR_CONFIDENCE_THRESHOLD. */
 const OCR_THRESHOLD = 0.8;
-const padStrokes = (a) => {
-  try {
-    const d = JSON.parse(a.content ?? '');
-    return Array.isArray(d) ? d.filter((s) => Array.isArray(s) && s.length > 1) : [];
-  } catch {
-    return [];
-  }
+const ocrEngine = () => {
+  if (!['tesseract', 'easyocr'].includes(db.org_config.default_ocr_engine)) throw mockError(503, 'OCR_UNAVAILABLE');
 };
 function ocrGrade(a) {
   if (!a.problem_id) throw mockError(400, 'NO_PROBLEM_ASSOCIATED');
   if (!a.content) throw mockError(400, 'NO_CONTENT');
-  if (a.annotation_type !== 'STYLUS') throw mockError(400, 'UNSUPPORTED_TYPE');
-  const n = padStrokes(a).length;
-  const out = { recognized_value: n ? String(n) : null, confidence: n ? (n <= 3 ? 0.92 : 0.55) : 0, auto_applied: false, raw_value: n ? String(n) : '' };
-  if (n && out.confidence >= OCR_THRESHOLD) {
+  if (!['STYLUS', 'TEXT'].includes(a.annotation_type)) throw mockError(400, 'UNSUPPORTED_TYPE');
+  const n = a.annotation_type === 'STYLUS' ? validatedInk(a.content).length : null;
+  if (n !== null) ocrEngine();
+  const value = n === null ? a.content.trim().replace(',', '.') : String(n);
+  const score = /^[-+]?(?:\d*\.\d+|\d+)$/.test(value) ? Number(value) : null;
+  const out = { recognized_value: score === null ? null : value, confidence: n === null ? 1 : (n <= 3 ? 0.92 : 0.55), auto_applied: false, raw_value: value, apply_error_code: null };
+  if (score === null) out.apply_error_code = 'NO_RECOGNIZED_VALUE';
+  else if (score < 0) out.apply_error_code = 'INVALID_SCORE';
+  else if (out.confidence < OCR_THRESHOLD) out.apply_error_code = 'LOW_CONFIDENCE';
+  if (!out.apply_error_code) {
     const inst = q.instance(a.instance_id);
     const problem = db.problems.find((p) => p.id === a.problem_id);
     const current = db.grades.find((g) => g.instance_id === inst.id && g.problem_id === problem.id);
     try {
-      applyGrade({ inst, problem, score: n, oldScore: current?.score ?? null, user: q.user(a.author_id) });
+      applyGrade({ inst, problem, score, oldScore: current?.score ?? null, user: q.user(a.author_id) });
       out.auto_applied = true;
-    } catch {
-      /* e.g. SCORE_EXCEEDS_MAX: the backend logs and leaves the grade untouched */
+    } catch (e) {
+      out.apply_error_code = e.__mock?.body?.error_code ?? 'VERSION_CONFLICT';
     }
   }
   return out;
 }
-const ocrAuthorOr400 = (a, user) => {
-  if (!user.is_staff && a.author_id !== user.id) throw mockError(400, 'NOT_AUTHOR');
+const ocrAuthorized = (a, user, grade = false) => {
+  const inst = q.instance(a.instance_id);
+  const subject = q.subject(subjectOf(inst));
+  const course = db.courses.find((c) => c.id === subject.course_id);
+  if ((inst.organization_id ?? subject.organization_id ?? course?.organization_id ?? db.organizations[0]?.id) !== user.organization_id) throw mockError(404, 'NOT_FOUND');
+  if (grade && course?.is_active === false) throw mockError(403, 'COURSE_ARCHIVED');
+  if (!user.is_staff && a.author_id !== user.id) throw mockError(403, 'NOT_AUTHOR');
 };
 
 export const mocks = [
@@ -195,7 +202,9 @@ export const mocks = [
         author_id: user.id, is_grade_annotation: Boolean(body.is_grade_annotation), created_at: now, updated_at: now,
       };
       db.annotations.push(a);
-      if (a.is_grade_annotation) ocrGrade(a); // RF-10.5: grade annotations trigger OCR on creation
+      if (a.is_grade_annotation) {
+        try { ocrGrade(a); } catch { /* automatic failure does not roll back creation */ }
+      }
       return reply(201, annotationOut(a));
     },
   },
@@ -231,7 +240,7 @@ export const mocks = [
     handler: ({ params, user }) => {
       const a = db.annotations.find((x) => x.id === params.id);
       if (!a) throw mockError(404, 'NOT_FOUND');
-      ocrAuthorOr400(a, user);
+      ocrAuthorized(a, user, true);
       return ocrGrade(a);
     },
   },
@@ -241,10 +250,11 @@ export const mocks = [
     handler: ({ params, user }) => {
       const a = db.annotations.find((x) => x.id === params.id);
       if (!a) throw mockError(404, 'NOT_FOUND');
-      ocrAuthorOr400(a, user);
+      ocrAuthorized(a, user);
       if (a.annotation_type !== 'STYLUS') throw mockError(400, 'NOT_STYLUS');
       if (!a.content) throw mockError(400, 'NO_CONTENT');
-      const n = padStrokes(a).length;
+      const n = validatedInk(a.content).length;
+      ocrEngine();
       return { recognized_text: n ? `Texto manuscrito simulado (${n} trazos)` : null, confidence: n ? 0.7 : 0 };
     },
   },

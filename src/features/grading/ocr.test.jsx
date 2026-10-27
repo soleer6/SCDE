@@ -7,7 +7,9 @@ import { api } from '../../lib/api/client.js';
 import { tokenStore } from '../../lib/api/tokens.js';
 import { db } from '../../lib/mock/db.js';
 import '../../app/registry.js'; // registers every feature's mock handlers
-import { parseInk, recognizeGrade, toRecognizerStrokes, transcribeHandwriting } from './ocr.js';
+import { parseInk, parseRecognizedScore, recognizeExistingGrade, recognizeGrade, toRecognizerStrokes, transcribeHandwriting } from './ocr.js';
+import { createAnnotation } from './api.js';
+import SavedGradeOcr from './SavedGradeOcr.jsx';
 import { useAnnotations } from './useAnnotations.js';
 import { GradeOcr } from './HandwritingOcr.jsx';
 
@@ -53,7 +55,7 @@ describe('recognizeGrade', () => {
     const r = await recognizeGrade(INST, PROBLEM, pad(2));
     expect(r).toMatchObject({ score: 2, autoApplied: true });
     expect(db.grades.find((g) => g.instance_id === INST && g.problem_id === PROBLEM)?.score).toBe(2);
-    expect(notes()).toEqual([expect.objectContaining({ problem_id: PROBLEM, is_grade_annotation: true })]);
+    expect(notes()).toEqual([expect.objectContaining({ problem_id: PROBLEM, is_grade_annotation: false })]);
   });
 
   it('only proposes a doubtful reading, without grading', async () => {
@@ -62,19 +64,87 @@ describe('recognizeGrade', () => {
     expect(db.grades.some((g) => g.instance_id === INST)).toBe(false);
   });
 
-  it('drops an unreadable attempt', async () => {
-    const r = await recognizeGrade(INST, PROBLEM, []);
-    expect(r.score).toBeNull();
-    expect(notes()).toHaveLength(0);
+  it('reports empty ink and preserves the source for correction', async () => {
+    await expect(recognizeGrade(INST, PROBLEM, [])).rejects.toMatchObject({ status: 400, code: 'EMPTY_STYLUS_PAYLOAD' });
+    expect(notes()).toHaveLength(1);
   });
 });
 
 describe('transcribeHandwriting', () => {
-  it('returns the text and deletes the temporary pad annotation', async () => {
+  it('returns text while preserving its source annotation', async () => {
     const r = await transcribeHandwriting(INST, pad(3));
     expect(r.text).toContain('3');
-    expect(notes()).toHaveLength(0);
+    expect(notes()).toHaveLength(1);
   });
+});
+
+const existing = (payload, extra = {}) => createAnnotation(INST, { annotation_type: 'STYLUS', payload,
+  problem_id: PROBLEM, page_number: 1, x: 0, y: 0, ...extra });
+
+describe('H14 existing annotations', () => {
+  it('accepts normalized page ink without changing or duplicating it', async () => {
+    const content = JSON.stringify({ v: 1, strokes: [line(0.2)] });
+    const a = await existing(content);
+    const before = structuredClone(notes());
+    expect(await recognizeExistingGrade(a.id)).toMatchObject({ score: 1, autoApplied: true, applyErrorCode: null });
+    expect(notes()).toEqual(before);
+  });
+
+  it.each(['{', '{"v":2,"strokes":[]}', '{"strokes":[{"points":[{"x":2,"y":0}]}]}', '[[{"x":true,"y":0}]]'])(
+    'rejects invalid payload %s without modifying grades or ink', async (payload) => {
+      const a = await existing(payload);
+      await expect(recognizeExistingGrade(a.id)).rejects.toMatchObject({ status: 400, code: 'INVALID_STYLUS_PAYLOAD' });
+      expect(notes()[0].content).toBe(payload);
+      expect(db.grades.some((g) => g.instance_id === INST)).toBe(false);
+    });
+
+  it('returns low confidence as a non-application reason', async () => {
+    expect(await recognizeGrade(INST, PROBLEM, pad(5))).toMatchObject({ score: 5, autoApplied: false, applyErrorCode: 'LOW_CONFIDENCE' });
+  });
+
+  it.each([['0', 0, true, null], ['2,5', 2.5, true, null], ['-1', -1, false, 'INVALID_SCORE'], ['7', 7, false, 'SCORE_EXCEEDS_MAX'], ['7 or 8', null, false, 'NO_RECOGNIZED_VALUE']])(
+    'preserves the TEXT reading %s and reports application separately', async (payload, score, autoApplied, applyErrorCode) => {
+      const a = await existing(payload, { annotation_type: 'TEXT' });
+      expect(await recognizeExistingGrade(a.id)).toMatchObject({ score, autoApplied, applyErrorCode });
+    });
+
+  it('denies another author with 403 before payload validation', async () => {
+    const a = await existing('{');
+    notes()[0].author_id = 'u-javier';
+    await expect(recognizeExistingGrade(a.id)).rejects.toMatchObject({ status: 403, code: 'NOT_AUTHOR' });
+  });
+
+  it('hides a foreign tenant with 404 even from its author', async () => {
+    const a = await existing('{');
+    db.instances.find((i) => i.id === INST).organization_id = 'foreign';
+    await expect(recognizeExistingGrade(a.id)).rejects.toMatchObject({ status: 404, code: 'NOT_FOUND' });
+  });
+
+  it('reports unavailable OCR with 503 and preserves the record', async () => {
+    const a = await existing(JSON.stringify({ strokes: [line(0.2)] }));
+    db.org_config.default_ocr_engine = 'missing';
+    await expect(recognizeExistingGrade(a.id)).rejects.toMatchObject({ status: 503, code: 'OCR_UNAVAILABLE' });
+    expect(notes()).toHaveLength(1);
+  });
+
+  it('reloads after server application without offering a second save, even when reload fails', async () => {
+    const a = await existing('2,5', { annotation_type: 'TEXT' });
+    const onApplied = vi.fn().mockRejectedValue(new Error('offline'));
+    const onUse = vi.fn();
+    render(<SavedGradeOcr instanceId={INST} problem={{ id: PROBLEM }} currentUserId="u-maria" onApplied={onApplied} onUse={onUse} />);
+    await userEvent.click(await screen.findByRole('button', { name: /reconocer anotación guardada|recognize saved annotation/i }));
+    await waitFor(() => expect(onApplied).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole('button', { name: /usar esta nota|use this grade/i })).toBeNull();
+    expect(onUse).not.toHaveBeenCalled();
+    expect(notes().find((n) => n.id === a.id).content).toBe('2,5');
+    expect(await screen.findByRole('alert')).toHaveTextContent(/recarga|refresh/i);
+  });
+});
+
+it('only accepts a full numeric OCR reading', () => {
+  for (const value of ['', ' ', '7 or 8', '0x10', 'Infinity']) expect(parseRecognizedScore(value)).toBeNull();
+  expect(parseRecognizedScore('0')).toBe(0);
+  expect(parseRecognizedScore('7,5')).toBe(7.5);
 });
 
 it('page ink ignores grade pads of the same page', async () => {
