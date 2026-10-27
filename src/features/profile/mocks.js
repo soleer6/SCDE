@@ -1,5 +1,6 @@
 import { mockError } from '../../lib/mock/router.js';
 import { validateEmail } from '../admin/mocks.js';
+import { DEFAULT_PERMISSIONS, PERMISSION_KEYS } from '../../lib/permissions.js';
 
 const shape = (user) => Object.fromEntries(['id', 'email', 'first_name', 'last_name', 'nia', 'dni', 'organization_id', 'email_notifications_enabled'].map((key) => [key, user[key]]));
 export const mocks = [
@@ -12,7 +13,10 @@ export const mocks = [
       .flatMap(m => {
         const subject = db.subjects.find(s => s.id === m.subject_id && s.course_id === course?.id);
         return subject ? [{ id: subject.id, name: subject.name, code: subject.code, semester: subject.semester,
-          role: m.role, group_label: db.groups.find(g => g.id === m.group_id)?.label ?? '',
+          role: m.role, membership_id: m.id,
+          effective_permissions: Object.fromEntries(PERMISSION_KEYS.map(key => [key, Boolean(user.is_staff || user.is_superadmin ||
+            (m.role !== 'STUDENT' && (m.permission_overrides?.[key] ?? db.org_config.role_permission_defaults?.[m.role]?.[key] ?? DEFAULT_PERMISSIONS[m.role]?.[key])))])),
+          group_label: db.groups.find(g => g.id === m.group_id)?.label ?? '',
           coordinator_email: db.users.find(u => u.id === subject.coordinator_id)?.email ?? '' }] : [];
       }).sort((a, b) => a.name.localeCompare(b.name));
   } },

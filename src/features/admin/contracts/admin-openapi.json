@@ -1,0 +1,3015 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SCDEE API",
+    "version": "1.0.0",
+    "description": "Backend API for the **Digital Exam Correction System (SCDEE/B)** — a multi-tenant platform that ingests scanned written exams, drives them through OCR / QR recognition, lets graders annotate and grade them on screen, and publishes the results to students.\n\nThis document is intended to be sufficient on its own — every cross-cutting convention is described below; every endpoint documents its specific request/response shape and error codes.\n\n---\n\n## Authentication\n\nAll ``/api/v1/*`` endpoints require a JWT bearer token unless noted otherwise. Obtain a token pair from ``POST /api/v1/auth/login/`` and pass the access token as ``Authorization: Bearer <token>``. Tokens are short-lived and rotate via ``POST /api/v1/auth/refresh/`` before they expire.\n\nPublic endpoints (no auth required): ``/health/``, ``/api/v1/auth/login/``, ``/api/v1/auth/refresh/``, ``/api/v1/auth/logout/``.\n\nThe authenticator is plugin-based (RF-1.1). v1.0 ships only the JWT-by-credentials plugin; SSO plugins are designed for but not implemented in v1.0.\n\n---\n\n## Multi-tenancy\n\nEvery business resource is scoped to one **organisation**, a university, an institute, or a SaaS tenant.Listings, lookups, and writes only see resources of the caller's organisation; cross-tenant access returns ``404 NOT_FOUND``.\n\n---\n\n## Error format\n\nAll errors follow a uniform JSON shape (RNF-8). The frontend maps ``error_code`` to a localised user-facing message, the API never sends human-readable text on the wire.\n\nSingle-code errors (most cases):\n\n```json\n{\"error_code\": \"AUTHENTICATION_REQUIRED\"}\n```\n\nValidation errors (HTTP 400 only) carry per-field details:\n\n```json\n{\n  \"error_code\": \"VALIDATION_ERROR\",\n  \"errors\": {\n    \"email\": [\"FIELD_REQUIRED\"],\n    \"password\": [\"MIN_LENGTH\"]\n  }\n}\n```\n\nThe most common error codes:\n\n| Status | ``error_code``              | Meaning                                                 |\n|-------:|------------------------------|---------------------------------------------------------|\n|    400 | ``VALIDATION_ERROR``         | Request body / query string failed serializer validation. |\n|    401 | ``AUTHENTICATION_REQUIRED``  | Missing, expired or revoked access token.               |\n|    403 | ``PERMISSION_DENIED``        | Authenticated, but role does not allow this action.      |\n|    404 | ``NOT_FOUND``                | Resource does not exist in this organisation.           |\n|    409 | ``CONFLICT``                 | Concurrent modification or invalid state transition.    |\n|    429 | ``RATE_LIMIT_EXCEEDED``      | Throttle exceeded — back off and retry.                 |\n|    500 | ``INTERNAL_ERROR``           | Unexpected server error (logged with a trace ID).       |\n\nEndpoint-specific codes (e.g. ``COURSE_ARCHIVED``, ``EMAIL_ALREADY_EXISTS``, ``PROBLEM_NOT_FOUND``) are documented on each operation's response section.\n\n---\n\n## Pagination\n\nPaginated endpoints use **page-number pagination** (RNF-15). Query parameters: ``page`` (default 1) and ``page_size`` (default 25, max 100). Paginated lists return this envelope; operations may explicitly return an unpaginated array:\n\n```json\n{\n  \"count\": 247,\n  \"page\": 1, \"page_size\": 25, \"total_pages\": 10,\n  \"next\":  \"https://.../?page=2&page_size=25\",\n  \"previous\": null,\n  \"results\": [ ... ]\n}\n```\n\n---\n\n## Rate limiting\n\nAll endpoints are throttled (RNF-6). Defaults: anonymous 30/min, regular users 120/min, managers 300/min, login 10/min/IP. Exceeded → ``429 RATE_LIMIT_EXCEEDED``.",
+    "contact": {
+      "name": "SCDEE Backend",
+      "url": "https://github.com/anxoCR/scdee"
+    },
+    "license": {
+      "name": "Proprietary — Anxo Canay Reguera"
+    }
+  },
+  "x-source": {
+    "revision": "9fbaff8",
+    "sha256_lf": "6fd67bc4c9efcf6693c304ad791647358147c2b69b17a9fc5d91ca07659474d4"
+  },
+  "paths": {
+    "/api/v1/users/": {
+      "get": {
+        "operationId": "api_v1_users_list",
+        "description": "List users in the manager's organization with search and filters (RF-2.12). Manager only.",
+        "summary": "List users with filters",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "email",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Case-insensitive partial email match. Empty/omitted means any."
+          },
+          {
+            "in": "query",
+            "name": "is_active",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Active status: true or false (case-insensitive). Empty/omitted means any. Other values return 400 INVALID_FILTER."
+          },
+          {
+            "in": "query",
+            "name": "is_staff",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Organization manager status: true or false (case-insensitive). Empty/omitted means any. Other values return 400 INVALID_FILTER."
+          },
+          {
+            "in": "query",
+            "name": "nia",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Case-insensitive exact institutional identifier. Empty/omitted means any."
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page_size",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Case-insensitive partial match on first_name, last_name OR email. Combined with other filters using AND."
+          }
+        ],
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedUserResponseList"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "INVALID_FILTER"
+                      ]
+                    },
+                    "errors": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "detail": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Invalid filter."
+          },
+          "401": {
+            "description": "Authentication credentials missing, expired or revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "AUTHENTICATION_REQUIRED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "summary": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "error_code": "AUTHENTICATION_REQUIRED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but not authorised for this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "PERMISSION_DENIED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "PERMISSION_DENIED": {
+                    "summary": "PERMISSION_DENIED",
+                    "value": {
+                      "error_code": "PERMISSION_DENIED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for this endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "RATE_LIMIT_EXCEEDED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "RATE_LIMIT_EXCEEDED": {
+                    "summary": "RATE_LIMIT_EXCEEDED",
+                    "value": {
+                      "error_code": "RATE_LIMIT_EXCEEDED"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/export/": {
+      "get": {
+        "operationId": "api_v1_users_export_retrieve",
+        "description": "Download all matching users in the authorized tenant with decrypted DNIs (RF-2.13). Uses the same AND-combined filters as GET /users/. Pagination parameters are ignored.",
+        "summary": "Export users to CSV or JSON",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "email",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Case-insensitive partial email match. Empty/omitted means any."
+          },
+          {
+            "in": "query",
+            "name": "export_format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "json"
+              ]
+            },
+            "description": "Export format: csv (default) or json; use export_format, not the DRF format parameter."
+          },
+          {
+            "in": "query",
+            "name": "is_active",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Active status: true or false (case-insensitive). Empty/omitted means any. Other values return 400 INVALID_FILTER."
+          },
+          {
+            "in": "query",
+            "name": "is_staff",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Organization manager status: true or false (case-insensitive). Empty/omitted means any. Other values return 400 INVALID_FILTER."
+          },
+          {
+            "in": "query",
+            "name": "nia",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Case-insensitive exact institutional identifier. Empty/omitted means any."
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Case-insensitive partial match on first_name, last_name OR email. Combined with other filters using AND."
+          }
+        ],
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "INVALID_FILTER",
+                        "INVALID_FORMAT"
+                      ]
+                    },
+                    "errors": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "detail": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Invalid filter; no file is generated. Export also rejects unsupported export_format."
+          },
+          "200": {
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "description": "Authentication credentials missing, expired or revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "AUTHENTICATION_REQUIRED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "summary": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "error_code": "AUTHENTICATION_REQUIRED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but not authorised for this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "PERMISSION_DENIED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "PERMISSION_DENIED": {
+                    "summary": "PERMISSION_DENIED",
+                    "value": {
+                      "error_code": "PERMISSION_DENIED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for this endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "RATE_LIMIT_EXCEEDED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "RATE_LIMIT_EXCEEDED": {
+                    "summary": "RATE_LIMIT_EXCEEDED",
+                    "value": {
+                      "error_code": "RATE_LIMIT_EXCEEDED"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizations/": {
+      "post": {
+        "operationId": "api_v1_organizations_create",
+        "description": "Creates an organization and its first manager user in one atomic transaction. Only accessible by superadmins (RF-2.1).",
+        "summary": "Create organization with initial manager",
+        "tags": [
+          "Organizations"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganizationRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganizationRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganizationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationConflict"
+                },
+                "examples": {
+                  "ExistingInitialManagerEmail": {
+                    "value": {
+                      "error_code": "EMAIL_ALREADY_EXISTS",
+                      "errors": {
+                        "initial_manager.email": [
+                          "EMAIL_ALREADY_EXISTS"
+                        ]
+                      }
+                    },
+                    "summary": "Existing initial manager email"
+                  }
+                }
+              }
+            },
+            "description": "Organization or initial manager uniqueness conflict. The entire creation is rolled back. Manager field errors use dotted paths; no existing user or organization data is returned."
+          },
+          "401": {
+            "description": "Authentication credentials missing, expired or revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "AUTHENTICATION_REQUIRED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "summary": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "error_code": "AUTHENTICATION_REQUIRED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but not authorised for this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "PERMISSION_DENIED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "PERMISSION_DENIED": {
+                    "summary": "PERMISSION_DENIED",
+                    "value": {
+                      "error_code": "PERMISSION_DENIED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input — see ``errors`` for field-level details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code",
+                    "errors"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_ERROR"
+                      ]
+                    },
+                    "errors": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of field name → list of symbolic error codes. Nested fields are flattened with dot notation."
+                    }
+                  }
+                },
+                "examples": {
+                  "ValidationError": {
+                    "summary": "Per-field error codes",
+                    "value": {
+                      "error_code": "VALIDATION_ERROR",
+                      "errors": {
+                        "<field_name>": [
+                          "<SYMBOLIC_CODE>"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for this endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "RATE_LIMIT_EXCEEDED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "RATE_LIMIT_EXCEEDED": {
+                    "summary": "RATE_LIMIT_EXCEEDED",
+                    "value": {
+                      "error_code": "RATE_LIMIT_EXCEEDED"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instances/{instance_pk}/": {
+      "patch": {
+        "operationId": "api_v1_instances_partial_update",
+        "description": "Retrieve, update, delete an instance (RF-7.2, RF-7.3, RF-7.10).",
+        "summary": "Update instance (RF-7.2)",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instance_pk",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "tags": [
+          "Instances"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedUpdateInstanceRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedUpdateInstanceRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedUpdateInstanceRequest"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse403_COURSE_ARCHIVED_PERMISSION_DENIED"
+                },
+                "examples": {
+                  "PERMISSIONDENIED": {
+                    "value": {
+                      "error_code": "PERMISSION_DENIED"
+                    },
+                    "summary": "PERMISSION_DENIED"
+                  },
+                  "COURSEARCHIVED": {
+                    "value": {
+                      "error_code": "COURSE_ARCHIVED"
+                    },
+                    "summary": "COURSE_ARCHIVED"
+                  }
+                }
+              }
+            },
+            "description": "Authenticated, but not authorised for this resource."
+          },
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse409_DUPLICATE_STUDENT_MODEL_NOT_FOUND_USER_NOT_FOUND"
+                },
+                "examples": {
+                  "DUPLICATESTUDENT": {
+                    "value": {
+                      "error_code": "DUPLICATE_STUDENT"
+                    },
+                    "summary": "DUPLICATE_STUDENT"
+                  },
+                  "USERNOTFOUND": {
+                    "value": {
+                      "error_code": "USER_NOT_FOUND"
+                    },
+                    "summary": "USER_NOT_FOUND"
+                  },
+                  "MODELNOTFOUND": {
+                    "value": {
+                      "error_code": "MODEL_NOT_FOUND"
+                    },
+                    "summary": "MODEL_NOT_FOUND"
+                  }
+                }
+              }
+            },
+            "description": "Conflict with the current state of the resource."
+          },
+          "401": {
+            "description": "Authentication credentials missing, expired or revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "AUTHENTICATION_REQUIRED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "summary": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "error_code": "AUTHENTICATION_REQUIRED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found in the caller's organisation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "NOT_FOUND"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "NOT_FOUND": {
+                    "summary": "NOT_FOUND",
+                    "value": {
+                      "error_code": "NOT_FOUND"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input — see ``errors`` for field-level details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code",
+                    "errors"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_ERROR"
+                      ]
+                    },
+                    "errors": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of field name → list of symbolic error codes. Nested fields are flattened with dot notation."
+                    }
+                  }
+                },
+                "examples": {
+                  "ValidationError": {
+                    "summary": "Per-field error codes",
+                    "value": {
+                      "error_code": "VALIDATION_ERROR",
+                      "errors": {
+                        "<field_name>": [
+                          "<SYMBOLIC_CODE>"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for this endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "RATE_LIMIT_EXCEEDED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "RATE_LIMIT_EXCEEDED": {
+                    "summary": "RATE_LIMIT_EXCEEDED",
+                    "value": {
+                      "error_code": "RATE_LIMIT_EXCEEDED"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/": {
+      "get": {
+        "operationId": "profile_retrieve",
+        "description": "**Return the authenticated user's full profile.**\n\nIncludes the *decrypted* DNI — by RF-2.10, the DNI is shown in plaintext only when the caller views their own profile or is an organisation manager. The DNI is stored encrypted at rest with AES-256-GCM (RF-16.3) and decrypted only on this code path.\n\nOther endpoints that serialise users (lists, search) do *not* include the DNI.",
+        "summary": "View own profile (RF-2.10)",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "description": "Authentication credentials missing, expired or revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "AUTHENTICATION_REQUIRED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "summary": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "error_code": "AUTHENTICATION_REQUIRED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but not authorised for this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "PERMISSION_DENIED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "PERMISSION_DENIED": {
+                    "summary": "PERMISSION_DENIED",
+                    "value": {
+                      "error_code": "PERMISSION_DENIED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for this endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "RATE_LIMIT_EXCEEDED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "RATE_LIMIT_EXCEEDED": {
+                    "summary": "RATE_LIMIT_EXCEEDED",
+                    "value": {
+                      "error_code": "RATE_LIMIT_EXCEEDED"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "profile_partial_update",
+        "description": "**Patch a subset of the caller's own profile.**\n\nTwo fields are accepted:\n- ``email`` (RF-2.9) — new contact address. Must be unique within the organisation.\n- ``email_notifications_enabled`` (RF-2.11) — when ``false``, the system stops sending email mirrors of in-app notifications.\n\n**Unchanged fields are silently no-ops.** A request with the same email and same notification preference returns ``200`` without writing to the database (and without an audit row).\n\n**Audit**\n\nEffective changes are logged with ``USER_UPDATED`` and the before/after values, marked ``self_update=true`` (RF-16.1).",
+        "summary": "Update own email or notification preferences (RF-2.9, RF-2.11)",
+        "tags": [
+          "Users"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedUpdateProfileRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedUpdateProfileRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedUpdateProfileRequest"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse409_EMAIL_ALREADY_EXISTS"
+                },
+                "examples": {
+                  "EMAILALREADYEXISTS": {
+                    "value": {
+                      "error_code": "EMAIL_ALREADY_EXISTS"
+                    },
+                    "summary": "EMAIL_ALREADY_EXISTS"
+                  }
+                }
+              }
+            },
+            "description": "The new email is already in use by another user in the same organisation. Note: this endpoint also returns the validation-error shape (``errors.email = [\"EMAIL_ALREADY_EXISTS\"]``) so the frontend can attach the message to the email field."
+          },
+          "401": {
+            "description": "Authentication credentials missing, expired or revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "AUTHENTICATION_REQUIRED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "summary": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "error_code": "AUTHENTICATION_REQUIRED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but not authorised for this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "PERMISSION_DENIED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "PERMISSION_DENIED": {
+                    "summary": "PERMISSION_DENIED",
+                    "value": {
+                      "error_code": "PERMISSION_DENIED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input — see ``errors`` for field-level details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code",
+                    "errors"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_ERROR"
+                      ]
+                    },
+                    "errors": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of field name → list of symbolic error codes. Nested fields are flattened with dot notation."
+                    }
+                  }
+                },
+                "examples": {
+                  "ValidationError": {
+                    "summary": "Per-field error codes",
+                    "value": {
+                      "error_code": "VALIDATION_ERROR",
+                      "errors": {
+                        "<field_name>": [
+                          "<SYMBOLIC_CODE>"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for this endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "RATE_LIMIT_EXCEEDED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "RATE_LIMIT_EXCEEDED": {
+                    "summary": "RATE_LIMIT_EXCEEDED",
+                    "value": {
+                      "error_code": "RATE_LIMIT_EXCEEDED"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/my-subjects/": {
+      "get": {
+        "operationId": "api_v1_my_subjects_list",
+        "description": "Own active memberships in the authenticated user's organization and active course, without can_manage_members. Includes membership_id and the complete effective_permissions boolean map. No membership, inactive membership/course or no organization returns an empty list. Recomputed on every request; no stored snapshot or expiry timestamp. Response is no-store. Refetch on session/context changes, permission edits and permission-denied responses; the server always authorizes writes.",
+        "summary": "(MAIN ENDPOINT) List user subjects in the active course",
+        "tags": [
+          "Subjects"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MySubject"
+                  }
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "description": "Authentication credentials missing, expired or revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "AUTHENTICATION_REQUIRED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "summary": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "error_code": "AUTHENTICATION_REQUIRED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but not authorised for this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "PERMISSION_DENIED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "PERMISSION_DENIED": {
+                    "summary": "PERMISSION_DENIED",
+                    "value": {
+                      "error_code": "PERMISSION_DENIED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for this endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "RATE_LIMIT_EXCEEDED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "RATE_LIMIT_EXCEEDED": {
+                    "summary": "RATE_LIMIT_EXCEEDED",
+                    "value": {
+                      "error_code": "RATE_LIMIT_EXCEEDED"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/": {
+      "get": {
+        "operationId": "api_v1_notifications_list",
+        "description": "List own notifications with filters (RF-13.4).",
+        "summary": "List notifications (RF-13.4)",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "notification_type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "A page number within the paginated result set.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page_size",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ARCHIVED",
+                "READ",
+                "UNREAD"
+              ]
+            }
+          }
+        ],
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedNotificationResponseList"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "description": "Authentication credentials missing, expired or revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "AUTHENTICATION_REQUIRED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "summary": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "error_code": "AUTHENTICATION_REQUIRED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but not authorised for this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "PERMISSION_DENIED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "PERMISSION_DENIED": {
+                    "summary": "PERMISSION_DENIED",
+                    "value": {
+                      "error_code": "PERMISSION_DENIED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for this endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "RATE_LIMIT_EXCEEDED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "RATE_LIMIT_EXCEEDED": {
+                    "summary": "RATE_LIMIT_EXCEEDED",
+                    "value": {
+                      "error_code": "RATE_LIMIT_EXCEEDED"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/count/": {
+      "get": {
+        "operationId": "api_v1_notifications_count_retrieve",
+        "description": "Get unread notification count (for UI badges).",
+        "summary": "Unread notification count",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "description": "Authentication credentials missing, expired or revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "AUTHENTICATION_REQUIRED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "summary": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "error_code": "AUTHENTICATION_REQUIRED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but not authorised for this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "PERMISSION_DENIED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "PERMISSION_DENIED": {
+                    "summary": "PERMISSION_DENIED",
+                    "value": {
+                      "error_code": "PERMISSION_DENIED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for this endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "RATE_LIMIT_EXCEEDED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "RATE_LIMIT_EXCEEDED": {
+                    "summary": "RATE_LIMIT_EXCEEDED",
+                    "value": {
+                      "error_code": "RATE_LIMIT_EXCEEDED"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/read/": {
+      "patch": {
+        "operationId": "api_v1_notifications_read_partial_update",
+        "description": "Mark notifications as read (RF-13.3).",
+        "summary": "Mark notifications as read (RF-13.3)",
+        "tags": [
+          "Notifications"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedMarkReadRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedMarkReadRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchedMarkReadRequest"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkReadResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "description": "Authentication credentials missing, expired or revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "AUTHENTICATION_REQUIRED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "summary": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "error_code": "AUTHENTICATION_REQUIRED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but not authorised for this resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "PERMISSION_DENIED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "PERMISSION_DENIED": {
+                    "summary": "PERMISSION_DENIED",
+                    "value": {
+                      "error_code": "PERMISSION_DENIED"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input — see ``errors`` for field-level details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code",
+                    "errors"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "VALIDATION_ERROR"
+                      ]
+                    },
+                    "errors": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "description": "Map of field name → list of symbolic error codes. Nested fields are flattened with dot notation."
+                    }
+                  }
+                },
+                "examples": {
+                  "ValidationError": {
+                    "summary": "Per-field error codes",
+                    "value": {
+                      "error_code": "VALIDATION_ERROR",
+                      "errors": {
+                        "<field_name>": [
+                          "<SYMBOLIC_CODE>"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for this endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_code"
+                  ],
+                  "properties": {
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "RATE_LIMIT_EXCEEDED"
+                      ],
+                      "description": "Symbolic, locale-independent error identifier. Map to a localised message on the frontend."
+                    }
+                  }
+                },
+                "examples": {
+                  "RATE_LIMIT_EXCEEDED": {
+                    "summary": "RATE_LIMIT_EXCEEDED",
+                    "value": {
+                      "error_code": "RATE_LIMIT_EXCEEDED"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/search/": {
+      "get": {
+        "operationId": "api_v1_search_list",
+        "description": "Search engine for Organization Managers to search across courses, subjects, exams and instances with a single endpoint. The level of the hierarchy is determined by the presence of query parameters: `course_id` → list subjects, `subject_id` → list exams, `exam_id` → list instances. Supports text search and filtering on each level.",
+        "summary": "Hierarchical search (RF-14.3)",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "course_id",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Course UUID to list subjects"
+          },
+          {
+            "in": "query",
+            "name": "exam_id",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Exam UUID to list instances"
+          },
+          {
+            "in": "query",
+            "name": "has_issues",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Filter instances with issues"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Page size"
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Text search (label/name/email)"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Instance status filter"
+          },
+          {
+            "in": "query",
+            "name": "subject_id",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Subject UUID to list exams"
+          }
+        ],
+        "tags": [
+          "Organizations"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedCourseList"
+                },
+                "examples": {
+                  "CoursesExample": {
+                    "value": {
+                      "count": 142,
+                      "page": 1,
+                      "page_size": 25,
+                      "total_pages": 6,
+                      "next": "http://api.example.com/.../?page=2",
+                      "previous": null,
+                      "results": [
+                        {
+                          "count": 2,
+                          "page": 1,
+                          "page_size": 25,
+                          "total_pages": 1,
+                          "next": "string",
+                          "previous": "string",
+                          "results": [
+                            {
+                              "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                              "label": "string",
+                              "is_active": true,
+                              "subject_count": 0,
+                              "created_at": "2023-10-01T00:00:00Z",
+                              "updated_at": "2023-10-01T00:00:00Z"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "summary": "Response when listing courses"
+                  },
+                  "SubjectsExample": {
+                    "value": {
+                      "count": 142,
+                      "page": 1,
+                      "page_size": 25,
+                      "total_pages": 6,
+                      "next": "http://api.example.com/.../?page=2",
+                      "previous": null,
+                      "results": [
+                        {
+                          "count": 2,
+                          "page": 1,
+                          "page_size": 25,
+                          "total_pages": 1,
+                          "next": "string",
+                          "previous": "string",
+                          "results": [
+                            {
+                              "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+                              "name": "Matemáticas I",
+                              "code": "MAT1",
+                              "semester": "1er cuatrimestre",
+                              "course_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                              "coordinator_id": "123e4567-e89b-12d3-a456-426614174000",
+                              "coordinator_email": "coordinador@universidad.es",
+                              "created_at": "2026-05-04T10:30:00Z",
+                              "updated_at": "2026-05-04T10:30:00Z",
+                              "groups": [
+                                {
+                                  "id": "g1-uuid",
+                                  "label": "G1"
+                                },
+                                {
+                                  "id": "g2-uuid",
+                                  "label": "G2"
+                                }
+                              ],
+                              "member_counts": {
+                                "coordinators": 1,
+                                "teachers": 3,
+                                "students": 45
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "summary": "Response when listing subjects"
+                  },
+                  "ExamsExample": {
+                    "value": {
+                      "count": 142,
+                      "page": 1,
+                      "page_size": 25,
+                      "total_pages": 6,
+                      "next": "http://api.example.com/.../?page=2",
+                      "previous": null,
+                      "results": [
+                        {
+                          "count": 2,
+                          "page": 1,
+                          "page_size": 25,
+                          "total_pages": 1,
+                          "next": "string",
+                          "previous": "string",
+                          "results": [
+                            {
+                              "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                              "name": "string",
+                              "date": "2025-05-10",
+                              "model_count": 0,
+                              "instance_count": 0,
+                              "created_at": "2026-05-04T10:30:00Z",
+                              "updated_at": "2026-05-04T10:30:00Z"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "summary": "Response when listing exams"
+                  },
+                  "InstancesExample": {
+                    "value": {
+                      "count": 142,
+                      "page": 1,
+                      "page_size": 25,
+                      "total_pages": 6,
+                      "next": "http://api.example.com/.../?page=2",
+                      "previous": null,
+                      "results": [
+                        {
+                          "count": 2,
+                          "page": 1,
+                          "page_size": 25,
+                          "total_pages": 1,
+                          "next": "string",
+                          "previous": "string",
+                          "results": [
+                            {
+                              "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                              "student_email": "user@example.com",
+                              "model_label": "string",
+                              "status": "string",
+                              "has_issues": true,
+                              "total_score": "37",
+                              "created_at": "2026-05-04T10:30:00Z",
+                              "updated_at": "2026-05-04T10:30:00Z"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "summary": "Response when listing instances"
+                  }
+                }
+              }
+            },
+            "description": "Paginated list of results. The actual item schema depends on the chosen hierarchy level (courses, subjects, exams, or instances)."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse401_AUTHENTICATION_REQUIRED"
+                },
+                "examples": {
+                  "AUTHENTICATIONREQUIRED": {
+                    "value": {
+                      "error_code": "AUTHENTICATION_REQUIRED"
+                    },
+                    "summary": "AUTHENTICATION_REQUIRED"
+                  }
+                }
+              }
+            },
+            "description": "Authentication credentials missing, expired or revoked."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse403_PERMISSION_DENIED"
+                },
+                "examples": {
+                  "PERMISSIONDENIED": {
+                    "value": {
+                      "error_code": "PERMISSION_DENIED"
+                    },
+                    "summary": "PERMISSION_DENIED"
+                  }
+                }
+              }
+            },
+            "description": "You must be an organization manager to access search."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse429_RATE_LIMIT_EXCEEDED"
+                },
+                "examples": {
+                  "RATELIMITEXCEEDED": {
+                    "value": {
+                      "error_code": "RATE_LIMIT_EXCEEDED"
+                    },
+                    "summary": "RATE_LIMIT_EXCEEDED"
+                  }
+                }
+              }
+            },
+            "description": "Rate limit exceeded for this endpoint."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT access token. Obtain via `POST /api/v1/auth/login/`. Pass as `Authorization: Bearer <token>`. Access tokens expire after 15 minutes by default; use `POST /api/v1/auth/refresh/` to renew."
+      }
+    },
+    "schemas": {
+      "PaginatedUserResponseList": {
+        "type": "object",
+        "required": [
+          "count",
+          "page",
+          "page_size",
+          "total_pages",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 142
+          },
+          "page": {
+            "type": "integer",
+            "example": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "example": 25
+          },
+          "total_pages": {
+            "type": "integer",
+            "example": 6
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.com/.../?page=2"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": null
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserResponse"
+            }
+          }
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "description": "Output shape for user data in all responses.\n\nThe DNI field is NEVER included here. When needed (own profile,\nexport), the view adds it explicitly to the response data.\nThis prevents accidental exposure.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "readOnly": true
+          },
+          "first_name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "last_name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "nia": {
+            "type": "string",
+            "readOnly": true
+          },
+          "is_active": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "is_staff": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "email_notifications_enabled": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "created_at",
+          "email",
+          "email_notifications_enabled",
+          "first_name",
+          "id",
+          "is_active",
+          "is_staff",
+          "last_name",
+          "nia",
+          "organization_id",
+          "updated_at"
+        ]
+      },
+      "CreateOrganizationRequest": {
+        "type": "object",
+        "description": "Input for POST /api/v1/organizations/ (RF-2.1).\n\nCreates an organization and its initial manager in one request.\nOnly accessible by superadmins.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Organization display name (e.g. 'Universidad Autónoma de Madrid').",
+            "maxLength": 255
+          },
+          "subdomain": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique identifier for URL routing (e.g. 'uam').",
+            "maxLength": 63,
+            "pattern": "^[-a-zA-Z0-9_]+$"
+          },
+          "plan": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanEnum"
+              }
+            ],
+            "default": "FREE",
+            "description": "Subscription plan (FREE or PREMIUM).\n\n* `FREE` - Free\n* `PREMIUM` - Premium"
+          },
+          "initial_manager": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InitialManagerRequest"
+              }
+            ],
+            "description": "Data for the organization's first manager."
+          }
+        },
+        "required": [
+          "initial_manager",
+          "name",
+          "subdomain"
+        ]
+      },
+      "PlanEnum": {
+        "enum": [
+          "FREE",
+          "PREMIUM"
+        ],
+        "type": "string",
+        "description": "* `FREE` - Free\n* `PREMIUM` - Premium"
+      },
+      "InitialManagerRequest": {
+        "type": "object",
+        "description": "Data for the first manager created with the organization.",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "minLength": 1
+          },
+          "first_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "last_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "dni": {
+            "type": "string",
+            "minLength": 1,
+            "default": "",
+            "maxLength": 20
+          },
+          "nia": {
+            "type": "string",
+            "minLength": 1,
+            "default": "",
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "email",
+          "first_name",
+          "last_name"
+        ]
+      },
+      "OrganizationResponse": {
+        "type": "object",
+        "description": "Output shape for organization responses.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "subdomain": {
+            "type": "string",
+            "readOnly": true
+          },
+          "plan": {
+            "type": "string",
+            "readOnly": true
+          },
+          "auth_mode": {
+            "type": "string",
+            "readOnly": true
+          },
+          "is_active": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "auth_mode",
+          "created_at",
+          "id",
+          "is_active",
+          "name",
+          "plan",
+          "subdomain"
+        ]
+      },
+      "OrganizationConflict": {
+        "type": "object",
+        "description": "Safe domain conflicts; nested manager fields use dotted paths.",
+        "properties": {
+          "error_code": {
+            "$ref": "#/components/schemas/OrganizationConflictErrorCodeEnum"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "error_code"
+        ]
+      },
+      "OrganizationConflictErrorCodeEnum": {
+        "enum": [
+          "EMAIL_ALREADY_EXISTS",
+          "NIA_ALREADY_EXISTS",
+          "USER_CREATION_FAILED",
+          "SUBDOMAIN_ALREADY_EXISTS",
+          "ORGANIZATION_CREATION_FAILED"
+        ],
+        "type": "string",
+        "description": "* `EMAIL_ALREADY_EXISTS` - EMAIL_ALREADY_EXISTS\n* `NIA_ALREADY_EXISTS` - NIA_ALREADY_EXISTS\n* `USER_CREATION_FAILED` - USER_CREATION_FAILED\n* `SUBDOMAIN_ALREADY_EXISTS` - SUBDOMAIN_ALREADY_EXISTS\n* `ORGANIZATION_CREATION_FAILED` - ORGANIZATION_CREATION_FAILED"
+      },
+      "PatchedUpdateInstanceRequest": {
+        "type": "object",
+        "description": "Input for PATCH /instances/{id}/ (RF-7.2).",
+        "properties": {
+          "student_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "model_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ErrorResponse403_COURSE_ARCHIVED_PERMISSION_DENIED": {
+        "type": "object",
+        "properties": {
+          "error_code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorResponse403COURSEARCHIVEDPERMISSIONDENIEDErrorCodeEnum"
+              }
+            ],
+            "description": "Symbolic error code emitted at this status.\n\n* `COURSE_ARCHIVED` - COURSE_ARCHIVED\n* `PERMISSION_DENIED` - PERMISSION_DENIED"
+          }
+        },
+        "required": [
+          "error_code"
+        ]
+      },
+      "ErrorResponse403COURSEARCHIVEDPERMISSIONDENIEDErrorCodeEnum": {
+        "enum": [
+          "COURSE_ARCHIVED",
+          "PERMISSION_DENIED"
+        ],
+        "type": "string",
+        "description": "* `COURSE_ARCHIVED` - COURSE_ARCHIVED\n* `PERMISSION_DENIED` - PERMISSION_DENIED"
+      },
+      "InstanceResponse": {
+        "type": "object",
+        "description": "Output for instance endpoints.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "exam_id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "student_id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true,
+            "nullable": true
+          },
+          "student_email": {
+            "type": "string",
+            "readOnly": true
+          },
+          "model_id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true,
+            "nullable": true
+          },
+          "model_label": {
+            "type": "string",
+            "readOnly": true
+          },
+          "status": {
+            "type": "string",
+            "readOnly": true
+          },
+          "has_issues": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "issue_types": {
+            "readOnly": true
+          },
+          "total_score": {
+            "type": "string",
+            "format": "decimal",
+            "pattern": "^-?\\d{0,6}(?:\\.\\d{0,2})?$",
+            "readOnly": true,
+            "nullable": true
+          },
+          "expected_pages": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "page_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "grades": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GradeResponse"
+            },
+            "description": "Persisted grades for problems the requester may correct. Empty without grading permission. Use score as old_score when regrading."
+          }
+        },
+        "required": [
+          "created_at",
+          "exam_id",
+          "expected_pages",
+          "grades",
+          "has_issues",
+          "id",
+          "issue_types",
+          "model_id",
+          "model_label",
+          "page_ids",
+          "status",
+          "student_email",
+          "student_id",
+          "total_score",
+          "updated_at"
+        ]
+      },
+      "GradeResponse": {
+        "type": "object",
+        "description": "Output for grade operations.",
+        "properties": {
+          "problem_id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "problem_name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "score": {
+            "type": "string",
+            "format": "decimal",
+            "pattern": "^-?\\d{0,6}(?:\\.\\d{0,2})?$",
+            "readOnly": true
+          },
+          "grader_email": {
+            "type": "string",
+            "readOnly": true
+          },
+          "rubric_selections": {
+            "readOnly": true
+          }
+        },
+        "required": [
+          "grader_email",
+          "problem_id",
+          "problem_name",
+          "rubric_selections",
+          "score"
+        ]
+      },
+      "ErrorResponse409_DUPLICATE_STUDENT_MODEL_NOT_FOUND_USER_NOT_FOUND": {
+        "type": "object",
+        "properties": {
+          "error_code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorResponse409DUPLICATESTUDENTMODELNOTFOUNDUSERNOTFOUNDErrorCodeEnum"
+              }
+            ],
+            "description": "Symbolic error code emitted at this status.\n\n* `DUPLICATE_STUDENT` - DUPLICATE_STUDENT\n* `MODEL_NOT_FOUND` - MODEL_NOT_FOUND\n* `USER_NOT_FOUND` - USER_NOT_FOUND"
+          }
+        },
+        "required": [
+          "error_code"
+        ]
+      },
+      "ErrorResponse409DUPLICATESTUDENTMODELNOTFOUNDUSERNOTFOUNDErrorCodeEnum": {
+        "enum": [
+          "DUPLICATE_STUDENT",
+          "MODEL_NOT_FOUND",
+          "USER_NOT_FOUND"
+        ],
+        "type": "string",
+        "description": "* `DUPLICATE_STUDENT` - DUPLICATE_STUDENT\n* `MODEL_NOT_FOUND` - MODEL_NOT_FOUND\n* `USER_NOT_FOUND` - USER_NOT_FOUND"
+      },
+      "ProfileResponse": {
+        "type": "object",
+        "description": "Output for GET /api/v1/profile/ (RF-2.10).\n\nIncludes all personal data visible to the user, including\ntheir own decrypted DNI. Subject memberships will be added\nin Fase 3 when SubjectMembership is implemented.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "readOnly": true
+          },
+          "first_name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "last_name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "nia": {
+            "type": "string",
+            "readOnly": true
+          },
+          "dni": {
+            "type": "string",
+            "readOnly": true,
+            "description": "Decrypted DNI. Only visible to the user themselves and managers."
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "email_notifications_enabled": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "dni",
+          "email",
+          "email_notifications_enabled",
+          "first_name",
+          "id",
+          "last_name",
+          "nia",
+          "organization_id"
+        ]
+      },
+      "PatchedUpdateProfileRequest": {
+        "type": "object",
+        "description": "Input for PATCH /api/v1/profile/ (RF-2.9, RF-2.11).\n\nUsers can only modify:\n- email: their own email address (RF-2.9)\n- email_notifications_enabled: notification preference (RF-2.11)\n\nAll other fields (name, NIA, is_staff, etc.) are managed by\nthe organization manager via PATCH /users/{id}/.",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "minLength": 1,
+            "description": "New email address. Must be unique within the organization."
+          },
+          "email_notifications_enabled": {
+            "type": "boolean",
+            "description": "Toggle email notification delivery (RF-2.11)."
+          }
+        }
+      },
+      "ErrorResponse409_EMAIL_ALREADY_EXISTS": {
+        "type": "object",
+        "properties": {
+          "error_code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorResponse409EMAILALREADYEXISTSErrorCodeEnum"
+              }
+            ],
+            "description": "Symbolic error code emitted at this status.\n\n* `EMAIL_ALREADY_EXISTS` - EMAIL_ALREADY_EXISTS"
+          }
+        },
+        "required": [
+          "error_code"
+        ]
+      },
+      "ErrorResponse409EMAILALREADYEXISTSErrorCodeEnum": {
+        "enum": [
+          "EMAIL_ALREADY_EXISTS"
+        ],
+        "type": "string",
+        "description": "* `EMAIL_ALREADY_EXISTS` - EMAIL_ALREADY_EXISTS"
+      },
+      "MySubject": {
+        "type": "object",
+        "description": "Output for GET /api/v1/my-subjects/ (RF-4.8).",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "readOnly": true
+          },
+          "code": {
+            "type": "string",
+            "readOnly": true
+          },
+          "semester": {
+            "type": "string",
+            "readOnly": true
+          },
+          "role": {
+            "type": "string",
+            "readOnly": true
+          },
+          "membership_id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "effective_permissions": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "readOnly": true,
+            "description": "Complete boolean permission map, including explicit revocations. Resolved from organization defaults and membership overrides on each request; staff bypass grants all keys. Missing or unknown keys must be treated as false."
+          },
+          "group_label": {
+            "type": "string",
+            "readOnly": true
+          },
+          "coordinator_email": {
+            "type": "string",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "code",
+          "coordinator_email",
+          "effective_permissions",
+          "group_label",
+          "id",
+          "membership_id",
+          "name",
+          "role",
+          "semester"
+        ]
+      },
+      "PaginatedNotificationResponseList": {
+        "type": "object",
+        "required": [
+          "count",
+          "page",
+          "page_size",
+          "total_pages",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 142
+          },
+          "page": {
+            "type": "integer",
+            "example": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "example": 25
+          },
+          "total_pages": {
+            "type": "integer",
+            "example": 6
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.com/.../?page=2"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": null
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationResponse"
+            }
+          }
+        }
+      },
+      "NotificationResponse": {
+        "type": "object",
+        "description": "Output for notification list.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "notification_type": {
+            "type": "string",
+            "readOnly": true
+          },
+          "title": {
+            "type": "string",
+            "readOnly": true
+          },
+          "message": {
+            "type": "string",
+            "readOnly": true
+          },
+          "status": {
+            "type": "string",
+            "readOnly": true
+          },
+          "metadata": {
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "created_at",
+          "id",
+          "message",
+          "metadata",
+          "notification_type",
+          "status",
+          "title"
+        ]
+      },
+      "UnreadCountResponse": {
+        "type": "object",
+        "description": "Output for the unread-count endpoint.",
+        "properties": {
+          "unread_count": {
+            "type": "integer",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "unread_count"
+        ]
+      },
+      "PatchedMarkReadRequest": {
+        "type": "object",
+        "description": "Input for marking notifications as read.",
+        "properties": {
+          "notification_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Specific IDs to mark. Empty = mark all."
+          }
+        }
+      },
+      "MarkReadResponse": {
+        "type": "object",
+        "description": "Output for the mark-as-read endpoint.",
+        "properties": {
+          "marked_read": {
+            "type": "integer",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "marked_read"
+        ]
+      },
+      "PaginatedCourseList": {
+        "type": "object",
+        "required": [
+          "count",
+          "page",
+          "page_size",
+          "total_pages",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 142
+          },
+          "page": {
+            "type": "integer",
+            "example": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "example": 25
+          },
+          "total_pages": {
+            "type": "integer",
+            "example": 6
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "http://api.example.com/.../?page=2"
+          },
+          "previous": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": null
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Course"
+            }
+          }
+        }
+      },
+      "Course": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "label": {
+            "type": "string",
+            "readOnly": true
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "readOnly": true,
+            "nullable": true
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "readOnly": true,
+            "nullable": true
+          },
+          "is_active": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "subject_count": {
+            "type": "integer",
+            "readOnly": true,
+            "default": 0,
+            "description": "Number of subjects in this course (annotated)."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "created_at",
+          "end_date",
+          "id",
+          "is_active",
+          "label",
+          "start_date",
+          "subject_count",
+          "updated_at"
+        ]
+      },
+      "ErrorResponse401_AUTHENTICATION_REQUIRED": {
+        "type": "object",
+        "properties": {
+          "error_code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorResponse401AUTHENTICATIONREQUIREDErrorCodeEnum"
+              }
+            ],
+            "description": "Symbolic error code emitted at this status.\n\n* `AUTHENTICATION_REQUIRED` - AUTHENTICATION_REQUIRED"
+          }
+        },
+        "required": [
+          "error_code"
+        ]
+      },
+      "ErrorResponse401AUTHENTICATIONREQUIREDErrorCodeEnum": {
+        "enum": [
+          "AUTHENTICATION_REQUIRED"
+        ],
+        "type": "string",
+        "description": "* `AUTHENTICATION_REQUIRED` - AUTHENTICATION_REQUIRED"
+      },
+      "ErrorResponse403_PERMISSION_DENIED": {
+        "type": "object",
+        "properties": {
+          "error_code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorResponse403PERMISSIONDENIEDErrorCodeEnum"
+              }
+            ],
+            "description": "Symbolic error code emitted at this status.\n\n* `PERMISSION_DENIED` - PERMISSION_DENIED"
+          }
+        },
+        "required": [
+          "error_code"
+        ]
+      },
+      "ErrorResponse403PERMISSIONDENIEDErrorCodeEnum": {
+        "enum": [
+          "PERMISSION_DENIED"
+        ],
+        "type": "string",
+        "description": "* `PERMISSION_DENIED` - PERMISSION_DENIED"
+      },
+      "ErrorResponse429_RATE_LIMIT_EXCEEDED": {
+        "type": "object",
+        "properties": {
+          "error_code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorResponse429RATELIMITEXCEEDEDErrorCodeEnum"
+              }
+            ],
+            "description": "Symbolic error code emitted at this status.\n\n* `RATE_LIMIT_EXCEEDED` - RATE_LIMIT_EXCEEDED"
+          }
+        },
+        "required": [
+          "error_code"
+        ]
+      },
+      "ErrorResponse429RATELIMITEXCEEDEDErrorCodeEnum": {
+        "enum": [
+          "RATE_LIMIT_EXCEEDED"
+        ],
+        "type": "string",
+        "description": "* `RATE_LIMIT_EXCEEDED` - RATE_LIMIT_EXCEEDED"
+      }
+    }
+  }
+}

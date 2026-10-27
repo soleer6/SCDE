@@ -59,18 +59,20 @@ try {
   assert.equal(await page.getByLabel('Subdominio', { exact: true }).inputValue(), subdomain);
   checks.push('H17 real nested manager validation: dotted field mapped, focus and draft preserved');
   await page.screenshot({ path: join(out, 'H17-validation-real.png'), fullPage: true });
-  // Current backend leaks an existing-manager conflict as 500, but must roll
-  // back the organization and leave the form available for correction.
+  // The corrected backend reports a field conflict and rolls back atomically.
   await page.getByLabel('Email del gestor inicial', { exact: true }).fill(tenant.manager);
   const existingEmailResponse = page.waitForResponse(r => r.request().method() === 'POST' && r.url().endsWith('/organizations/'));
   await page.getByRole('button', { name: 'Crear organización', exact: true }).click();
   const existingEmail = await existingEmailResponse;
-  assert.equal(existingEmail.status(), 500);
-  assert.equal((await existingEmail.json()).error_code, 'INTERNAL_ERROR');
+  assert.equal(existingEmail.status(), 409);
+  const emailConflict = await existingEmail.json();
+  assert.equal(emailConflict.error_code, 'EMAIL_ALREADY_EXISTS');
+  assert.deepEqual(emailConflict.errors['initial_manager.email'], ['EMAIL_ALREADY_EXISTS']);
+  await page.waitForFunction(() => document.activeElement?.getAttribute('type') === 'email' && document.activeElement?.getAttribute('aria-invalid') === 'true');
   await page.getByRole('button', { name: 'Crear organización', exact: true }).waitFor({ state: 'visible' });
   assert.equal(await page.getByRole('region', { name: 'Organización creada' }).count(), 0);
   assert.equal(await page.getByLabel('Subdominio', { exact: true }).inputValue(), subdomain);
-  checks.push('H17 existing manager email: backend defect 500/INTERNAL_ERROR, no false success and editable draft retained');
+  checks.push('H17 existing manager email: 409 EMAIL_ALREADY_EXISTS, focused field, no false success and editable draft retained');
   await page.getByLabel('Email del gestor inicial', { exact: true }).fill(initialEmail);
   const createdResponse = page.waitForResponse(r => r.request().method() === 'POST' && r.url().endsWith('/organizations/'));
   await page.getByRole('button', { name: 'Crear organización', exact: true }).click();

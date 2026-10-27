@@ -108,7 +108,8 @@ it('recovers an existing-manager failure without leaving an orphan organization 
   const previous = structuredClone({ orgs: db.organizations, users: db.users });
   const user = userEvent.setup();
   await user.click(screen.getByRole('button', { name: 'Crear organización', exact: true }));
-  await screen.findByRole('alert');
+  await screen.findAllByRole('alert');
+  await waitFor(() => expect(screen.getByLabelText('Email del gestor inicial')).toHaveFocus());
   expect(screen.queryByRole('region', { name: 'Organización creada' })).not.toBeInTheDocument();
   expect({ orgs: db.organizations, users: db.users }).toEqual(previous);
   expect(screen.getByLabelText('Subdominio')).toHaveValue('campus-test');

@@ -122,19 +122,11 @@ try {
     probes.push({ entity: name, status: response.status(), code: result.error_code, rejected: true });
   }
   const response = await context.request.patch(`${api}/instances/${fx.instanceId}/`, { headers, data: { model_id: fx.alternateModelId } });
-  if (response.status() === 200) {
-    const persisted = await context.request.get(`${api}/instances/${fx.instanceId}/`, { headers });
-    assert.equal((await persisted.json()).model_id, fx.alternateModelId);
-    const restore = await context.request.patch(`${api}/instances/${fx.instanceId}/`, { headers, data: { model_id: fx.modelId } });
-    assert.equal(restore.status(), 200);
-    const restored = await context.request.get(`${api}/instances/${fx.instanceId}/`, { headers });
-    assert.equal((await restored.json()).model_id, fx.modelId);
-    probes.push({ entity: 'instance', status: 200, rejected: false, persistedChange: true, originalModelRestored: true });
-  } else {
-    assert.equal(response.status(), 409);
-    assert.equal((await response.json()).error_code, 'COURSE_ARCHIVED');
-    probes.push({ entity: 'instance', status: 409, code: 'COURSE_ARCHIVED', rejected: true });
-  }
+  assert.equal(response.status(), 403);
+  assert.equal((await response.json()).error_code, 'COURSE_ARCHIVED');
+  const unchanged = await context.request.get(`${api}/instances/${fx.instanceId}/`, { headers });
+  assert.equal((await unchanged.json()).model_id, fx.modelId);
+  probes.push({ entity: 'instance', status: 403, code: 'COURSE_ARCHIVED', rejected: true, originalModelUnchanged: true });
   checks.push('H18 direct archive probes: course/subject/exam reject writes (403/409); instance result recorded separately');
   assert.deepEqual(errors, []);
   await writeFile(join(out, 'result.json'), JSON.stringify({ checks, pageErrors: errors, uiWrites: writes, probes,

@@ -28,6 +28,18 @@ function validateCourse(body) {
   if (body.start_date && body.end_date && body.start_date > body.end_date) throw mockError(400, 'VALIDATION_ERROR', { end_date: ['INVALID'] });
 }
 const staff = (handler) => (ctx) => { requireStaff(ctx.user); return handler(ctx); };
+function filteredUsers(db, query, user) {
+  for (const key of ['is_active', 'is_staff']) {
+    if (query.get(key) && !['true', 'false'].includes(query.get(key).toLowerCase())) throw mockError(400, 'INVALID_FILTER', { [key]: ['Use true or false.'] });
+  }
+  const text = key => (query.get(key) || '').trim().toLowerCase();
+  return db.users.filter(row => user.is_superadmin || row.organization_id === user.organization_id)
+    .filter(row => !text('search') || ['first_name', 'last_name', 'email'].some(key => (row[key] || '').toLowerCase().includes(text('search'))))
+    .filter(row => !text('email') || row.email.toLowerCase().includes(text('email')))
+    .filter(row => !text('nia') || (row.nia || '').toLowerCase() === text('nia'))
+    .filter(row => ['is_active', 'is_staff'].every(key => !text(key) || row[key] === (text(key) === 'true')))
+    .sort((a, b) => a.last_name.localeCompare(b.last_name) || a.first_name.localeCompare(b.first_name));
+}
 async function importUsers({ db, form, user }) {
   const rows = await readImportFile(form);
   const result = { created: 0, reactivated: 0, updated: 0, total_processed: rows.length, total_errors: 0, errors: [] };
@@ -57,7 +69,7 @@ export const mocks = [
   ...organizationMocks,
   { method: 'POST', path: '/users/import/', handler: staff(importUsers) },
   { method: 'GET', path: '/users/', handler: staff(({ db, query, user }) => {
-    return paginate(db.users.filter((u) => u.organization_id === user.organization_id).map(userShape), query);
+    return paginate(filteredUsers(db, query, user).map(userShape), query);
   }) },
   { method: 'GET', path: '/search/', handler: staff(({ db, query, user }) => {
     const search = (query.get('search') ?? '').toLowerCase();
@@ -85,7 +97,15 @@ export const mocks = [
     else rows = ownCourses.filter(c => c.label.toLowerCase().includes(search)).map(c => courseShape(c, db));
     return paginate(rows, query);
   }) },
-  { method: 'GET', path: '/users/export/', handler: staff(({ db, user }) => reply(200, new Blob([JSON.stringify(db.users.filter((u) => u.organization_id === user.organization_id).map((u) => ({ ...userShape(u), dni: u.dni ?? '' })))], { type: 'application/json' }))) },
+  { method: 'GET', path: '/users/export/', handler: staff(({ db, user, query }) => {
+    const format = (query.get('export_format') || 'csv').toLowerCase();
+    if (!['json', 'csv'].includes(format)) throw mockError(400, 'INVALID_FORMAT');
+    const columns = ['first_name', 'last_name', 'email', 'dni', 'nia', 'is_active', 'is_staff'];
+    const rows = filteredUsers(db, query, user).map(row => Object.fromEntries(columns.map(key => [key, row[key] ?? ''])));
+    const csv = value => `"${String(value === true ? 'True' : value === false ? 'False' : value).replaceAll('"', '""')}"`;
+    const body = format === 'json' ? JSON.stringify(rows) : [columns.join(','), ...rows.map(row => columns.map(key => csv(row[key])).join(','))].join('\r\n') + '\r\n';
+    return reply(200, new Blob([body], { type: format === 'json' ? 'application/json' : 'text/csv' }));
+  }) },
   { method: 'POST', path: '/users/', handler: staff(({ body, db, user }) => {
     validateEmail(body.email, db);
     for (const key of ['first_name', 'last_name']) if (!body[key]?.trim()) throw mockError(400, 'VALIDATION_ERROR', { [key]: ['FIELD_REQUIRED'] });

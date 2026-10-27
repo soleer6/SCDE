@@ -36,7 +36,7 @@ export const organizationMocks = [{ method: 'POST', path: '/organizations/', han
   if (Object.keys(errors).length) throw mockError(400, 'VALIDATION_ERROR', errors);
   if (db.organizations.some(o => o.subdomain === body.subdomain.trim())) throw mockError(409, 'SUBDOMAIN_ALREADY_EXISTS', { subdomain: ['SUBDOMAIN_ALREADY_EXISTS'] });
   // Validate before mutating either collection: failed registration is atomic.
-  if (db.users.some(u => u.email.toLowerCase() === manager.email.trim().toLowerCase())) throw mockError(500, 'INTERNAL_ERROR');
+  if (db.users.some(u => u.email.toLowerCase() === manager.email.trim().toLowerCase())) throw mockError(409, 'EMAIL_ALREADY_EXISTS', { 'initial_manager.email': ['EMAIL_ALREADY_EXISTS'] });
   const created_at = new Date().toISOString();
   const org = { id: crypto.randomUUID(), name: body.name.trim(), subdomain: body.subdomain.trim(), plan: body.plan ?? 'FREE', auth_mode: 'JWT', is_active: true, created_at };
   const initial = { id: crypto.randomUUID(), organization_id: org.id, email: manager.email.trim().toLowerCase(),

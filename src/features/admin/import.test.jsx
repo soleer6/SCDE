@@ -266,6 +266,6 @@ it('exports JSON including DNI without authentication secrets', async () => {
   db.users.find((u) => u.id === 'u-admin').dni = '12345678X';
   const blob = await api.blob('/users/export/', { export_format: 'json' });
   const rows = JSON.parse(await blob.text());
-  expect(rows.find((u) => u.id === 'u-admin').dni).toBe('12345678X');
+  expect(rows.find((u) => u.email === 'admin@uam.es').dni).toBe('12345678X');
   expect(rows[0]).not.toHaveProperty('password');
 });

@@ -176,38 +176,43 @@ it('retries the same course search with Enter after a request failure', async ()
   expect(db.courses).toHaveLength(2);
 });
 
-it('uses only documented users parameters and filters the current page locally', async () => {
+it('filters users on the server before pagination and resets the page for a new search', async () => {
   db.users.push(...Array.from({ length: 26 }, (_, i) => ({ ...db.users[0], id: `extra-${i}`, email: `extra${i}@uam.es`, is_staff: false })));
   const get = vi.spyOn(api, 'get');
   const user = userEvent.setup(); renderPage(<UsersPage />);
   await screen.findByText('admin@uam.es');
   fireEvent.change(screen.getByLabelText('Buscar usuarios'), { target: { value: 'maria' } });
   await user.click(screen.getByRole('button', { name: 'Buscar' }));
+  await screen.findByText('maria.perez@uam.es');
   expect(screen.queryByText('admin@uam.es')).not.toBeInTheDocument();
-  expect(get.mock.calls.filter(([path]) => path === '/users/')).toEqual([['/users/', { page: 1, page_size: '25' }]]);
+  expect(get).toHaveBeenLastCalledWith('/users/', { search: 'maria', page: 1, page_size: '25' });
+  fireEvent.change(screen.getByLabelText('Buscar usuarios'), { target: { value: 'extra' } });
+  await user.click(screen.getByRole('button', { name: 'Buscar' }));
+  await screen.findByText(/Página 1 de 2/);
   await user.click(screen.getByRole('button', { name: 'Siguiente' }));
   await screen.findByText(/Página 2 de 2/);
   fireEvent.change(screen.getByLabelText('Buscar usuarios'), { target: { value: 'extra25' } });
   await user.click(screen.getByRole('button', { name: 'Buscar' }));
   await screen.findByText('extra25@uam.es');
-  expect(get).toHaveBeenLastCalledWith('/users/', { page: 2, page_size: '25' });
+  expect(get).toHaveBeenLastCalledWith('/users/', { search: 'extra25', page: 1, page_size: '25' });
   await user.selectOptions(screen.getByLabelText('Registros por página'), '50');
-  await waitFor(() => expect(get).toHaveBeenLastCalledWith('/users/', { page: 1, page_size: '50' }));
+  await waitFor(() => expect(get).toHaveBeenLastCalledWith('/users/', { search: 'extra25', page: 1, page_size: '50' }));
 });
 
-it('recovers a failed users page with keyboard retry and preserves the local search', async () => {
+it('recovers a failed users page with keyboard retry and preserves server search', async () => {
   db.users.push(...Array.from({ length: 26 }, (_, i) => ({ ...db.users[0], id: `extra-${i}`, email: `extra${i}@uam.es`, is_staff: false })));
   const originalUsers = structuredClone(db.users);
   const user = userEvent.setup(); renderPage(<UsersPage />);
   await screen.findByText('admin@uam.es');
   const search = screen.getByLabelText('Buscar usuarios');
-  await user.type(search, 'extra25{Enter}');
+  await user.type(search, 'extra{Enter}');
+  await screen.findByText(/Página 1 de 2/);
   const get = vi.spyOn(api, 'get');
   get.mockRejectedValueOnce(new Error('Temporary network failure'));
   await user.click(screen.getByRole('button', { name: 'Siguiente' }));
   expect((await screen.findByRole('alert')).parentElement).toHaveFocus();
   expect(screen.queryByText('extra25@uam.es')).not.toBeInTheDocument();
-  expect(search).toHaveValue('extra25');
+  expect(search).toHaveValue('extra');
   await user.tab();
   expect(screen.getByRole('button', { name: 'Reintentar' })).toHaveFocus();
   get.mockRejectedValueOnce(new Error('Temporary network failure'));
@@ -219,8 +224,8 @@ it('recovers a failed users page with keyboard retry and preserves the local sea
   await waitFor(() => expect(search).toHaveFocus());
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(screen.getByText(/Página 2 de 2/)).toBeInTheDocument();
-  expect(search).toHaveValue('extra25');
-  expect(get.mock.calls).toEqual(Array.from({ length: 3 }, () => ['/users/', { page: 2, page_size: '25' }]));
+  expect(search).toHaveValue('extra');
+  expect(get.mock.calls).toEqual(Array.from({ length: 3 }, () => ['/users/', { search: 'extra', page: 2, page_size: '25' }]));
   expect(db.users).toEqual(originalUsers);
 }, 15000);
 
