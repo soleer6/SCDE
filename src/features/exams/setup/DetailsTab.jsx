@@ -19,7 +19,7 @@ export default function DetailsTab({ exam, onSaved }) {
   const [date, setDate] = useState(toLocal(exam.date));
   const [perms, setPerms] = useState(exam.student_permissions ?? {});
   const [confirm, setConfirm] = useState(false);
-  const save = useAction(() => updateExam(exam.id, { name: name.trim(), date: date ? new Date(date).toISOString() : null, student_permissions: perms }));
+  const save = useAction(() => updateExam(exam.id, { name: name.trim(), ...(date ? { date: new Date(date).toISOString() } : {}), student_permissions: perms }));
   const remove = useAction(() => deleteExam(exam.id));
 
   const onSave = async () => {
