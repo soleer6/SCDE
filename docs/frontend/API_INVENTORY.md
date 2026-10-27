@@ -1,6 +1,6 @@
 # API inventory (generated)
 
-Source: canonical contract of the local backend `SCDEE-backend`, branch `fix/integracion-real` @ 6ca40e7 (2026-10-26), file `docs/files/spectacular/SCDEE API.yaml` (SHA-256 LF dade4ce3922f3365b7d5402d37cbd91b9a8436fc5683aeaca9ca35f58d67063a). Previous source: `anxoCRuam/SCDEE` `backend` @ a8eb9f43.
+Source: canonical contract of the local backend `SCDEE-backend`, branch `fix/integracion-real` @ 065a5e6 (2026-10-27), file `docs/files/spectacular/SCDEE API.yaml` (SHA-256 LF dcccfdb262cc5609d0c86f60f43adc7393f594cf2627bc8c9ee1a3f09ef4be31). Previous source: `anxoCRuam/SCDEE` `backend` @ a8eb9f43.
 Regenerate with `scripts/analyze/endpoints.py` and `scripts/analyze/schemas.py` (need PyYAML). All paths below are relative to `/api/v1`.
 
 **Never use an endpoint or field that is not listed here.** If you need one, write it in docs/coordination/REQUESTS.md.
@@ -50,7 +50,7 @@ PATCH  /instances/{instance_pk}/pages/{page_pk}/accept/                [Pages] r
 POST   /instances/{instance_pk}/pages/{page_pk}/move/                  [Pages] req=json:MovePageRequest resp=200:DetailResponse | Move page ('can_resolve_issues')
 POST   /instances/{instance_pk}/pages/attach/                          [Pages] req=json:AttachPageRequest resp=200:DetailResponse | Attach orphan page
 PATCH  /instances/{instance_pk}/pages/reorder/                         [Pages] req=json:PatchedReorderPagesRequest resp=200:DetailResponse | Reorder pages ('can_resolve_issues' or assigned required)
-PUT    /instances/{instance_pk}/problems/{problem_pk}/grade/           [Grading] req=json:ManualGradeRequest resp=200:GradeResponse | Manual grade with optimistic concurrency (RF-11.1) 
+PUT    /instances/{instance_pk}/problems/{problem_pk}/grade/           [Grading] req=json:ManualGradeRequest resp=200:GradeResponse | Manual grade with optimistic concurrency (RF-11.1)
 PUT    /instances/{instance_pk}/problems/{problem_pk}/rubric/          [Grading] req=json:RubricGradeRequest resp=200:GradeResponse | Rubric grade with optimistic concurrency (RF-11.2)
 GET    /instances/{instance_pk}/review-requests/                       [Reviews] req= resp=200:array | List review requests for instance ('can_manage_reviews': all, teacher:
 POST   /instances/{instance_pk}/review-requests/                       [Reviews] req=json:SubmitReviewRequestRequest resp=201:array | Submit review requests (RF-12.4)
@@ -667,7 +667,7 @@ PublishResult:
    *errors: [PublishError] ro
 RefreshRequestRequest:
    *refresh_token: string
-ReviewRead: anyOf(ReviewResponse|ReviewStatusResponse) — request_count only with effective can_manage_reviews
+ReviewRead:
 ReviewRequestResponse:
    *id: string(uuid) ro
    *instance_id: string(uuid) ro
@@ -836,4 +836,7 @@ ZoneResponse:
 ZoneTypeEnum: enum ['OCR_TEXT', 'OCR_NUMBER', 'QR', 'CHECKBOX']
 ```
 
+
 PATCH `/models/{model_pk}/`: required `label`, pattern `^[A-Za-z0-9]+$`, maxLength 10; effective `can_create_exams`. Errors: 400 validation, 403 denied, 404 missing/other tenant, 409 `COURSE_ARCHIVED` / `MODEL_LABEL_EXISTS`. Returns full `ModelDetail`.
+
+GET `/instances/{instance_pk}/annotations/`: authorization precedes filtering/URL generation. 403 `PERMISSION_DENIED`, 404 `NOT_FOUND` for missing/other tenant. Active membership in the exact subject; student owner, published instance and `can_view_annotations`. OPEN requires IN_REVIEW and start_date <= now < end_date. CLOSED/COMPLETED also requires `can_view_pages_after_review`. Teachers need assignment (model/group filters) or effective view-all permission; coordinators/managers retain tenant-scoped access. Existing signed URLs remain bearer capabilities until expiry.

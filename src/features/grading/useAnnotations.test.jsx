@@ -22,6 +22,41 @@ beforeEach(async () => {
 afterEach(() => vi.restoreAllMocks());
 
 describe('useAnnotations', () => {
+  it('does not restore an earlier payload after a newer authorization check was denied', async () => {
+    const id = 'i-e-mat-p2-3';
+    await api.post(`/instances/${id}/annotations/`, { annotation_type: 'STYLUS', payload: JSON.stringify({ strokes: [stroke] }), page_number: 1, x: 0, y: 0 });
+    const { result } = renderHook(() => useAnnotations(id));
+    await waitFor(() => expect(result.current.strokesByPage[1]).toEqual([stroke]));
+    const originalGet = api.get;
+    let release;
+    vi.spyOn(api, 'get').mockImplementationOnce((...args) => new Promise((resolve) => { release = () => resolve(originalGet(...args)); }))
+      .mockRejectedValueOnce(new ApiError('PERMISSION_DENIED', 403));
+    act(() => window.dispatchEvent(new Event('focus')));
+    expect(result.current.strokesByPage).toEqual({});
+    act(() => window.dispatchEvent(new Event('focus')));
+    await waitFor(() => expect(result.current.error?.status).toBe(403));
+    await act(async () => { release(); await new Promise((resolve) => setTimeout(resolve, 30)); });
+    expect(result.current.strokesByPage).toEqual({});
+    expect(result.current.error?.status).toBe(403);
+  });
+  it('clears all ink after a permission rejection and reloads from the server on retry', async () => {
+    const id = 'i-e-mat-p2-3';
+    await api.post(`/instances/${id}/annotations/`, { annotation_type: 'STYLUS', payload: JSON.stringify({ strokes: [stroke] }), page_number: 1, x: 0, y: 0 });
+    const { result } = renderHook(() => useAnnotations(id));
+    await waitFor(() => expect(result.current.strokesByPage[1]).toEqual([stroke]));
+    vi.spyOn(api, 'put').mockRejectedValueOnce(new ApiError('PERMISSION_DENIED', 403));
+    act(() => result.current.addStroke(1, stroke));
+    await act(async () => { await result.current.flush(); });
+    expect(result.current.strokesByPage).toEqual({});
+    expect(result.current.layersByPage).toEqual({});
+    expect(result.current.loadFailed).toBe(true);
+    expect(result.current.error.status).toBe(403);
+    act(() => result.current.addStroke(1, stroke));
+    expect(result.current.strokesByPage).toEqual({});
+    await act(async () => { await result.current.retry(); });
+    expect(result.current.error).toBeNull();
+    expect(result.current.strokesByPage[1]).toEqual([stroke]);
+  });
   it('blocks edits after a payload download fails and reloads the existing content on retry', async () => {
     const id = 'i-e-mat-p2-3';
     await api.post(`/instances/${id}/annotations/`, { annotation_type: 'TEXT', payload: 'Original conservado', page_number: 1, x: 0, y: 0 });

@@ -13,7 +13,12 @@ export function useAnnotations(instanceId, { readOnly = false, authorId = decode
     });
     current.current = session;
     void session.load();
+    const recheck = () => {
+      if (!session.dirty.size && !session.writing) void session.load();
+    };
+    window.addEventListener('focus', recheck);
     return () => {
+      window.removeEventListener('focus', recheck);
       current.current = null;
       void session.flush();
     };

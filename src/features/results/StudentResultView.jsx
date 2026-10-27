@@ -6,6 +6,7 @@ import { Badge, Button, DataTable, EmptyState, ErrorState, Loader, PageHeader, P
 import { getExamInstances, getReview, asList } from '../exams/api.js';
 import { listAnnotations, readAnnotationPayload } from '../grading/api.js';
 import { readAnnotationLayers } from '../grading/annotationLayers.js';
+import { useAnnotationRead } from '../grading/useAnnotationRead.js';
 import { usePdfUrl } from '../grading/usePdfUrl.js';
 import PdfStage from '../grading/PdfStage.jsx';
 import AudioNotes from '../grading/AudioNotes.jsx';
@@ -83,6 +84,7 @@ export default function StudentResultView({ exam }) {
 
   const maxTotal = inst.rubric?.reduce((a, p) => a + Number(p.max_score), 0);
   const reviewOpen = review.data?.status === 'OPEN' && inst.status === 'IN_REVIEW';
+  const accessKey = JSON.stringify([exam.id, exam.student_permissions, inst.id, inst.status, Boolean(inst.pages), review.data]);
 
   return (
     <>
@@ -108,15 +110,15 @@ export default function StudentResultView({ exam }) {
       <div className="dm-split rs-body">
         <section className="dm-section">
           {inst.pages ? (
-            <StudentPdf instanceId={inst.id} canDownload={Boolean(inst.can_download)} fileName={`${exam.subject_code}-${exam.name}.pdf`} />
+            <StudentPdf key={inst.id} instanceId={inst.id} accessKey={accessKey} canDownload={Boolean(inst.can_download)} fileName={`${exam.subject_code}-${exam.name}.pdf`} />
           ) : (
             <EmptyState title={t('pdf.hiddenTitle')} body={t(review.data ? 'pdf.hiddenAfter' : 'pdf.hiddenBody')} />
           )}
         </section>
         <aside className="ui-stack">
           <Breakdown inst={inst} />
-          <TeacherComment instanceId={inst.id} visible={Boolean(inst.pages)} problems={inst.rubric ?? inst.grades ?? []} />
-          {inst.pages && <AudioNotes instanceId={inst.id} canEdit={false} />}
+          <TeacherComment instanceId={inst.id} accessKey={accessKey} visible={Boolean(inst.pages)} problems={inst.rubric ?? inst.grades ?? []} />
+          {inst.pages && <AudioNotes instanceId={inst.id} accessKey={accessKey} canEdit={false} />}
           <Panel title={t('review.title')}>
             {reviewOpen ? (
               <ReviewRequestForm
@@ -171,18 +173,10 @@ function Breakdown({ inst }) {
   );
 }
 
-function StudentPdf({ instanceId, canDownload, fileName }) {
+function StudentPdf({ instanceId, canDownload, fileName, accessKey }) {
   const { t } = useTranslation('results');
   const { url, error } = usePdfUrl(instanceId);
-  const ann = useApi(async () => {
-    try {
-      const list = await listAnnotations(instanceId);
-      return await readAnnotationLayers(list);
-    } catch (e) {
-      if (e.status === 403) return { layersByPage: {} }; // annotations hidden by exam permissions
-      throw e;
-    }
-  }, [instanceId]);
+  const ann = useAnnotationRead(async () => readAnnotationLayers(await listAnnotations(instanceId)), JSON.stringify([instanceId, accessKey]));
 
   if (error) return <ErrorState error={error} title={t('pdf.error')} />;
   const annotations = { strokesByPage: {}, layersByPage: ann.data?.layersByPage ?? {}, loading: ann.loading };
@@ -201,21 +195,16 @@ function StudentPdf({ instanceId, canDownload, fileName }) {
   </>;
 }
 
-function TeacherComment({ instanceId, visible, problems = [] }) {
+function TeacherComment({ instanceId, visible, problems = [], accessKey }) {
   const { t } = useTranslation('results');
-  const comment = useApi(
+  const comment = useAnnotationRead(
     visible
       ? async () => {
-          try {
-            const list = await listAnnotations(instanceId);
-            return await Promise.all(list.filter((x) => x.annotation_type === 'TEXT').map(async (a) => ({ ...a, text: await readAnnotationPayload(a) })));
-          } catch (e) {
-            if (e.status === 403) return [];
-            throw e;
-          }
+          const list = await listAnnotations(instanceId);
+          return await Promise.all(list.filter((x) => x.annotation_type === 'TEXT').map(async (a) => ({ ...a, text: await readAnnotationPayload(a) })));
         }
-      : null,
-    [instanceId, visible],
+      : async () => [],
+    JSON.stringify([instanceId, visible, accessKey]),
   );
   if (!visible) return null;
   if (comment.error) return <ErrorState error={comment.error} onRetry={comment.reload} />;

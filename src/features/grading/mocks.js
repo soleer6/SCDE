@@ -1,6 +1,7 @@
 import { db, q } from '../../lib/mock/db.js';
 import { mockError, reply } from '../../lib/mock/router.js';
 import { encryptPdf } from './pdfCrypto.js';
+import { authorizeAnnotationRead } from './annotationAccess.js';
 import { canGradeInstance as canGrade, gradeOut, hasPerm, instanceOut, recalcTotal, studentCan, studentInstanceOut } from '../exams/mockSerializers.js';
 
 /* Mirrors apps.instances.models.instances.VALID_TRANSITIONS */
@@ -166,10 +167,12 @@ export const mocks = [
   {
     method: 'GET',
     path: '/instances/:id/annotations/',
-    handler: ({ params, user }) => {
+    handler: ({ params, user, query = new URLSearchParams() }) => {
       const inst = instOr404(params.id);
-      if (isOwner(inst, user) ? !studentCan(inst, 'can_view_annotations') : !canSee(user, inst)) throw mockError(403, 'PERMISSION_DENIED');
-      return db.annotations.filter((a) => a.instance_id === inst.id).map(annotationOut);
+      authorizeAnnotationRead(inst, user);
+      return db.annotations.filter((a) => a.instance_id === inst.id
+        && ['page_number', 'problem_id', 'annotation_type', 'author_id'].every((key) => !query.get(key) || String(a[key]) === query.get(key)))
+        .sort((a, b) => a.page_number - b.page_number || a.y - b.y || a.x - b.x).map(annotationOut);
     },
   },
   {

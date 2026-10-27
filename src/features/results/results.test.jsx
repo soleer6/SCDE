@@ -2,7 +2,7 @@
  * plurals, requests already made
  * elsewhere, a window that closes meanwhile and where the focus lands. */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -59,11 +59,40 @@ const requestElsewhere = (problemId) =>
 beforeEach(async () => {
   localStorage.clear();
   db.reset();
+  const review = db.reviews.find((r) => r.exam_id === 'e-mat-p1');
+  review.start_date = new Date(Date.now() - 60000).toISOString();
+  review.end_date = new Date(Date.now() + 3600000).toISOString();
   await i18n.changeLanguage('es');
   await loginAs('elena.rodriguez@estudiante.uam.es', 'est123');
 });
 
 describe('student result', () => {
+  it('removes ink, text and audio on permission revocation and recovers through retry', async () => {
+    await loginAs('maria.perez@uam.es', 'prof123');
+    await api.post(`/instances/${INSTANCE}/annotations/`, { annotation_type: 'TEXT', payload: 'Comentario protegido', page_number: 1, x: 0, y: 0 });
+    await api.post(`/instances/${INSTANCE}/annotations/`, { annotation_type: 'STYLUS', payload: JSON.stringify({ strokes: [{ points: [{ x: 0.1, y: 0.2 }, { x: 0.3, y: 0.4 }], color: 'red', width: 0.003 }] }), page_number: 1, x: 0, y: 0 });
+    db.annotations.push({ id: 'audio-private', instance_id: INSTANCE, annotation_type: 'AUDIO', author_id: 'u-maria' });
+    await loginAs('elena.rodriguez@estudiante.uam.es', 'est123');
+    const { container } = renderResult();
+    await screen.findByText('Comentario protegido');
+    await waitFor(() => expect(container.querySelectorAll('.gr-ink.is-readonly')).toHaveLength(2));
+    await waitFor(() => expect(container.querySelectorAll('audio')).toHaveLength(1));
+    db.exams.find((e) => e.id === 'e-mat-p1').student_permissions.can_view_annotations = false;
+    act(() => window.dispatchEvent(new Event('focus')));
+    expect(screen.queryByText('Comentario protegido')).not.toBeInTheDocument();
+    expect(container.querySelectorAll('audio')).toHaveLength(0);
+    expect(container.querySelectorAll('.gr-ink.is-readonly')).toHaveLength(0);
+    await waitFor(() => expect(screen.getAllByRole('alert')).toHaveLength(3));
+    expect(container.querySelectorAll('.gr-ink.is-readonly')).toHaveLength(1); // empty base canvas
+    expect(screen.getByTestId('pdf-doc')).toBeInTheDocument();
+    db.exams.find((e) => e.id === 'e-mat-p1').student_permissions.can_view_annotations = true;
+    const user = userEvent.setup();
+    for (const button of screen.getAllByRole('button', { name: /Reintentar/i })) await user.click(button);
+    expect(await screen.findByText('Comentario protegido')).toBeInTheDocument();
+    await waitFor(() => expect(container.querySelectorAll('audio')).toHaveLength(1));
+    await waitFor(() => expect(container.querySelectorAll('.gr-ink.is-readonly')).toHaveLength(2));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
   it('shows comments and independent ink layers from both teachers', async () => {
     await loginAs('maria.perez@uam.es', 'prof123');
     for (const [index, author] of ['u-maria', 'u-javier'].entries()) {

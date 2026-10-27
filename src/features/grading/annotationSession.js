@@ -13,18 +13,31 @@ export function annotationSession(instanceId, authorId, notify) {
     comment: '', ids: { stylus: {}, text: null }, dirty: new Map(),
     timers: new Map(), writing: null,
   };
+  const clear = () => {
+    Object.assign(s, { loaded: false, strokesByPage: {}, layersByPage: {}, comments: [], comment: '', ids: { stylus: {}, text: null } });
+    for (const timer of s.timers.values()) clearTimeout(timer);
+    s.timers.clear();
+    s.dirty.clear();
+  };
+  let loadVersion = 0;
   s.load = async () => {
+    const version = ++loadVersion;
+    clear();
     s.loading = true;
     s.error = null;
     notify();
     try {
       const data = await readAnnotationLayers(await listAnnotations(instanceId), authorId);
+      if (version !== loadVersion) return;
       Object.assign(s, data, { loaded: true });
     } catch (e) {
+      if (version !== loadVersion) return;
       s.error = e;
     } finally {
-      s.loading = false;
-      notify();
+      if (version === loadVersion) {
+        s.loading = false;
+        notify();
+      }
     }
   };
   const write = async (key) => {
@@ -60,6 +73,7 @@ export function annotationSession(instanceId, authorId, notify) {
         s.saveState = 'saved';
         return true;
       } catch (e) {
+        if (e.status === 403 || e.status === 404) clear();
         s.error = e;
         s.saveState = 'error';
         return false;

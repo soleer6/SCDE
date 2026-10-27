@@ -1,24 +1,20 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useApi } from '../../lib/hooks.js';
-import { Button, Textarea, useToast } from '../../ui';
+import { useAnnotationRead } from './useAnnotationRead.js';
+import { Button, ErrorState, Textarea, useToast } from '../../ui';
 import { createAnnotation, deleteAnnotation, listAnnotations, readAnnotationPayload, updateAnnotation } from './api.js';
 
 /** Text comment tied to one problem (RF-10.1/10.3): each teacher keeps one of their own per problem
  *  (create, edit, remove by saving it empty); comments by other teachers are shown read-only.
  *  They are TEXT annotations with problem_id, so the page-level layers and the general comment ignore them. */
 export default function ProblemNote({ instanceId, problem, canEdit, currentUserId }) {
-  const notes = useApi(async () => {
-    try {
-      const list = (await listAnnotations(instanceId)).filter((a) => a.annotation_type === 'TEXT' && a.problem_id === problem.id);
-      return await Promise.all(list.map(async (a) => ({ ...a, text: await readAnnotationPayload(a) })));
-    } catch (e) {
-      if (e.status === 403) return [];
-      throw e;
-    }
-  }, [instanceId, problem.id]);
+  const notes = useAnnotationRead(async () => {
+    const list = (await listAnnotations(instanceId)).filter((a) => a.annotation_type === 'TEXT' && a.problem_id === problem.id);
+    return await Promise.all(list.map(async (a) => ({ ...a, text: await readAnnotationPayload(a) })));
+  }, JSON.stringify([instanceId, problem.id, currentUserId]));
 
-  if (notes.initialLoading || notes.error) return null;
+  if (notes.error) return <ErrorState error={notes.error} onRetry={notes.reload} />;
+  if (notes.loading) return null;
   const all = notes.data ?? [];
   const own = canEdit ? all.find((a) => a.author_id === currentUserId) : null;
   const others = all.filter((a) => a !== own);
@@ -55,6 +51,7 @@ function OwnNote({ instanceId, problem, own, onSaved }) {
       onSaved();
     } catch (e) {
       toast.error(t('note.error'));
+      if (e.status === 403 || e.status === 404) onSaved();
     } finally {
       setSaving(false);
     }

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useApi } from '../../lib/hooks.js';
-import { Button, Panel, useToast } from '../../ui';
+import { useAnnotationRead } from './useAnnotationRead.js';
+import { Button, ErrorState, Panel, useToast } from '../../ui';
 import { createAudioAnnotation, deleteAnnotation, listAnnotations } from './api.js';
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -9,18 +9,11 @@ const clock = (s) => `${pad(Math.floor(s / 60))}:${pad(s % 60)}`;
 
 /** Audio comments (RF-10.1–10.4): teachers record or upload them, the student listens when the
  *  exam allows annotations. The server validates format and the organisation's duration limit
- *  (RF-10.6); a 403 on the list just means "not visible". */
-export default function AudioNotes({ instanceId, canEdit, currentUserId }) {
+ *  (RF-10.6); denied reads clear URLs and offer a fresh authorized retry. */
+export default function AudioNotes({ instanceId, canEdit, currentUserId, accessKey = '' }) {
   const { t } = useTranslation('grading');
   const toast = useToast();
-  const notes = useApi(async () => {
-    try {
-      return (await listAnnotations(instanceId)).filter((a) => a.annotation_type === 'AUDIO');
-    } catch (e) {
-      if (e.status === 403) return [];
-      throw e;
-    }
-  }, [instanceId]);
+  const notes = useAnnotationRead(async () => (await listAnnotations(instanceId)).filter((a) => a.annotation_type === 'AUDIO'), JSON.stringify([instanceId, currentUserId, accessKey]));
   const [state, setState] = useState('idle'); // idle | recording | saving
   const [seconds, setSeconds] = useState(0);
   const rec = useRef(null);
@@ -43,6 +36,7 @@ export default function AudioNotes({ instanceId, canEdit, currentUserId }) {
       notes.reload();
     } catch (e) {
       toast.error(t(`audio.errors.${e.code}`, { defaultValue: t('audio.errors.UNKNOWN') }));
+      if (e.status === 403 || e.status === 404) notes.reload();
     } finally {
       setState('idle');
     }
@@ -75,10 +69,12 @@ export default function AudioNotes({ instanceId, canEdit, currentUserId }) {
       notes.reload();
     } catch (e) {
       toast.error(t(`audio.errors.${e.code}`, { defaultValue: t('audio.errors.UNKNOWN') }));
+      if (e.status === 403 || e.status === 404) notes.reload();
     }
   };
 
   const list = notes.data ?? [];
+  if (notes.error) return <ErrorState error={notes.error} onRetry={notes.reload} />;
   if (!canEdit && !list.length) return null;
 
   return (
