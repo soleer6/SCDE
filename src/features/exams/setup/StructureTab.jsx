@@ -2,8 +2,9 @@ import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAction, useApi } from '../../../lib/hooks.js';
 import { formatScore } from '../../../lib/format.js';
-import { Badge, Button, DataTable, EmptyState, Field, Input, Panel, Select, useToast } from '../../../ui';
-import { createModel, createProblem, generateQrPdf, getModel, uploadBlankPdf } from '../api.js';
+import { Badge, Button, Checkbox, DataTable, EmptyState, ErrorState, Field, Input, Loader, Panel, Select, useToast } from '../../../ui';
+import { createModel, createProblem, generateQrPdf, getModel, listPageProfiles, uploadBlankPdf } from '../api.js';
+import { problemScore } from '../problemInput.js';
 import RubricDialog from './RubricDialog.jsx';
 import ZonesSection from './ZonesSection.jsx';
 import RenameModelDialog from './RenameModelDialog.jsx';
@@ -120,7 +121,7 @@ function ModelBlock({ model, perms, onChanged }) {
         <span className="u-muted">
           {t('setup.structure.total')} <b className="u-num">{formatScore(total)}</b>
         </span>
-        {perms.rubric && <NewProblemForm modelId={model.model_id} nextOrder={model.problems.length + 1} onCreated={onChanged} />}
+        {perms.rubric && <NewProblemForm key={model.model_id} modelId={model.model_id} canReadZones={perms.exams} nextOrder={model.problems.length + 1} onCreated={onChanged} />}
       </div>
       {perms.exams && pages > 0 && <ZonesSection modelId={model.model_id} pages={pages} onError={fail} />}
       <RubricDialog problem={rubricFor} onClose={() => setRubricFor(null)} onSaved={onChanged} />
@@ -129,21 +130,27 @@ function ModelBlock({ model, perms, onChanged }) {
   );
 }
 
-function NewProblemForm({ modelId, nextOrder, onCreated }) {
+function NewProblemForm({ modelId, canReadZones, nextOrder, onCreated }) {
   const { t } = useTranslation('exams');
   const toast = useToast();
   const fail = useErrorToast();
   const [name, setName] = useState('');
   const [max, setMax] = useState('');
-  const create = useAction(() => createProblem(modelId, { name: name.trim(), max_score: String(Number(max.replace(',', '.'))), order: nextOrder }));
-  const valid = name.trim() && Number(max.replace(',', '.')) > 0;
+  const [zoneIds, setZoneIds] = useState([]);
+  const profiles = useApi(canReadZones ? () => listPageProfiles(modelId) : null, [modelId, canReadZones]);
+  const zones = (profiles.data ?? []).flatMap((p) => p.zones.map((z) => ({ ...z, page: p.page_number })));
+  const score = problemScore(max);
+  const create = useAction(() => createProblem(modelId, { name: name.trim(), max_score: score, order: nextOrder, zone_ids: zoneIds }));
+  const valid = name.trim() && score !== null && (!zoneIds.length || (!profiles.loading && !profiles.error && zoneIds.every((id) => zones.some((z) => z.id === id))));
 
   const submit = async (e) => {
     e.preventDefault();
+    if (!valid || create.pending) return;
     try {
       await create.run();
       setName('');
       setMax('');
+      setZoneIds([]);
       toast.success(t('setup.structure.problemAdded'));
       onCreated();
     } catch (err) {
@@ -152,9 +159,25 @@ function NewProblemForm({ modelId, nextOrder, onCreated }) {
   };
 
   return (
-    <form className="setup-inline" onSubmit={submit}>
-      <Field label={t('setup.structure.newProblem')}>{(id) => <Input id={id} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('setup.structure.problemPlaceholder')} />}</Field>
-      <Field label={t('setup.structure.max')}>{(id) => <Input id={id} inputMode="decimal" value={max} onChange={(e) => setMax(e.target.value)} className="setup-num" />}</Field>
+    <form className="setup-problem ui-stack" onSubmit={submit}>
+      <div className="setup-inline">
+        <Field label={t('setup.structure.newProblem')}>{(id) => <Input id={id} maxLength={255} disabled={create.pending} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('setup.structure.problemPlaceholder')} />}</Field>
+        <Field label={t('setup.structure.max')} hint={t('setup.structure.scoreHint')}>{(id) => <Input id={id} inputMode="decimal" disabled={create.pending} value={max} onChange={(e) => setMax(e.target.value)} className="setup-num" />}</Field>
+      </div>
+      <div role="group" aria-label={t('setup.structure.problemZones')} className="ui-stack">
+        <p className="u-muted">{t('setup.structure.problemZones')}</p>
+        {!canReadZones && <p className="u-muted">{t('setup.structure.zonesPermission')}</p>}
+        {profiles.initialLoading && <Loader label={t('setup.zones.loading')} />}
+        {profiles.error && <ErrorState error={profiles.error} onRetry={profiles.reload} />}
+        {zoneIds.length > 0 && <Button size="sm" type="button" onClick={() => setZoneIds([])} disabled={create.pending}>{t('setup.structure.clearZones')}</Button>}
+        {canReadZones && profiles.data && !profiles.error && (
+          <>
+            {!zones.length && <p className="u-muted">{t('setup.structure.noProblemZones')}</p>}
+            {zones.map((z) => <Checkbox key={z.id} label={t('setup.structure.problemZone', { page: z.page, name: z.attribute, type: t(`setup.zones.types.${z.zone_type}`, { defaultValue: z.zone_type }), x: z.x, y: z.y })} disabled={create.pending || profiles.loading} checked={zoneIds.includes(z.id)} onChange={(e) => setZoneIds((ids) => e.target.checked ? [...ids, z.id] : ids.filter((id) => id !== z.id))} />)}
+            <Button size="sm" type="button" onClick={profiles.reload} disabled={create.pending} loading={profiles.loading}>{t('setup.structure.refreshZones')}</Button>
+          </>
+        )}
+      </div>
       <Button type="submit" variant="primary" disabled={!valid} loading={create.pending}>
         {t('setup.structure.addProblem')}
       </Button>

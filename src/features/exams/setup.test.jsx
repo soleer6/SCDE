@@ -96,7 +96,7 @@ describe('exam setup', () => {
     const add = within(model).getByRole('button', { name: 'Añadir problema' });
     await user.type(within(model).getByLabelText('Nuevo problema'), 'Pruebas');
     await user.type(within(model).getByLabelText('Máx.'), '0');
-    expect(add).toBeDisabled();
+    expect(add).toBeEnabled(); // Decimal(6, 2) permits zero as well as penalties.
     await user.clear(within(model).getByLabelText('Máx.'));
     await user.type(within(model).getByLabelText('Máx.'), '2,5');
     await user.click(add);

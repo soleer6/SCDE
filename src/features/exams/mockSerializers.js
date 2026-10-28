@@ -25,7 +25,7 @@ export function problemOut(p) {
     max_score: dec(p.max_score),
     order: p.order,
     exam_model_id: p.exam_model_id,
-    zone_ids: [],
+    zone_ids: (p.zone_ids ?? []).filter((id) => db.zones.some((z) => z.id === id)),
     rubric_criteria: db.criteria
       .filter((c) => c.problem_id === p.id)
       .sort((a, b) => a.order - b.order)

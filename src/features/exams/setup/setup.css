@@ -34,6 +34,10 @@
   gap: var(--s-3);
   flex-wrap: wrap;
 }
+.setup-problem {
+  min-width: 0;
+  flex: 1 1 320px;
+}
 .setup-inline .ui-field {
   min-width: 200px;
 }

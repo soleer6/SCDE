@@ -6,6 +6,7 @@
 import { db, extendSeed, q } from '../../lib/mock/db.js';
 import { mockError, reply } from '../../lib/mock/router.js';
 import { examOut, hasPerm, problemOut } from './mockSerializers.js';
+import { problemScore } from './problemInput.js';
 
 const now = () => new Date().toISOString();
 const exam404 = (id) => q.exam(id) ?? (() => { throw mockError(404, 'NOT_FOUND'); })();
@@ -297,11 +298,14 @@ export const authoringMocks = [
       need(user, subjectOfModel(m), 'can_create_rubric');
       const errors = {};
       if (!body?.name?.trim()) errors.name = ['FIELD_REQUIRED'];
-      const max = Number(body?.max_score);
-      if (body?.max_score === undefined || Number.isNaN(max) || max <= 0) errors.max_score = ['INVALID'];
+      const max = problemScore(body?.max_score);
+      if (max === null) errors.max_score = ['INVALID'];
+      if (body?.zone_ids !== undefined && (!Array.isArray(body.zone_ids) || body.zone_ids.some((id) => typeof id !== 'string'))) errors.zone_ids = ['INVALID'];
       if (Object.keys(errors).length) throw mockError(400, 'VALIDATION_ERROR', errors);
       const order = Number(body.order ?? d.problems.filter((p) => p.exam_model_id === m.id).length + 1);
-      const p = { id: d.uid('p'), exam_model_id: m.id, name: body.name.trim(), max_score: max, order };
+      const profileIds = profilesOf(m.id).map((p) => p.id);
+      const zone_ids = d.zones.filter((z) => profileIds.includes(z.page_profile_id) && (body.zone_ids ?? []).includes(z.id)).map((z) => z.id);
+      const p = { id: d.uid('p'), exam_model_id: m.id, name: body.name.trim(), max_score: Number(max), order, zone_ids };
       d.problems.push(p);
       return reply(201, problemOut(p));
     },
