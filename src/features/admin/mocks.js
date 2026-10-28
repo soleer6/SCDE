@@ -1,6 +1,7 @@
 import { mockError, paginate, reply } from '../../lib/mock/router.js';
 import { importRowError, readImportFile } from './import-files.js';
 import { organizationMocks } from './organizations-mocks.js';
+import { captureMembershipPermissions } from '../../lib/mock/membershipPermissions.js';
 
 export function requireStaff(user) {
   if (!user?.is_active || !(user.is_staff || user.is_superadmin)) throw mockError(403, 'PERMISSION_DENIED');
@@ -135,7 +136,10 @@ export const mocks = [
     Object.assign(row, body, { updated_at: now() }); return courseShape(row, db);
   }) },
   { method: 'GET', path: '/config/', handler: staff(({ db }) => db.org_config) },
-  { method: 'PATCH', path: '/config/', handler: staff(({ db, body }) => { Object.assign(db.org_config, body); return db.org_config; }) },
+  { method: 'PATCH', path: '/config/', handler: staff(({ db, body }) => {
+    db.memberships.forEach((membership) => captureMembershipPermissions(db, membership));
+    Object.assign(db.org_config, body); return db.org_config;
+  }) },
   { method: 'GET', path: '/audit-logs/', handler: staff(({ db, query }) => {
     const rows = db.audit_logs.filter((row) => {
       for (const [param, field] of [['actor_id', 'actor'], ['entity_id', 'entity_id'], ['entity_type', 'entity_type'], ['event_type', 'event_type'], ['ip_address', 'ip_address']]) {

@@ -1,5 +1,6 @@
 import { mockError, paginate, reply } from '../../lib/mock/router.js';
-import { DEFAULT_PERMISSIONS, PERMISSION_KEYS } from '../../lib/permissions.js';
+import { PERMISSION_KEYS } from '../../lib/permissions.js';
+import { captureMembershipPermissions, effectiveMembershipPermissions } from '../../lib/mock/membershipPermissions.js';
 import { requireRecord, requireStaff } from '../admin/mocks.js';
 import { subjectImportMocks } from './subject-import.mocks.js';
 
@@ -8,7 +9,7 @@ function permit(db, user, subject, permission) {
   if (!user?.is_active) throw mockError(403, 'PERMISSION_DENIED');
   if (user.is_staff || user.is_superadmin) return;
   const membership = db.memberships.find((m) => m.user_id === user.id && m.subject_id === subject && m.is_active);
-  if (!membership || ![permission].flat().some((key) => membership.permission_overrides?.[key] ?? DEFAULT_PERMISSIONS[membership.role]?.[key])) throw mockError(403, 'PERMISSION_DENIED');
+  if (!membership || ![permission].flat().some((key) => effectiveMembershipPermissions(db, membership)[key])) throw mockError(403, 'PERMISSION_DENIED');
 }
 const memberShape = (m, db) => {
   const u = requireRecord(db.users.find((u) => u.id === m.user_id));
@@ -18,7 +19,7 @@ const groupShape = (g, db) => ({ id: g.id, label: g.label, subject_id: g.subject
 function effective(m, db) {
   const u = db.users.find((u) => u.id === m.user_id);
   const bypass = Boolean(u?.is_staff || u?.is_superadmin);
-  return { permissions: bypass ? Object.fromEntries(PERMISSION_KEYS.map((key) => [key, true])) : { ...DEFAULT_PERMISSIONS[m.role], ...m.permission_overrides }, role: m.role, has_overrides: Boolean(Object.keys(m.permission_overrides ?? {}).length), is_staff_bypass: bypass };
+  return { permissions: bypass ? Object.fromEntries(PERMISSION_KEYS.map((key) => [key, true])) : effectiveMembershipPermissions(db, m), role: m.role, has_overrides: Boolean(Object.keys(m.permission_overrides ?? {}).length), is_staff_bypass: bypass };
 }
 const permissionTarget = (db, user, id, editing) => {
   if (!user?.is_active) throw mockError(403, 'PERMISSION_DENIED');
@@ -58,6 +59,7 @@ function coordinatorMembership(db, subject) {
     member = { id: crypto.randomUUID(), subject_id: subject.id, user_id: subject.coordinator_id, group_id: null, is_active: true };
     db.memberships.push(member);
   }
+  captureMembershipPermissions(db, member);
   Object.assign(member, { role: 'COORDINATOR', permission_overrides: {} });
 }
 function target(db, user, id) {
@@ -92,7 +94,10 @@ export const subjectCrudMocks = [
     unique(db, values, s.course_id, s.id, false);
     if (values.coordinator_id && values.coordinator_id !== s.coordinator_id) {
       const old = db.memberships.find((m) => m.subject_id === s.id && m.user_id === s.coordinator_id && m.is_active && m.role === 'COORDINATOR');
-      if (old) Object.assign(old, { role: 'TEACHER', permission_overrides: {} });
+      if (old) {
+        captureMembershipPermissions(db, old);
+        Object.assign(old, { role: 'TEACHER', permission_overrides: {} });
+      }
       s.coordinator_id = values.coordinator_id; coordinatorMembership(db, s);
     }
     Object.assign(s, values, { updated_at: new Date().toISOString() });
@@ -138,6 +143,7 @@ export const mocks = [
     if (body.role === 'STUDENT' && body.group_id && existing?.group_id && existing.group_id !== body.group_id) throw mockError(409, 'STUDENT_ALREADY_IN_GROUP');
     if (existing) throw mockError(409, 'ALREADY_MEMBER');
     const m = { id: crypto.randomUUID(), subject_id: params.subject, user_id: body.user_id, role: body.role, group_id: body.group_id || null, permission_overrides: {}, is_active: true };
+    captureMembershipPermissions(db, m);
     db.memberships.push(m); return reply(201, memberShape(m, db));
   } },
   { method: 'DELETE', path: '/subjects/:subject/members/:member/', handler: ({ db, user, params }) => {

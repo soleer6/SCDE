@@ -1,12 +1,12 @@
 import { mockError } from '../../lib/mock/router.js';
 import { requireStaff } from '../admin/mocks.js';
 import { importRowError, readImportFile } from '../admin/import-files.js';
+import { captureMembershipPermissions } from '../../lib/mock/membershipPermissions.js';
 
-function validateSubject(value, db, user, course) {
+function validateSubject(value, db, user) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw mockError(400, 'VALIDATION_ERROR');
   for (const key of ['name', 'code', 'coordinator_email']) if (typeof value[key] !== 'string' || !value[key].trim()) throw mockError(400, 'VALIDATION_ERROR', { [key]: ['FIELD_REQUIRED'] });
   if (value.semester !== undefined && typeof value.semester !== 'string') throw mockError(400, 'VALIDATION_ERROR', { semester: ['INVALID'] });
-  if (db.subjects.some((s) => s.course_id === course.id && s.code === value.code.trim())) throw mockError(409, 'CONFLICT');
   const findUser = (email) => {
     const found = typeof email === 'string' && db.users.find((u) => u.email.toLowerCase() === email.toLowerCase() && u.is_active && u.organization_id === user.organization_id);
     if (!found) throw mockError(400, 'VALIDATION_ERROR', { email: ['INVALID'] });
@@ -38,13 +38,35 @@ export const subjectImportMocks = [{
     rows.forEach((value, index) => {
       try {
         // Validate the complete row before adding any of its related records.
-        const { groups, coordinator, teaching, enrolled } = validateSubject(value, db, user, course);
+        const { groups, coordinator, teaching, enrolled } = validateSubject(value, db, user);
         const timestamp = new Date().toISOString();
-        const subject = { id: crypto.randomUUID(), course_id: course.id, name: value.name.trim(), code: value.code.trim(), semester: value.semester ?? '', coordinator_id: coordinator.id, created_at: timestamp, updated_at: timestamp };
-        const newGroups = groups.map((label) => ({ id: crypto.randomUUID(), subject_id: subject.id, label }));
-        const membership = (member, role, group) => ({ id: crypto.randomUUID(), subject_id: subject.id, user_id: member.id, role, group_id: newGroups.find((g) => g.label === group)?.id ?? null, is_active: true, permission_overrides: {} });
-        db.subjects.push(subject); db.groups.push(...newGroups);
-        db.memberships.push(membership(coordinator, 'COORDINATOR'), ...teaching.map((u) => membership(u, 'TEACHER')), ...enrolled.map(({ user: student, group }) => membership(student, 'STUDENT', group)));
+        let subject = db.subjects.find((s) => s.course_id === course.id && s.code === value.code.trim());
+        if (!subject) {
+          subject = { id: crypto.randomUUID(), course_id: course.id, code: value.code.trim(), created_at: timestamp };
+          db.subjects.push(subject);
+        }
+        Object.assign(subject, { name: value.name.trim(), semester: value.semester ?? '', coordinator_id: coordinator.id, updated_at: timestamp });
+        const subjectGroups = groups.map((label) => {
+          let group = db.groups.find((g) => g.subject_id === subject.id && g.label === label);
+          if (!group) { group = { id: crypto.randomUUID(), subject_id: subject.id, label }; db.groups.push(group); }
+          return group;
+        });
+        const membership = (member, role, group) => {
+          let row = db.memberships.find((m) => m.subject_id === subject.id && m.user_id === member.id && m.role === role);
+          const groupId = subjectGroups.find((g) => g.label === group)?.id ?? null;
+          if (!row) {
+            row = { id: crypto.randomUUID(), subject_id: subject.id, user_id: member.id, role, group_id: groupId, is_active: true, permission_overrides: {} };
+            captureMembershipPermissions(db, row);
+            db.memberships.push(row);
+          } else {
+            captureMembershipPermissions(db, row);
+            if (role === 'COORDINATOR') row.is_active = true;
+            if (role === 'STUDENT' && groupId) row.group_id = groupId;
+          }
+        };
+        membership(coordinator, 'COORDINATOR');
+        teaching.forEach((u) => membership(u, 'TEACHER'));
+        enrolled.forEach(({ user: student, group }) => membership(student, 'STUDENT', group));
         result.created++;
       } catch (err) { result.errors.push(importRowError(index, err)); }
     });
