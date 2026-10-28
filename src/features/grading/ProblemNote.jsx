@@ -4,20 +4,23 @@ import { useAnnotationRead } from './useAnnotationRead.js';
 import { Button, ErrorState, Textarea, useToast } from '../../ui';
 import { createAnnotation, deleteAnnotation, listAnnotations, readAnnotationPayload, updateAnnotation } from './api.js';
 
-/** Text comment tied to one problem (RF-10.1/10.3): each teacher keeps one of their own per problem
- *  (create, edit, remove by saving it empty); comments by other teachers are shown read-only.
+/** Text comments tied to one problem (RF-10.1/10.2/10.3): every own record is editable;
+ *  comments by other teachers are shown read-only. Saving an existing note empty removes it.
  *  They are TEXT annotations with problem_id, so the page-level layers and the general comment ignore them. */
 export default function ProblemNote({ instanceId, problem, canEdit, currentUserId }) {
+  const [drafts, setDrafts] = useState({});
+  const scope = JSON.stringify([instanceId, problem.id, currentUserId]);
   const notes = useAnnotationRead(async () => {
     const list = (await listAnnotations(instanceId)).filter((a) => a.annotation_type === 'TEXT' && a.problem_id === problem.id);
     return await Promise.all(list.map(async (a) => ({ ...a, text: await readAnnotationPayload(a) })));
-  }, JSON.stringify([instanceId, problem.id, currentUserId]));
+  }, scope);
 
   if (notes.error) return <ErrorState error={notes.error} onRetry={notes.reload} />;
   if (notes.loading) return null;
   const all = notes.data ?? [];
-  const own = canEdit ? all.find((a) => a.author_id === currentUserId) : null;
-  const others = all.filter((a) => a !== own);
+  const own = canEdit ? all.filter((a) => a.author_id === currentUserId) : [];
+  const others = all.filter((a) => !own.includes(a));
+  const editors = own.length ? own : [null];
   if (!canEdit && !others.length) return null;
 
   return (
@@ -28,15 +31,28 @@ export default function ProblemNote({ instanceId, problem, canEdit, currentUserI
           {a.text}
         </p>
       ))}
-      {canEdit && <OwnNote key={own?.id ?? 'new'} instanceId={instanceId} problem={problem} own={own} onSaved={notes.reload} />}
+      {canEdit && editors.map((a, index) => {
+        const draftKey = JSON.stringify([scope, a?.id ?? 'new']);
+        return <OwnNote key={draftKey} instanceId={instanceId} problem={problem} own={a}
+          suffix={editors.length > 1 ? ` (${index + 1})` : ''}
+          text={drafts[draftKey] ?? a?.text ?? ''}
+          onChange={(value) => setDrafts((prev) => ({ ...prev, [draftKey]: value }))}
+          onSaved={() => {
+            setDrafts((prev) => {
+              const next = { ...prev };
+              delete next[draftKey];
+              return next;
+            });
+            notes.reload();
+          }} onReload={notes.reload} />;
+      })}
     </div>
   );
 }
 
-function OwnNote({ instanceId, problem, own, onSaved }) {
+function OwnNote({ instanceId, problem, own, suffix, text, onChange, onSaved, onReload }) {
   const { t } = useTranslation('grading');
   const toast = useToast();
-  const [text, setText] = useState(own?.text ?? '');
   const [saving, setSaving] = useState(false);
   const changed = text.trim() !== (own?.text ?? '').trim();
 
@@ -51,7 +67,7 @@ function OwnNote({ instanceId, problem, own, onSaved }) {
       onSaved();
     } catch (e) {
       toast.error(t('note.error'));
-      if (e.status === 403 || e.status === 404) onSaved();
+      if (e.status === 403 || e.status === 404) onReload();
     } finally {
       setSaving(false);
     }
@@ -61,13 +77,14 @@ function OwnNote({ instanceId, problem, own, onSaved }) {
     <>
       <Textarea
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={saving}
         placeholder={t('note.placeholder')}
-        aria-label={t('note.label', { name: problem.name })}
+        aria-label={t('note.label', { name: problem.name }) + suffix}
         rows={2}
       />
       <Button size="sm" variant="ghost" onClick={save} disabled={!changed || (!own && !text.trim())} loading={saving}>
-        {t('note.save', { name: problem.name })}
+        {t('note.save', { name: problem.name })}{suffix}
       </Button>
     </>
   );
