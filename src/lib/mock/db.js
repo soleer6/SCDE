@@ -7,6 +7,8 @@
  * `extendSeed(fn)` from their own mocks module instead.
  */
 
+import { captureMembershipPermissions } from './membershipPermissions.js';
+
 const KEY = 'scde.mockdb.v3';
 const ORG = 'org-uam';
 const iso = (d) => new Date(d).toISOString();
@@ -161,6 +163,11 @@ function seed() {
 
 const extenders = [];
 
+function captureAllMemberships(data) {
+  data.memberships?.forEach((membership) => captureMembershipPermissions(data, membership));
+  return data;
+}
+
 function load() {
   try {
     if (typeof location !== 'undefined' && location.search.includes('resetMock')) localStorage.removeItem(KEY);
@@ -173,8 +180,9 @@ function load() {
 }
 
 export const db = {
-  ...(load() ?? seed()),
+  ...captureAllMemberships(load() ?? seed()),
   persist() {
+    captureAllMemberships(this);
     try {
       const { persist: _p, reset: _r, uid: _u, ...data } = this;
       localStorage.setItem(KEY, JSON.stringify(data));
@@ -183,7 +191,7 @@ export const db = {
     }
   },
   reset() {
-    const fresh = seed();
+    const fresh = captureAllMemberships(seed());
     // Drop every data table first, including those added by extendSeed, so the
     // extenders rebuild them from scratch instead of skipping as "already seeded".
     Object.keys(this).forEach((k) => {
@@ -202,7 +210,12 @@ export const db = {
 export function extendSeed(fn) {
   extenders.push(fn);
   fn(db);
+  captureAllMemberships(db);
 }
+
+// Keep the v3 key: upgrade existing rows in place and persist their fixed bases,
+// so a reload after a later global-config change cannot recapture newer defaults.
+db.persist();
 
 /* ---- Shared lookups used by several features' handlers ---- */
 export const q = {

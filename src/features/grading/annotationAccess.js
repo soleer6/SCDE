@@ -1,5 +1,5 @@
 import { db, q } from '../../lib/mock/db.js';
-import { DEFAULT_PERMISSIONS } from '../../lib/permissions.js';
+import { effectiveMembershipPermissions } from '../../lib/mock/membershipPermissions.js';
 import { mockError } from '../../lib/mock/router.js';
 import { studentCan } from '../exams/mockSerializers.js';
 
@@ -21,9 +21,7 @@ export function authorizeAnnotationRead(inst, user) {
       allowed &&= Date.parse(review.start_date) <= Date.now() && Date.now() < Date.parse(review.end_date);
     }
   } else if (member && ['COORDINATOR', 'TEACHER'].includes(member.role)) {
-    const override = member.permission_overrides?.can_view_all_instances;
-    const defaults = { ...DEFAULT_PERMISSIONS[member.role], ...db.org_config.role_permission_defaults?.[member.role] };
-    const viewAll = override ?? defaults?.can_view_all_instances;
+    const viewAll = effectiveMembershipPermissions(db, member).can_view_all_instances;
     const studentGroup = q.membership(inst.student_id, subject.id)?.group_id;
     allowed = member.role === 'COORDINATOR' || viewAll || db.assignment_rules.some((r) =>
       r.exam_id === inst.exam_id && r.correctors.includes(user.id)

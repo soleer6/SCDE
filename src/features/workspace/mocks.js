@@ -1,7 +1,8 @@
 import { db, q } from '../../lib/mock/db.js';
 import { mockError } from '../../lib/mock/router.js';
 import { examOut, hasPerm } from '../exams/mockSerializers.js';
-import { DEFAULT_PERMISSIONS, PERMISSION_KEYS } from '../../lib/permissions.js';
+import { PERMISSION_KEYS } from '../../lib/permissions.js';
+import { effectiveMembershipPermissions } from '../../lib/mock/membershipPermissions.js';
 
 /* Mirrors MySubjectsView, SubjectDetailView, MyTasksView (apps.subjects / apps.instances). */
 export const mocks = [
@@ -27,8 +28,7 @@ export const mocks = [
           role: m.role,
           membership_id: m.id,
           effective_permissions: Object.fromEntries(PERMISSION_KEYS.map((k) => [k,
-            Boolean(user.is_staff || user.is_superadmin || (m.permission_overrides?.[k]
-              ?? db.org_config.role_permission_defaults?.[m.role]?.[k] ?? DEFAULT_PERMISSIONS[m.role]?.[k]))])),
+            Boolean(user.is_staff || user.is_superadmin || effectiveMembershipPermissions(db, m)[k])])),
           group_label: db.groups.find((g) => g.id === m.group_id)?.label ?? '',
           coordinator_email: q.user(s.coordinator_id)?.email ?? '',
         }));

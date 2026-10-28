@@ -1,7 +1,7 @@
 /* Mock-side equivalents of the Django serializers used by the core flows.
  * Each function documents the backend serializer it mirrors. */
 import { db, q } from '../../lib/mock/db.js';
-import { DEFAULT_PERMISSIONS } from '../../lib/permissions.js';
+import { effectiveMembershipPermissions } from '../../lib/mock/membershipPermissions.js';
 
 const dec = (n) => (n === null || n === undefined ? null : Number(n).toFixed(2));
 
@@ -11,8 +11,7 @@ export function hasPerm(user, subjectId, key) {
   if (user.is_staff || user.is_superadmin) return true;
   const m = q.membership(user.id, subjectId);
   if (!m) return false;
-  const base = DEFAULT_PERMISSIONS[m.role] ?? {};
-  return (m.permission_overrides?.[key] ?? db.org_config.role_permission_defaults?.[m.role]?.[key] ?? base[key]) === true;
+  return effectiveMembershipPermissions(db, m)[key] === true;
 }
 
 export const roleIn = (user, subjectId) => q.membership(user?.id, subjectId)?.role ?? null;

@@ -42,7 +42,9 @@ it('uses a strict complete effective map; roles and missing/unknown values grant
   expect(can({ isStaff: true }, null, 'can_create_exams')).toBe(true);
   expect(can({ isStaff: true }, null, 'unknown')).toBe(false);
 });
-it('updates grant, revoke, live organization default and null inheritance without role fallback', async () => {
+// Before #49 this test expected null to follow LIVE organization defaults.
+// RF15.5 / backend #45: null now restores the membership's fixed role base.
+it('updates grants and revocations while null restores the fixed base after defaults change', async () => {
   await login(); mount(); expect(await screen.findByText('denied')).toBeInTheDocument();
   member().permission_overrides.can_create_exams = true;
   await userEvent.click(screen.getByText('reload')); expect(await screen.findByText('allowed')).toBeInTheDocument();
@@ -50,7 +52,7 @@ it('updates grant, revoke, live organization default and null inheritance withou
   db.org_config.role_permission_defaults = { TEACHER: { can_create_exams: true } };
   await userEvent.click(screen.getByText('reload')); expect(await screen.findByText('denied')).toBeInTheDocument();
   member().permission_overrides.can_create_exams = null;
-  await userEvent.click(screen.getByText('reload')); expect(await screen.findByText('allowed')).toBeInTheDocument();
+  await userEvent.click(screen.getByText('reload')); expect(await screen.findByText('denied')).toBeInTheDocument();
   db.org_config.role_permission_defaults.TEACHER.can_create_exams = false;
   act(() => window.dispatchEvent(new Event('focus'))); expect(await screen.findByText('denied')).toBeInTheDocument();
 });

@@ -87,7 +87,8 @@ describe('annotation read authorization (#20)', () => {
     if (role === 'assigned') db.assignment_rules.push({ exam_id: exam.id, correctors: [user.id], models_filter: [inst.model_id], groups: [member.group_id] });
     if (role === 'effective override') q.membership(user.id, exam.subject_id).permission_overrides.can_view_all_instances = true;
     if (role === 'null override') {
-      db.org_config.role_permission_defaults = { TEACHER: { can_view_all_instances: true } };
+      // RF15.5: null restores the original true base despite later global false.
+      db.org_config.role_permission_defaults = { TEACHER: { can_view_all_instances: false } };
       q.membership(user.id, exam.subject_id).permission_overrides.can_view_all_instances = null;
     }
     expect(read({ params: { id }, user })).toHaveLength(1);
