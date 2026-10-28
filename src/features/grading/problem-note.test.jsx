@@ -1,4 +1,4 @@
-﻿import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import i18n from '../../app/i18n.js';
 import { ToastProvider } from '../../ui';
@@ -60,5 +60,3 @@ it('read-only mode offers no editor; failed reauthorization hides all notes and 
   fireEvent(window, new Event('focus'));
   await screen.findByText('second');
 });
-
-
