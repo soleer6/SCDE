@@ -363,3 +363,4 @@
 .gr-saveresult.is-done > strong { color: var(--green); }
 .gr-saveresult.is-error > strong { color: var(--rust); }
 .gr-problem__next { align-self: flex-start; min-height: 44px; }
+.gr-save-btn, .gr-saveresult .ui-btn { min-height: 44px; }
