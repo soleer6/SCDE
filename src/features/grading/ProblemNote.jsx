@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAnnotationRead } from './useAnnotationRead.js';
+import { useSaver } from './useSaver.js';
 import { Button, ErrorState, Textarea, useToast } from '../../ui';
 import { createAnnotation, deleteAnnotation, listAnnotations, readAnnotationPayload, updateAnnotation } from './api.js';
 
 /** Text comments tied to one problem (RF-10.1/10.2/10.3): every own record is editable;
  *  comments by other teachers are shown read-only. Saving an existing note empty removes it.
  *  They are TEXT annotations with problem_id, so the page-level layers and the general comment ignore them. */
-export default function ProblemNote({ instanceId, problem, canEdit, currentUserId }) {
+export default function ProblemNote({ instanceId, problem, canEdit, currentUserId, register }) {
   const [drafts, setDrafts] = useState({});
   const scope = JSON.stringify([instanceId, problem.id, currentUserId]);
   const notes = useAnnotationRead(async () => {
@@ -33,7 +34,7 @@ export default function ProblemNote({ instanceId, problem, canEdit, currentUserI
       ))}
       {canEdit && editors.map((a, index) => {
         const draftKey = JSON.stringify([scope, a?.id ?? 'new']);
-        return <OwnNote key={draftKey} instanceId={instanceId} problem={problem} own={a}
+        return <OwnNote key={draftKey} saverKey={`note:${draftKey}`} register={register} instanceId={instanceId} problem={problem} own={a}
           suffix={editors.length > 1 ? ` (${index + 1})` : ''}
           text={drafts[draftKey] ?? a?.text ?? ''}
           onChange={(value) => setDrafts((prev) => ({ ...prev, [draftKey]: value }))}
@@ -50,24 +51,42 @@ export default function ProblemNote({ instanceId, problem, canEdit, currentUserI
   );
 }
 
-function OwnNote({ instanceId, problem, own, suffix, text, onChange, onSaved, onReload }) {
+function OwnNote({ saverKey, register, instanceId, problem, own, suffix, text, onChange, onSaved, onReload }) {
   const { t } = useTranslation('grading');
   const toast = useToast();
   const [saving, setSaving] = useState(false);
   const changed = text.trim() !== (own?.text ?? '').trim();
 
-  const save = async () => {
+  const inflight = useRef(null);
+
+  const save = (quiet = false) => {
+    const run = doSave(quiet);
+    inflight.current = run;
+    return run.finally(() => {
+      if (inflight.current === run) inflight.current = null;
+    });
+  };
+
+  useSaver(register, saverKey, async () => {
+    if (inflight.current) return inflight.current;
+    if (!changed || (!own && !text.trim())) return true;
+    return save(true);
+  });
+
+  const doSave = async (quiet) => {
     setSaving(true);
     try {
       const value = text.trim();
       if (own && !value) await deleteAnnotation(own.id);
       else if (own) await updateAnnotation(own.id, { payload: value });
       else await createAnnotation(instanceId, { annotation_type: 'TEXT', payload: value, problem_id: problem.id, page_number: 1, x: 0, y: 0 });
-      toast.success(t(own && !value ? 'note.removed' : 'note.saved'));
+      if (!quiet) toast.success(t(own && !value ? 'note.removed' : 'note.saved'));
       onSaved();
+      return true;
     } catch (e) {
       toast.error(t('note.error'));
       if (e.status === 403 || e.status === 404) onReload();
+      return false;
     } finally {
       setSaving(false);
     }
@@ -83,7 +102,7 @@ function OwnNote({ instanceId, problem, own, suffix, text, onChange, onSaved, on
         aria-label={t('note.label', { name: problem.name }) + suffix}
         rows={2}
       />
-      <Button size="sm" variant="ghost" onClick={save} disabled={!changed || (!own && !text.trim())} loading={saving}>
+      <Button size="sm" variant="ghost" onClick={() => save()} disabled={!changed || (!own && !text.trim())} loading={saving}>
         {t('note.save', { name: problem.name })}{suffix}
       </Button>
     </>

@@ -55,7 +55,21 @@
     "pending": "Cambios sin guardar",
     "saving": "Guardando",
     "saved": "Guardado",
-    "error": "Error al guardar"
+    "error": "Error al guardar",
+    "panelTitle": "Guardar corrección",
+    "button": "Guardar",
+    "hint": "Guarda notas, rúbrica, comentarios, audios y anotaciones de este examen. Llevas {{done}}/{{total}} ejercicios con nota.",
+    "readyHint": "Todos los ejercicios tienen nota. Pulsa Guardar para confirmar que todo queda guardado.",
+    "doneTitle": "Guardado y publicado correctamente",
+    "doneGrades": "Notas: {{done}} de {{total}} ejercicios",
+    "doneNotes": "Comentarios por ejercicio: {{count}}",
+    "generalYes": "Comentario general: guardado",
+    "generalNo": "Comentario general: ninguno",
+    "doneAudios": "Audios: {{count}}",
+    "doneStrokes": "Páginas con anotaciones: {{count}}",
+    "doneAt": "Comprobado en el servidor a las {{time}}",
+    "noMore": "No quedan más exámenes por corregir.",
+    "failed": "No se ha podido guardar todo. Revisa los avisos en rojo y vuelve a pulsar Guardar."
   },
   "annotations": {
     "loadError": "No se han podido cargar las anotaciones. Reintenta antes de editar.",
@@ -84,7 +98,8 @@
       "saving": "Guardando",
       "saved": "Guardado",
       "error": "Error"
-    }
+    },
+    "next": "Ir al siguiente ejercicio"
   },
   "ocr": {
     "padHint": "Escribe aquí con el lápiz o el ratón",
@@ -152,5 +167,10 @@
     "saved": "Comentario guardado",
     "removed": "Comentario eliminado",
     "error": "No se ha podido guardar el comentario."
+  },
+  "nav": {
+    "label": "Ejercicios del examen",
+    "graded": "con nota",
+    "pending": "sin nota"
   }
 }

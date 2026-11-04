@@ -1,0 +1,20 @@
+import { beforeEach, expect, it } from 'vitest';
+import { db } from './db.js';
+import { prepareTeacherDemo, TEACHER_DEMO_INSTANCE } from './teacherDemo.js';
+beforeEach(() => db.reset());
+it('leaves only Irene\'s exam ungraded and keeps everything else', () => {
+  const inst = db.instances.find((i) => i.id === TEACHER_DEMO_INSTANCE);
+  db.grades.push({ id: 'g-x', instance_id: inst.id, problem_id: 'p-e-mat-p2-2', score: 2, grader_id: 'u-javier', rubric_selections: [] });
+  db.annotations.push({ id: 'a-x', instance_id: inst.id, annotation_type: 'AUDIO' }, { id: 'a-y', instance_id: 'other', annotation_type: 'AUDIO' });
+  inst.status = 'GRADED'; inst.total_score = 2;
+  const others = JSON.stringify(db.instances.filter((i) => i.id !== inst.id));
+  const otherGrades = db.grades.filter((g) => g.instance_id !== inst.id).length;
+  prepareTeacherDemo(db);
+  expect(inst.status).toBe('PENDING_GRADING');
+  expect(inst.total_score).toBeNull();
+  expect(db.grades.some((g) => g.instance_id === inst.id)).toBe(false);
+  expect(db.annotations.map((a) => a.id)).toEqual(['a-y']);
+  expect(db.grades.filter((g) => g.instance_id !== inst.id)).toHaveLength(otherGrades);
+  expect(JSON.stringify(db.instances.filter((i) => i.id !== inst.id))).toBe(others);
+  expect(db.assignment_rules.find((r) => r.id === 'ar-mat-p2').correctors).toContain('u-javier');
+});

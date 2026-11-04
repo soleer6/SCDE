@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApi, useAction } from '../../lib/hooks.js';
@@ -8,7 +8,7 @@ import { getAllExamInstances, getExam } from '../exams/api.js';
 import { getMyTasks, useMySubjects } from '../workspace/api.js';
 import { LifecycleRail, Score, StatusBadge } from '../workspace/domain.jsx';
 import { studentName } from '../workspace/model.js';
-import { getInstance, serverGrades, transitionInstance } from './api.js';
+import { getInstance, listAnnotations, serverGrades, transitionInstance } from './api.js';
 import { usePdfUrl } from './usePdfUrl.js';
 import { useAnnotations } from './useAnnotations.js';
 import { useKnownGrades } from './useKnownGrades.js';
@@ -38,6 +38,14 @@ export default function GradingPage() {
   const server = useMemo(() => serverGrades(inst.data), [inst.data]);
   const known = useKnownGrades(instanceId, server);
   const [confirm, setConfirm] = useState(false);
+  // Guardar: rows (scores, per-problem comments) register their pending-edit committers here.
+  const savers = useRef(new Map());
+  const register = useCallback((key, fn) => {
+    if (fn) savers.current.set(key, fn);
+    else savers.current.delete(key);
+  }, []);
+  const [saveRun, setSaveRun] = useState({ state: 'idle' }); // idle | saving | done | error
+  const [activeProblem, setActiveProblem] = useState(null);
   const transition = useAction((target) => transitionInstance(instanceId, target));
 
   // GET /my-tasks/?exam_id= lists, per instance, the problems the rules assign to this corrector
@@ -75,6 +83,44 @@ export default function GradingPage() {
     const fresh = await getInstance(instanceId);
     inst.setData(fresh);
     return serverGrades(fresh);
+  };
+
+  const saveAll = async () => {
+    setSaveRun({ state: 'saving' });
+    try {
+      const rows = await Promise.all([...savers.current.values()].map((fn) => fn()));
+      const annotationsOk = await annotations.flush();
+      if (rows.includes(false) || !annotationsOk) {
+        setSaveRun({ state: 'error' });
+        return;
+      }
+      // Confirm against the server, not the screen: re-read the instance and its annotations.
+      const [fresh, list] = await Promise.all([getInstance(instanceId), listAnnotations(instanceId)]);
+      inst.setData(fresh);
+      const mine = list.filter((a) => !session?.id || a.author_id === session.id);
+      const count = (type) => mine.filter((a) => a.annotation_type === type).length;
+      const freshGrades = serverGrades(fresh) ?? known.grades;
+      setSaveRun({
+        state: 'done',
+        at: new Date(),
+        graded: problems.filter((p) => freshGrades[p.id] !== undefined).length,
+        total: problems.length,
+        notes: mine.filter((a) => a.annotation_type === 'TEXT' && a.problem_id).length,
+        audios: count('AUDIO'),
+        strokes: count('STYLUS'),
+        general: mine.some((a) => a.annotation_type === 'TEXT' && !a.problem_id),
+      });
+    } catch {
+      setSaveRun({ state: 'error' });
+    }
+  };
+
+  const goToProblem = (pid) => {
+    const row = document.getElementById(`gr-problem-${pid}`);
+    if (!row) return;
+    setActiveProblem(pid);
+    row.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    row.querySelector('input:not([type=checkbox]):not([hidden]), input[type=checkbox], textarea')?.focus({ preventScroll: true });
   };
 
   const move = async (target, msgKey) => {
@@ -163,7 +209,7 @@ export default function GradingPage() {
           <PdfStage url={pdfUrl} annotations={annotations} readOnly={!editable || annotations.loading || annotations.loadFailed} aside={<SaveState state={annotations.saveState} />} />
         )}
 
-        <aside className="gr-side">
+        <aside className="gr-side" onInputCapture={() => setSaveRun((r) => (r.state === 'done' || r.state === 'error' ? { state: 'idle' } : r))}>
           <Panel title={t('side.total')}>
             <div className="gr-total">
               <Score value={i.total_score} max={maxTotal} size="md" />
@@ -171,19 +217,75 @@ export default function GradingPage() {
             </div>
           </Panel>
 
+          <Panel title={t('save.panelTitle')} className="gr-savepanel">
+            <nav aria-label={t('nav.label')} className="gr-exnav">
+              {problems.map((p) => {
+                const done = known.grades[p.id] !== undefined;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`gr-exnav__chip ${done ? 'is-done' : ''} ${activeProblem === p.id ? 'is-active' : ''}`}
+                    aria-current={activeProblem === p.id ? 'true' : undefined}
+                    onClick={() => goToProblem(p.id)}
+                  >
+                    <span className="u-num">{String(p.order).padStart(2, '0')}</span> {p.name}
+                    <span className="gr-exnav__mark">{done ? t('nav.graded') : t('nav.pending')}</span>
+                  </button>
+                );
+              })}
+            </nav>
+            {editable && (
+              <Button
+                variant="solid"
+                block
+                onClick={saveAll}
+                loading={saveRun.state === 'saving'}
+                disabled={annotations.loading || annotations.loadFailed}
+              >
+                {t('save.button')}
+              </Button>
+            )}
+            <div className={`gr-saveresult is-${saveRun.state}`} role="status" aria-live="polite">
+              {saveRun.state === 'idle' && editable && <p className="u-muted">{t(gradedCount === problems.length && problems.length ? 'save.readyHint' : 'save.hint', { done: gradedCount, total: problems.length })}</p>}
+              {saveRun.state === 'done' && (
+                <>
+                  <strong>{t('save.doneTitle')}</strong>
+                  <ul>
+                    <li>{t('save.doneGrades', { done: saveRun.graded, total: saveRun.total })}</li>
+                    <li>{t('save.doneNotes', { count: saveRun.notes })}</li>
+                    <li>{t(saveRun.general ? 'save.generalYes' : 'save.generalNo')}</li>
+                    <li>{t('save.doneAudios', { count: saveRun.audios })}</li>
+                    <li>{t('save.doneStrokes', { count: saveRun.strokes })}</li>
+                  </ul>
+                  <span className="u-muted">{t('save.doneAt', { time: saveRun.at.toLocaleTimeString() })}</span>
+                  {next ? (
+                    <Button block onClick={async () => { if (await annotations.flush()) navigate(`/instances/${next.id}/grade`); }}>{t('actions.next')}</Button>
+                  ) : (
+                    <span className="u-muted">{t('save.noMore')}</span>
+                  )}
+                </>
+              )}
+              {saveRun.state === 'error' && <strong role="alert">{t('save.failed')}</strong>}
+            </div>
+          </Panel>
+
           <Panel title={t('side.problems')} flush>
             {!problems.length && <p className="gr-empty u-muted">{t('side.noProblems')}</p>}
-            {problems.map((p) => (
-              <ProblemGrader
-                key={`${i.id}:${p.id}`}
-                instanceId={i.id}
-                problem={p}
-                known={known}
-                disabled={!editable}
-                currentUserId={session?.id}
-                onSaved={() => inst.reload()}
-                onConflict={refreshGrades}
-              />
+            {problems.map((p, idx) => (
+              <div key={`${i.id}:${p.id}`} className="gr-problem-wrap" onFocusCapture={() => setActiveProblem(p.id)}>
+                <ProblemGrader
+                  instanceId={i.id}
+                  problem={p}
+                  known={known}
+                  disabled={!editable}
+                  currentUserId={session?.id}
+                  onSaved={() => inst.reload()}
+                  onConflict={refreshGrades}
+                  register={register}
+                  onNext={idx < problems.length - 1 ? () => goToProblem(problems[idx + 1].id) : undefined}
+                />
+              </div>
             ))}
           </Panel>
 
