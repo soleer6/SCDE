@@ -239,6 +239,7 @@ export default function GradingPage() {
               <Button
                 variant="solid"
                 block
+                className="gr-save-btn"
                 onClick={saveAll}
                 loading={saveRun.state === 'saving'}
                 disabled={annotations.loading || annotations.loadFailed}
