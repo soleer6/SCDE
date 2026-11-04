@@ -5,10 +5,10 @@ MinIO, Celery y Mailpit. No sustituye servicios con mocks ni modifica la memoria
 del TFG. Los datos son sintéticos, pero se almacenan y consultan en los servicios
 reales. La API y MinIO solo publican puertos en `127.0.0.1`.
 
-Desde la raíz de SCDE-b:
+Desde la raíz de esta entrega:
 
 ```powershell
-.\src\features\admin\real-backend\start.ps1
+.\src\features\admin\real-backend\start.ps1 -BackendPath C:\ruta\SCDEE\backend
 node src/features/admin/real-backend/smoke.mjs
 ```
 
@@ -34,12 +34,10 @@ CORS de MinIO se configura en el servidor, sin `PutBucketCors` (no implementado)
 
 ## Pruebas de componentes sin mocks HTTP
 
-Se utiliza una copia de compilación de las dos ramas; no se fusionan ni se
-modifican archivos compartidos. Después de confirmar los cambios locales:
+La entrega ya integra los módulos del frontend. Para ejecutar desde su raíz:
 
 ```powershell
-$source = .\src\features\admin\prepare-integrated-source.ps1
-$env:SCDE_INTEGRATED_SOURCE = $source
+$env:SCDE_INTEGRATED_SOURCE = (Get-Location).Path
 npx vitest run --config src/features/admin/real-backend/vitest.config.mjs
 ```
 

@@ -3,7 +3,7 @@
 Source: canonical contract of local `SCDEE-backend`, `fix/integracion-real` @ 67a60b5 (evidence 9fbaff8, 2026-10-27), `docs/files/spectacular/SCDEE API.yaml` (SHA-256 LF 6fd67bc4c9efcf6693c304ad791647358147c2b69b17a9fc5d91ca07659474d4). Includes H01/H17/H18/H21/H25 and PATCH models.
 Regenerate with `scripts/analyze/endpoints.py` and `scripts/analyze/schemas.py` (PyYAML). Paths relative to `/api/v1`.
 
-**Never use an endpoint or field that is not listed here.** Request additions in docs/coordination/REQUESTS.md.
+**Never use an endpoint or field that is not listed here.**
 
 ## Endpoints
 ```
