@@ -23,6 +23,7 @@ export default {
       breakdown: { title: 'Desglose', problem: 'Problema', score: 'Nota', max: 'Máx.', hidden: 'El desglose por problema se muestra durante la revisión.' },
       comment: { title: 'Comentario del profesorado' },
       review: {
+        optional: 'Si estás conforme, puedes salir sin solicitar revisión. El cierre formal del periodo lo gestiona la coordinación.', skip: 'No necesito revisión · Volver a la asignatura',
         title: 'Revisión', notOpen: 'Todavía no hay periodo de revisión para este examen.', closed: 'El periodo de revisión no está abierto.',
         help: 'Marca los problemas cuya corrección quieres que se revise y explica el motivo.',
         reason: 'Motivo', reasonPlaceholder: 'Qué crees que no se ha valorado bien',
@@ -54,6 +55,7 @@ export default {
       breakdown: { title: 'Breakdown', problem: 'Problem', score: 'Grade', max: 'Max', hidden: 'The per-problem breakdown is shown during review.' },
       comment: { title: "Teacher's comment" },
       review: {
+        optional: 'If you agree with your grade, you can leave without requesting a review. The coordinator manages the formal closing of the review period.', skip: 'No review needed · Back to subject',
         title: 'Review', notOpen: 'No review period for this exam yet.', closed: 'The review period is not open.',
         help: 'Select the problems you want reviewed and explain why.',
         reason: 'Reason', reasonPlaceholder: "What you think wasn't assessed correctly",

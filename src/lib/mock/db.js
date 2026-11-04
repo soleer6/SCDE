@@ -7,6 +7,7 @@
  * `extendSeed(fn)` from their own mocks module instead.
  */
 
+import { updateDemoReviewDates } from './demoReviewDates.js';
 import { captureMembershipPermissions } from './membershipPermissions.js';
 
 const KEY = 'scde.mockdb.v3';
@@ -180,7 +181,7 @@ function load() {
 }
 
 export const db = {
-  ...captureAllMemberships(load() ?? seed()),
+  ...captureAllMemberships(updateDemoReviewDates(load() ?? seed())),
   persist() {
     captureAllMemberships(this);
     try {
@@ -191,7 +192,7 @@ export const db = {
     }
   },
   reset() {
-    const fresh = captureAllMemberships(seed());
+    const fresh = captureAllMemberships(updateDemoReviewDates(seed()));
     // Drop every data table first, including those added by extendSeed, so the
     // extenders rebuild them from scratch instead of skipping as "already seeded".
     Object.keys(this).forEach((k) => {

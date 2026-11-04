@@ -67,6 +67,13 @@ beforeEach(async () => {
 });
 
 describe('student result', () => {
+  it('lets a satisfied student leave without a review request or privileged transition', async () => {
+    renderResult();
+    const exit = await screen.findByRole('link', { name: 'No necesito revisión · Volver a la asignatura' });
+    expect(exit).toHaveAttribute('href', '/subjects/s-mat101');
+    expect(db.review_requests.filter((r) => r.instance_id === INSTANCE)).toHaveLength(0);
+    expect(db.instances.find((i) => i.id === INSTANCE).status).toBe('IN_REVIEW');
+  });
   it('removes ink, text and audio on permission revocation and recovers through retry', async () => {
     await loginAs('maria.perez@uam.es', 'prof123');
     await api.post(`/instances/${INSTANCE}/annotations/`, { annotation_type: 'TEXT', payload: 'Comentario protegido', page_number: 1, x: 0, y: 0 });
@@ -171,7 +178,9 @@ describe('student review requests', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {
       renderResult();
-      expect(await screen.findByLabelText('Límites', {}, { timeout: 8000 })).toBeInTheDocument();
+      expect(await screen.findByText('El periodo de revisión no está abierto.', {}, { timeout: 8000 })).toBeInTheDocument();
+      expect(screen.queryByLabelText('Límites')).not.toBeInTheDocument();
+      expect(screen.queryByText('PERMISSION_DENIED')).not.toBeInTheDocument();
       review.status = 'CLOSED';
       await vi.advanceTimersByTimeAsync(31000);
       expect(await screen.findByText('El periodo de revisión ha terminado')).toBeInTheDocument();

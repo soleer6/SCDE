@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApi } from '../../lib/hooks.js';
 import { formatDate, formatDateTime, formatScore } from '../../lib/format.js';
@@ -20,6 +21,11 @@ import './results.css';
  *  enforced by the backend: absent fields simply mean "not visible". */
 export default function StudentResultView({ exam }) {
   const { t } = useTranslation('results');
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
   const instances = useApi(() => getExamInstances(exam.id).then(asList), [exam.id]);
   const review = useApi(() => getReview(exam.id), [exam.id]);
   const inst = instances.data?.[0];
@@ -83,7 +89,9 @@ export default function StudentResultView({ exam }) {
   }
 
   const maxTotal = inst.rubric?.reduce((a, p) => a + Number(p.max_score), 0);
-  const reviewOpen = review.data?.status === 'OPEN' && inst.status === 'IN_REVIEW';
+  const reviewOpen = review.data?.status === 'OPEN' && inst.status === 'IN_REVIEW'
+    && Date.parse(review.data.start_date) <= now && now < Date.parse(review.data.end_date);
+  const pagesVisible = Boolean(inst.pages) && (review.data?.status !== 'OPEN' || reviewOpen);
   const accessKey = JSON.stringify([exam.id, exam.student_permissions, inst.id, inst.status, Boolean(inst.pages), review.data]);
 
   return (
@@ -101,7 +109,7 @@ export default function StudentResultView({ exam }) {
             <p className="u-muted">
               {reviewOpen
                 ? t('hero.reviewOpen', { end: formatDateTime(review.data.end_date) })
-                : t(`hero.review.${review.data.status}`, { start: formatDateTime(review.data.start_date), defaultValue: '' })}
+                : t(`hero.review.${review.data.status === 'OPEN' ? 'CLOSED' : review.data.status}`, { start: formatDateTime(review.data.start_date), defaultValue: '' })}
             </p>
           )}
         </div>
@@ -109,7 +117,7 @@ export default function StudentResultView({ exam }) {
 
       <div className="dm-split rs-body">
         <section className="dm-section">
-          {inst.pages ? (
+          {pagesVisible ? (
             <StudentPdf key={inst.id} instanceId={inst.id} accessKey={accessKey} canDownload={Boolean(inst.can_download)} fileName={`${exam.subject_code}-${exam.name}.pdf`} />
           ) : (
             <EmptyState title={t('pdf.hiddenTitle')} body={t(review.data ? 'pdf.hiddenAfter' : 'pdf.hiddenBody')} />
@@ -117,8 +125,8 @@ export default function StudentResultView({ exam }) {
         </section>
         <aside className="ui-stack">
           <Breakdown inst={inst} />
-          <TeacherComment instanceId={inst.id} accessKey={accessKey} visible={Boolean(inst.pages)} problems={inst.rubric ?? inst.grades ?? []} />
-          {inst.pages && <AudioNotes instanceId={inst.id} accessKey={accessKey} canEdit={false} />}
+          <TeacherComment instanceId={inst.id} accessKey={accessKey} visible={pagesVisible} problems={inst.rubric ?? inst.grades ?? []} />
+          {pagesVisible && <AudioNotes instanceId={inst.id} accessKey={accessKey} canEdit={false} />}
           <Panel title={t('review.title')}>
             {reviewOpen ? (
               <ReviewRequestForm
@@ -130,6 +138,10 @@ export default function StudentResultView({ exam }) {
             ) : (
               <p ref={closedRef} tabIndex={-1} role="status" className="u-muted">{review.data ? t('review.closed') : t('review.notOpen')}</p>
             )}
+            {reviewOpen && !(requests.data ?? []).length && <div className="ui-stack">
+              <p className="u-muted">{t('review.optional')}</p>
+              <Link to={`/subjects/${exam.subject_id}`}>{t('review.skip')}</Link>
+            </div>}
             {(requests.data ?? []).length > 0 && (
               <section ref={listRef} tabIndex={-1} aria-label={t('review.requests')}>
                 <RequestList items={requests.data} />
