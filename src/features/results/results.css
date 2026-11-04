@@ -62,3 +62,12 @@
     gap: var(--s-4);
   }
 }
+
+.rs-review-exit {
+  min-height: 44px;
+  height: auto;
+  padding: var(--s-3) var(--s-4);
+  white-space: normal;
+  text-align: center;
+  text-decoration: none;
+}

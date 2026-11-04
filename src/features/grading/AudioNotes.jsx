@@ -17,6 +17,7 @@ export default function AudioNotes({ instanceId, canEdit, currentUserId, accessK
   const [state, setState] = useState('idle'); // idle | recording | saving
   const [seconds, setSeconds] = useState(0);
   const rec = useRef(null);
+  const fileInput = useRef(null);
   const timer = useRef(null);
   const canRecord = typeof navigator !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia) && typeof MediaRecorder !== 'undefined';
 
@@ -80,21 +81,24 @@ export default function AudioNotes({ instanceId, canEdit, currentUserId, accessK
   return (
     <Panel title={t('audio.title')}>
       {canEdit && (
-        <div className="ui-row gr-audio__tools">
+        <div className="gr-audio__tools">
           {state === 'recording' ? (
             <Button variant="solid" onClick={() => rec.current?.stop()}>
               {t('audio.stop', { time: clock(seconds) })}
             </Button>
           ) : (
             canRecord && (
-              <Button onClick={start} disabled={state === 'saving'} loading={state === 'saving'}>
+              <Button variant="solid" onClick={start} disabled={state === 'saving'} loading={state === 'saving'}>
                 {t('audio.record')}
               </Button>
             )
           )}
-          <label className="ui-btn gr-audio__file">
+          <Button onClick={() => fileInput.current?.click()} disabled={state !== 'idle'}>
             {t('audio.upload')}
-            <input
+          </Button>
+          <input
+              ref={fileInput}
+              aria-label={t('audio.upload')}
               type="file"
               accept="audio/*"
               hidden
@@ -105,7 +109,7 @@ export default function AudioNotes({ instanceId, canEdit, currentUserId, accessK
                 if (f) send(f);
               }}
             />
-          </label>
+
         </div>
       )}
       {list.length === 0 ? (

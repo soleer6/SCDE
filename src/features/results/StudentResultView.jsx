@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApi } from '../../lib/hooks.js';
 import { formatDate, formatDateTime, formatScore } from '../../lib/format.js';
-import { Badge, Button, DataTable, EmptyState, ErrorState, Loader, PageHeader, Panel } from '../../ui';
+import { Badge, Button, ButtonLink, DataTable, EmptyState, ErrorState, Loader, PageHeader, Panel } from '../../ui';
 import { getExamInstances, getReview, asList } from '../exams/api.js';
 import { listAnnotations, readAnnotationPayload } from '../grading/api.js';
 import { readAnnotationLayers } from '../grading/annotationLayers.js';
@@ -140,7 +139,7 @@ export default function StudentResultView({ exam }) {
             )}
             {reviewOpen && !(requests.data ?? []).length && <div className="ui-stack">
               <p className="u-muted">{t('review.optional')}</p>
-              <Link to={`/subjects/${exam.subject_id}`}>{t('review.skip')}</Link>
+              <ButtonLink variant="primary" className="rs-review-exit" to={`/subjects/${exam.subject_id}`}>{t('review.skip')}</ButtonLink>
             </div>}
             {(requests.data ?? []).length > 0 && (
               <section ref={listRef} tabIndex={-1} aria-label={t('review.requests')}>

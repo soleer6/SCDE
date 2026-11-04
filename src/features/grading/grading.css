@@ -144,6 +144,10 @@
   max-height: calc(100vh - var(--topbar-h) - var(--s-6));
   overflow-y: auto;
 }
+/* Scroll the sidebar instead of shrinking and clipping its panels. */
+.gr-side > * {
+  flex-shrink: 0;
+}
 .gr-total {
   display: flex;
   align-items: baseline;
@@ -304,7 +308,9 @@
 }
 
 .gr-audio__tools {
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-2);
   margin-bottom: var(--s-3);
 }
 .gr-audio__list {
@@ -314,6 +320,26 @@
   padding: 0;
   list-style: none;
 }
+.gr-audio__tools > .ui-btn {
+  min-height: 44px;
+  height: auto;
+  padding: var(--s-3) var(--s-4);
+  white-space: normal;
+}
+.gr-audio__list > li {
+  display: grid;
+  min-width: 0;
+  gap: var(--s-2);
+}
+.gr-audio__list > li > span {
+  overflow-wrap: anywhere;
+}
 .gr-audio__list audio {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+.gr-audio__list > li > .ui-btn {
+  justify-self: start;
+  min-height: 44px;
 }
