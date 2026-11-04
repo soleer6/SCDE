@@ -1,0 +1,74 @@
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Badge, Button, ButtonLink, Dialog, Field, Input, PageHeader } from '../../ui';
+import { useApi } from '../../lib/hooks.js';
+import { createCourse, searchCatalog, updateCourse } from './api.js';
+import { Pagination, RecordForm, Records } from './components.jsx';
+
+export default function CoursesPage() {
+  const { t } = useTranslation('admin');
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
+  const [editing, setEditing] = useState(null);
+  const savingRef = useRef(false);
+  const courses = useApi(() => searchCatalog({ page, search: query }), [page, query]);
+  const searchRef = useRef(null);
+  const resultsRef = useRef(null);
+  const focusAfterSave = useRef(null);
+  const focusAfterQuery = useRef(null);
+  const recovering = useRef(false);
+  useEffect(() => {
+    if (courses.loading) return;
+    if (courses.error) {
+      focusAfterQuery.current = null;
+      recovering.current = true;
+    } else if (recovering.current && courses.data) {
+      recovering.current = false;
+      if (!focusAfterQuery.current) searchRef.current?.focus();
+    }
+  }, [courses.loading, courses.error, courses.data]);
+  useEffect(() => {
+    const target = focusAfterQuery.current;
+    if (!target || courses.loading || courses.error || target.data === courses.data) return;
+    focusAfterQuery.current = null;
+    resultsRef.current?.focus();
+  }, [courses.loading, courses.error, courses.data]);
+  useEffect(() => {
+    const target = focusAfterSave.current;
+    if (!target || editing || courses.loading || courses.error || target.data === courses.data) return;
+    focusAfterSave.current = null;
+    resultsRef.current?.focus();
+  }, [editing, courses.loading, courses.error, courses.data]);
+  return <>
+    <PageHeader eyebrow={t('management')} title={t('courses')} lede={t('courseListHint')} actions={<Button variant="primary" onClick={() => setEditing({ label: '', start_date: '', end_date: '' })}>{t('newCourse')}</Button>} />
+    <form className="admin-actions" onSubmit={(e) => {
+      e.preventDefault();
+      focusAfterQuery.current = { data: courses.data };
+      if (page === 1 && query === search) courses.reload();
+      else { setQuery(search); setPage(1); }
+    }}>
+      <Field label={t('searchCourses')}>{(id) => <Input ref={searchRef} id={id} value={search} onChange={(e) => setSearch(e.target.value)} />}</Field>
+      <Button type="submit">{t('common:search')}</Button>
+    </form>
+    <section ref={resultsRef} tabIndex={-1} aria-label={t('courses')}><Records focusError state={courses} action={<Button onClick={() => setEditing({ label: '', start_date: '', end_date: '' })}>{t('newCourse')}</Button>} columns={[
+      { key: 'label', header: t('label') },
+      { key: 'is_active', header: t('status'), render: (c) => <Badge tone={c.is_active ? 'accent' : undefined}>{t(c.is_active ? 'current' : 'inactive')}</Badge> },
+      { key: 'start_date', header: t('start_date') }, { key: 'end_date', header: t('end_date') },
+      { key: 'subject_count', header: t('subjectCount'), align: 'num' },
+      { key: 'actions', header: t('actions'), render: (c) => <div className="admin-actions"><ButtonLink size="sm" to={`/admin/history?${new URLSearchParams({ course_id: c.id, course_label: c.label })}`}>{t('historyView')}</ButtonLink><Button size="sm" disabled={!c.is_active} onClick={() => setEditing(c)}>{t('editCourse')}</Button></div> },
+    ]} /></section>
+    <Pagination data={courses.data} page={page} onChange={(value) => { focusAfterQuery.current = { data: courses.data }; setPage(value); }} />
+    <Dialog open={Boolean(editing)} title={t(editing?.id ? 'editCourse' : 'newCourse')} onClose={() => !savingRef.current && setEditing(null)}>
+      {editing && <RecordForm key={editing.id ?? 'new'} initial={editing} fields={['label', 'start_date', 'end_date'].map((name) => ({ name, label: t(name), type: name === 'label' ? 'text' : 'date', required: name === 'label' }))} onSave={async (v) => {
+        savingRef.current = true;
+        try {
+          const body = { label: v.label, start_date: v.start_date || null, end_date: v.end_date || null };
+          if (editing.id) await updateCourse(editing.id, body); else await createCourse(body);
+          focusAfterSave.current = { data: courses.data };
+          setEditing(null); setQuery(''); setSearch(''); setPage(1); courses.reload();
+        } finally { savingRef.current = false; }
+      }} />}
+    </Dialog>
+  </>;
+}

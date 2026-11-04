@@ -1,0 +1,96 @@
+name: scde-integration
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: scde_integration
+      POSTGRES_USER: scde_integration
+      POSTGRES_PASSWORD: ${SCDE_DB_PASSWORD:?Set SCDE_DB_PASSWORD}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U scde_integration -d scde_integration]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  minio:
+    build:
+      context: .
+      dockerfile: Minio.Dockerfile
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: scde-integration
+      MINIO_ROOT_PASSWORD: ${SCDE_STORAGE_PASSWORD:?Set SCDE_STORAGE_PASSWORD}
+      MINIO_API_CORS_ALLOW_ORIGIN: http://localhost:5173,http://localhost:5175,http://127.0.0.1:5176
+    ports:
+      - 127.0.0.1:8000:8000
+      - 127.0.0.1:9000:9000
+    volumes:
+      - objects:/data
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:9000/minio/health/live]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  api:
+    build:
+      context: ${SCDEE_BACKEND_PATH:?Set SCDEE_BACKEND_PATH}
+      dockerfile: ${SCDE_INTEGRATION_DOCKERFILE:?Set SCDE_INTEGRATION_DOCKERFILE}
+    # Sharing MinIO's namespace makes signed localhost:9000 URLs reachable both
+    # from Django and the browser, with no changes to the backend storage code.
+    network_mode: service:minio
+    command: python manage.py runserver 0.0.0.0:8000 --noreload
+    volumes:
+      - ${SCDEE_BACKEND_PATH}:/app:ro
+      - ${SCDE_RUNTIME_PATH:?Set SCDE_RUNTIME_PATH}:/runtime
+    environment: &api-environment
+      DJANGO_SETTINGS_MODULE: integration_settings
+      PYTHONPATH: /runtime:/app
+      DJANGO_SECRET_KEY: ${SCDE_DJANGO_SECRET:?Set SCDE_DJANGO_SECRET}
+      ENCRYPTION_MASTER_KEY: ${SCDE_ENCRYPTION_KEY:?Set SCDE_ENCRYPTION_KEY}
+      DB_NAME: scde_integration
+      DB_USER: scde_integration
+      DB_PASSWORD: ${SCDE_DB_PASSWORD}
+      DB_HOST: db
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      MINIO_ENDPOINT_URL: http://127.0.0.1:9000
+      MINIO_ACCESS_KEY: scde-integration
+      MINIO_SECRET_KEY: ${SCDE_STORAGE_PASSWORD}
+      MINIO_BUCKET_NAME: scde-integration
+      EMAIL_HOST: mailpit
+      EMAIL_PORT: 1025
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:5175,http://127.0.0.1:5176
+      LOG_LEVEL: INFO
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+  worker:
+    build:
+      context: ${SCDEE_BACKEND_PATH}
+      dockerfile: ${SCDE_INTEGRATION_DOCKERFILE}
+    network_mode: service:minio
+    command: celery -A scdee worker --loglevel=info --queues=default,recognition,notifications --concurrency=1
+    volumes:
+      - ${SCDEE_BACKEND_PATH}:/app:ro
+      - ${SCDE_RUNTIME_PATH}:/runtime:ro
+    environment: *api-environment
+    depends_on:
+      - api
+  mailpit:
+    image: axllent/mailpit:v1.27.8
+volumes:
+  postgres:
+  objects:
