@@ -159,7 +159,7 @@
 
 @media (max-width: 900px) {
   .shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas: 'top' 'rail' 'main';
   }
   .shell-brand {
@@ -188,4 +188,11 @@
   .shell-rail__link {
     white-space: nowrap;
   }
+}
+
+@media (max-width: 600px) {
+  .shell-topbar { padding-inline: var(--s-2); gap: var(--s-2); }
+  .shell-topbar__end { gap: var(--s-1); }
+  .shell-topbar__btn { padding-inline: var(--s-1); }
+  .shell-topbar__mock { max-width: 92px; }
 }
