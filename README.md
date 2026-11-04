@@ -1,5 +1,7 @@
 # SCDE — Sistema de Corrección Digital de Exámenes
 
+Repositorio de entrega: https://github.com/soleer6/SCDE.
+
 Frontend para gestionar asignaturas, exámenes, ingesta de páginas, corrección, resultados y revisiones. Incluye administración de usuarios y organizaciones, permisos, notificaciones y perfil.
 
 ## Stack
@@ -77,9 +79,8 @@ que requieren servicios y datos de integración propios y no forman parte de `np
 
 ## Demo y arquitectura
 
-Demo existente: https://scde-tutor-admin-ops.vercel.app. Funciona con datos simulados
-en el navegador, sin conexión al backend real. Esta entrega local puede contener
-cambios posteriores a esa demo.
+Demo: https://scde-tutor-admin-ops.vercel.app. Funciona con datos simulados
+en el navegador, sin conexión al backend real. La demo corresponde a esta entrega final.
 
 ![Arquitectura de SCDE](docs/arquitectura.png)
 
@@ -89,6 +90,6 @@ los QR y el OCR con Tesseract; MinIO almacena los PDF y las páginas.
 
 ## Historial
 
-La rama `main` integra las líneas `frontend/core` y `frontend/admin` mediante un
-merge. Se conservan las iteraciones, autores y fechas originales; los identificadores
+La rama integrada `modulo-profesor` (rama por defecto en GitHub, `main` en la
+entrega local) reúne las líneas `frontend/core` y `frontend/admin` mediante un merge. Se conservan las iteraciones, autores y fechas originales; los identificadores
 de commit cambian al excluir documentación interna y normalizar referencias técnicas.
