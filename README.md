@@ -93,3 +93,7 @@ los QR y el OCR con Tesseract; MinIO almacena los PDF y las páginas.
 La rama integrada `modulo-profesor` (rama por defecto en GitHub, `main` en la
 entrega local) reúne las líneas `frontend/core` y `frontend/admin` mediante un merge. Se conservan las iteraciones, autores y fechas originales; los identificadores
 de commit cambian al excluir documentación interna y normalizar referencias técnicas.
+
+### Escenario de prueba del alumnado
+
+Abre `/?resetMock=student` para reiniciar los datos locales con los cuatro exámenes de Elena Rodríguez disponibles para consultar y solicitar revisión. El reinicio reemplaza las modificaciones de demostración de ese navegador. Inicia sesión con la cuenta de Elena de la pantalla de acceso. Los demás alumnos mantienen sus ejercicios de corrección de ejemplo; no cambia la autorización del backend real. «No necesito revisión» vuelve a la asignatura sin enviar solicitud ni cerrar el periodo.
