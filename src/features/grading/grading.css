@@ -170,7 +170,7 @@
   flex-direction: column;
   gap: var(--s-3);
 }
-.gr-problem:last-child {
+.gr-problem-wrap:last-child .gr-problem {
   border-bottom: 0;
 }
 .gr-problem.is-active {
@@ -346,3 +346,20 @@
   justify-self: start;
   min-height: 44px;
 }
+
+/* ---------- Guardar + navegación entre ejercicios ---------- */
+.gr-savepanel .ui-panel__body { display: flex; flex-direction: column; gap: var(--s-3); }
+.gr-exnav { display: flex; flex-direction: column; gap: var(--s-2); }
+.gr-exnav__chip {
+  display: flex; align-items: center; gap: var(--s-2); min-height: 44px; padding: var(--s-2) var(--s-3);
+  text-align: left; font: inherit; color: var(--ink); background: transparent; border: 1px solid var(--line); cursor: pointer;
+}
+.gr-exnav__chip.is-active { border-color: var(--ink); border-left-width: 4px; }
+.gr-exnav__chip.is-done .gr-exnav__mark { color: var(--green); }
+.gr-exnav__mark { margin-left: auto; font-size: var(--fs-micro); font-weight: 700; color: var(--dim); }
+.gr-saveresult { display: flex; flex-direction: column; gap: var(--s-2); }
+.gr-saveresult p { margin: 0; }
+.gr-saveresult ul { margin: 0; padding-left: var(--s-5); }
+.gr-saveresult.is-done > strong { color: var(--green); }
+.gr-saveresult.is-error > strong { color: var(--rust); }
+.gr-problem__next { align-self: flex-start; min-height: 44px; }

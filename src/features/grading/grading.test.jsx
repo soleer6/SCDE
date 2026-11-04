@@ -117,6 +117,25 @@ describe('grading', () => {
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
   });
 
+  it('Guardar commits typed scores and per-problem comments, confirms from the server and offers the next exam', async () => {
+    await loginAs('javier.ruiz@uam.es', 'prof123');
+    const user = userEvent.setup();
+    renderGrading();
+    const second = await screen.findByLabelText('Nota de Integral impropia');
+    await user.type(second, '2');
+    await user.type(screen.getByLabelText('Nota de Aplicaciones'), '3');
+    await user.type(screen.getByLabelText('Comentario del problema Aplicaciones'), 'Bien planteado');
+    // No blur: the Guardar click itself must commit the pending drafts.
+    await user.click(screen.getByRole('button', { name: 'Guardar', exact: true }));
+    expect(await screen.findByText('Guardado y publicado correctamente')).toBeInTheDocument();
+    expect(db.grades.filter((g) => g.instance_id === INSTANCE).map((g) => g.score).sort()).toEqual([2, 3]);
+    expect(db.annotations.some((a) => a.instance_id === INSTANCE && a.problem_id === 'p-e-mat-p2-3' && a.content === 'Bien planteado')).toBe(true);
+    expect(screen.getByText('Notas: 2 de 2 ejercicios')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Siguiente por corregir' }).length).toBeGreaterThan(1);
+    await user.click(screen.getByRole('button', { name: /^02 Integral impropia/ }));
+    expect(second).toHaveFocus();
+  });
+
   it('keeps negative rubric criteria while flooring the total', async () => {
     const user = userEvent.setup();
     const id = 'i-e-prg-pr1-4';

@@ -8,6 +8,7 @@
  */
 
 import { prepareStudentDemo } from './studentDemo.js';
+import { prepareTeacherDemo } from './teacherDemo.js';
 import { updateDemoReviewDates } from './demoReviewDates.js';
 import { captureMembershipPermissions } from './membershipPermissions.js';
 
@@ -185,6 +186,9 @@ function initialData() {
   const data = updateDemoReviewDates(load() ?? seed());
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('resetMock') === 'student') {
     prepareStudentDemo(data);
+  }
+  if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('resetMock') === 'teacher') {
+    prepareTeacherDemo(data);
   }
   return captureAllMemberships(data);
 }

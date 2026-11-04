@@ -55,7 +55,21 @@
     "pending": "Unsaved changes",
     "saving": "Saving",
     "saved": "Saved",
-    "error": "Save failed"
+    "error": "Save failed",
+    "panelTitle": "Save grading",
+    "button": "Save",
+    "hint": "Saves scores, rubric, comments, audio and annotations for this exam. {{done}}/{{total}} exercises graded.",
+    "readyHint": "Every exercise has a score. Press Save to confirm everything is stored.",
+    "doneTitle": "Saved and published successfully",
+    "doneGrades": "Scores: {{done}} of {{total}} exercises",
+    "doneNotes": "Per-exercise comments: {{count}}",
+    "generalYes": "General comment: saved",
+    "generalNo": "General comment: none",
+    "doneAudios": "Audio notes: {{count}}",
+    "doneStrokes": "Annotated pages: {{count}}",
+    "doneAt": "Checked on the server at {{time}}",
+    "noMore": "No more exams left to grade.",
+    "failed": "Not everything could be saved. Check the red notices and press Save again."
   },
   "annotations": {
     "loadError": "Annotations could not be loaded. Retry before editing.",
@@ -84,7 +98,8 @@
       "saving": "Saving",
       "saved": "Saved",
       "error": "Error"
-    }
+    },
+    "next": "Go to next exercise"
   },
   "ocr": {
     "padHint": "Write here with a pen or the mouse",
@@ -152,5 +167,10 @@
     "saved": "Comment saved",
     "removed": "Comment removed",
     "error": "The comment could not be saved."
+  },
+  "nav": {
+    "label": "Exam exercises",
+    "graded": "graded",
+    "pending": "not graded"
   }
 }

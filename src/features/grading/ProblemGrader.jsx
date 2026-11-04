@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatScore } from '../../lib/format.js';
-import { Checkbox, Input } from '../../ui';
+import { Button, Checkbox, Input } from '../../ui';
 import { gradeManual, gradeRubric, toKnownGrade } from './api.js';
 import { GradeOcr } from './HandwritingOcr.jsx';
 import ProblemNote from './ProblemNote.jsx';
 import SavedGradeOcr from './SavedGradeOcr.jsx';
+import { useSaver } from './useSaver.js';
 
 /**
  * One problem row. Rubric problems grade by criteria (PUT .../rubric/),
@@ -16,7 +17,7 @@ import SavedGradeOcr from './SavedGradeOcr.jsx';
  * the current value, so the next save carries the right old_score.
  * Manual-score problems can also be graded from a handwritten number (GradeOcr).
  */
-export default function ProblemGrader({ instanceId, problem, known, disabled, onSaved, onConflict, currentUserId }) {
+export default function ProblemGrader({ instanceId, problem, known, disabled, onSaved, onConflict, currentUserId, register, onNext }) {
   const { t } = useTranslation('grading');
   const { t: tc } = useTranslation();
   const current = known.grades[problem.id];
@@ -26,7 +27,17 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
   const max = Number(problem.max_score);
   const rubric = problem.rubric_criteria ?? [];
 
-  const save = async (fn) => {
+  const inflight = useRef(null);
+
+  const save = (fn) => {
+    const run = doSave(fn);
+    inflight.current = run;
+    return run.finally(() => {
+      if (inflight.current === run) inflight.current = null;
+    });
+  };
+
+  const doSave = async (fn) => {
     setState('saving');
     setErrCode(null);
     try {
@@ -35,6 +46,7 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
       setDraft(String(Number(res.score)));
       setState('saved');
       onSaved?.();
+      return true;
     } catch (e) {
       let code = e.code;
       if (code === 'VERSION_CONFLICT' && onConflict) {
@@ -51,25 +63,34 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
       }
       setState('error');
       setErrCode(code);
+      return false;
     }
   };
 
-  const commitManual = (value = draft) => {
-    if (value === '' || disabled) return;
+  const commitDraft = async (value = draft) => {
+    if (value === '' || disabled) return true;
     const n = Number(String(value).replace(',', '.'));
     // RF-11.1 allows penalties below zero; only the instance total is floored.
     if (!Number.isFinite(n) || n > max) {
       setState('error');
       setErrCode(n > max ? 'SCORE_EXCEEDS_MAX' : 'INVALID');
-      return;
+      return false;
     }
     if (current && Number(current.score) === n) {
       setState('saved');
       setErrCode(null);
-      return;
+      return true;
     }
-    save((old) => gradeManual(instanceId, problem.id, n, old));
+    return save((old) => gradeManual(instanceId, problem.id, n, old));
   };
+  const commitManual = (value = draft) => void commitDraft(value);
+
+  // Guardar: a blur may already be saving this draft; wait for it instead of repeating it with a stale old_score.
+  useSaver(register, `score:${problem.id}`, async () => {
+    if (rubric.length) return true;
+    if (inflight.current) return inflight.current;
+    return commitDraft();
+  });
 
   const toggleCriterion = (cid) => {
     const selected = new Set(current?.criteria ?? []);
@@ -88,7 +109,7 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
   };
 
   return (
-    <div className={`gr-problem ${state === 'saving' ? 'is-active' : ''}`}>
+    <div id={`gr-problem-${problem.id}`} className={`gr-problem ${state === 'saving' ? 'is-active' : ''}`}>
       <div className="gr-problem__head">
         <span className="gr-problem__idx u-num">{String(problem.order).padStart(2, '0')}</span>
         <span>{problem.name}</span>
@@ -142,7 +163,7 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
       {!rubric.length && !disabled && <SavedGradeOcr instanceId={instanceId} problem={problem} currentUserId={currentUserId}
         onApplied={refreshApplied} onUse={(score) => { setDraft(String(score)); commitManual(String(score)); }} />}
 
-      <ProblemNote instanceId={instanceId} problem={problem} canEdit={!disabled} currentUserId={currentUserId} />
+      <ProblemNote instanceId={instanceId} problem={problem} canEdit={!disabled} currentUserId={currentUserId} register={register} />
 
       <span className={`gr-problem__state is-${state}`} role={state === 'error' ? 'alert' : undefined} aria-live="polite">
         {state === 'error'
@@ -151,6 +172,11 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
             : tc(`errors.${errCode}`, { defaultValue: errCode })
           : t(`problem.state.${state}`)}
       </span>
+      {onNext && (
+        <Button size="sm" variant="ghost" className="gr-problem__next" onClick={onNext}>
+          {t('problem.next')}
+        </Button>
+      )}
     </div>
   );
 }
