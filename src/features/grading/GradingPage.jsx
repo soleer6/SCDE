@@ -60,11 +60,11 @@ export default function GradingPage() {
     return new Set(mine.flatMap((x) => x.problems_sent));
   }, [tasks.data, instanceId, session, roleOf, subjectId]);
 
-  const problems = useMemo(() => {
+  const allProblems = useMemo(() => {
     const model = exam.data?.models_problems?.find((m) => m.model_id === inst.data?.model_id) ?? exam.data?.models_problems?.[0];
-    const all = model?.problems ?? [];
-    return sees ? all.filter((p) => sees.has(p.id)) : all;
-  }, [exam.data, inst.data, sees]);
+    return model?.problems ?? [];
+  }, [exam.data, inst.data]);
+  const problems = useMemo(() => (sees ? allProblems.filter((p) => sees.has(p.id)) : allProblems), [allProblems, sees]);
 
   // Only the first load (or a new instance) shows the loader: reloading after each grade must not unmount the PDF and the problem rows.
   if (inst.error) return <ErrorState error={inst.error} onRetry={inst.reload} />;
@@ -100,7 +100,20 @@ export default function GradingPage() {
       const mine = list.filter((a) => !session?.id || a.author_id === session.id);
       const count = (type) => mine.filter((a) => a.annotation_type === type).length;
       const freshGrades = serverGrades(fresh) ?? known.grades;
+      // Saving with every exercise of the exam graded (all of them, not only this corrector's) marks it as graded.
+      let marked = false;
+      if (['PENDING_GRADING', 'PENDING_REVIEW'].includes(fresh.status) && allProblems.length
+          && allProblems.every((p) => freshGrades[p.id] !== undefined)) {
+        try {
+          await transitionInstance(instanceId, 'GRADED');
+          inst.setData(await getInstance(instanceId));
+          marked = true;
+        } catch {
+          marked = false; // the grades are saved anyway; the exam just stays pending
+        }
+      }
       setSaveRun({
+        marked,
         state: 'done',
         at: new Date(),
         graded: problems.filter((p) => freshGrades[p.id] !== undefined).length,
@@ -150,16 +163,6 @@ export default function GradingPage() {
             <StatusBadge status={i.status} />
             {next && (
               <Button onClick={async () => { if (await annotations.flush()) navigate(`/instances/${next.id}/grade`); }} disabled={annotations.loading || annotations.loadFailed}>{t('actions.next')}</Button>
-            )}
-            {i.status === 'PENDING_GRADING' && (
-              <Button variant="solid" onClick={() => move('GRADED', 'toast.graded')} loading={transition.pending} disabled={!problems.length || gradedCount < problems.length}>
-                {t('actions.finish')}
-              </Button>
-            )}
-            {i.status === 'PENDING_REVIEW' && (
-              <Button variant="solid" onClick={() => move('GRADED', 'toast.graded')} loading={transition.pending} disabled={!problems.length || gradedCount < problems.length}>
-                {t('actions.finish')}
-              </Button>
             )}
             {CONFIRMED_MOVES[i.status] && (
               <Button onClick={() => setConfirm(true)} loading={transition.pending}>
@@ -252,6 +255,7 @@ export default function GradingPage() {
               {saveRun.state === 'done' && (
                 <>
                   <strong>{t('save.doneTitle')}</strong>
+                  <p>{t(saveRun.marked ? 'save.marked' : 'save.notMarked', { done: saveRun.graded, total: saveRun.total })}</p>
                   <ul>
                     <li>{t('save.doneGrades', { done: saveRun.graded, total: saveRun.total })}</li>
                     <li>{t('save.doneNotes', { count: saveRun.notes })}</li>

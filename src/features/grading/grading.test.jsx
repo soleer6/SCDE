@@ -210,8 +210,7 @@ describe('grading', () => {
     const user = userEvent.setup();
     renderGrading();
     const series = await screen.findByLabelText('Nota de Series');
-    const finish = screen.getByRole('button', { name: 'Marcar como corregido' });
-    expect(finish).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Marcar como corregido' })).not.toBeInTheDocument();
 
     // Zoom is PdfStage state: it only survives if the reload does not unmount the stage.
     await user.click(screen.getByRole('button', { name: 'Ampliar' }));
@@ -229,12 +228,12 @@ describe('grading', () => {
 
     await user.click(screen.getByLabelText('Nota de Aplicaciones'));
     await user.keyboard('1{Enter}');
-    await waitFor(() => expect(finish).toBeEnabled());
-    expect(screen.getByText('3/3 problemas')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('3/3 problemas')).toBeInTheDocument());
+    expect(db.instances.find((i) => i.id === INSTANCE).status).toBe('PENDING_GRADING'); // grading alone does not finish
     expect(db.grades.filter((g) => g.instance_id === INSTANCE).map((g) => Number(g.score)).sort()).toEqual([1, 2, 3.5]);
 
-    await user.click(finish);
-    expect(await screen.findByText('Examen marcado como corregido')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Guardar' }));
+    expect(await screen.findByText('Examen marcado como corregido.')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: 'Reabrir corrección' })).toBeInTheDocument();
     expect(db.instances.find((i) => i.id === INSTANCE).status).toBe('GRADED');
     expect(screen.getByLabelText('Nota de Series')).toBe(series);
@@ -278,7 +277,17 @@ describe('grading', () => {
     db.problems = db.problems.filter((p) => p.exam_model_id !== 'mdl-e-mat-p2');
     renderGrading();
     expect(await screen.findByText(/Este modelo no tiene problemas definidos/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Marcar como corregido' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Marcar como corregido' })).not.toBeInTheDocument();
+  });
+
+  it('saving with exercises still ungraded keeps the exam pending', async () => {
+    const user = userEvent.setup();
+    renderGrading();
+    await user.type(await screen.findByLabelText('Nota de Series'), '3{Enter}');
+    await waitFor(() => expect(screen.getByText('1/3 problemas')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Guardar' }));
+    expect(await screen.findByText(/El examen sigue pendiente/)).toBeInTheDocument();
+    expect(db.instances.find((i) => i.id === INSTANCE).status).toBe('PENDING_GRADING');
   });
 
   it('hydrates persisted grades in a clean browser and regrades with them as old_score', async () => {
