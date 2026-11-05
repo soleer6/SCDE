@@ -216,3 +216,23 @@ describe('exam authoring contract', () => {
     expect(link).toHaveAttribute('href', '/exams/e-mat-p2/setup');
   });
 });
+
+describe('Elena demo review reaches its corrector', () => {
+  beforeEach(async () => {
+    db.reset();
+    const { prepareStudentDemo } = await import('../lib/mock/studentDemo.js');
+    prepareStudentDemo(db);
+  });
+
+  it('shows Elena\'s Parcial 1 request to Javier (assigned corrector) without new subject permissions', async () => {
+    const memberships = JSON.stringify(db.memberships);
+    const inst = db.instances.find((i) => i.student_id === 'u-elena' && i.exam_id === 'e-mat-p1');
+    const problem = db.problems.find((p) => p.exam_model_id === inst.model_id);
+    await loginAs('elena.rodriguez@estudiante.uam.es', 'est123');
+    await api.post(`/instances/${inst.id}/review-requests/`, { problems: [{ problem_id: problem.id, message: 'Revisad el apartado b' }] });
+    await loginAs('javier.ruiz@uam.es', 'prof123');
+    const tasks = await api.get('/my-tasks/');
+    expect(tasks.pending_reviews.map((r) => r.instance_id)).toContain(inst.id);
+    expect(JSON.stringify(db.memberships)).toBe(memberships);
+  });
+});

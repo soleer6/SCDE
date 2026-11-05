@@ -142,7 +142,7 @@ function seed() {
   const notifications = [
     { id: 'n-1', user_id: 'u-elena', notification_type: 'GRADES_PUBLISHED', title: 'Notas publicadas', message: 'Ya puedes consultar tu nota de Cálculo I · Parcial 1.', status: 'UNREAD', metadata: { exam_id: 'e-mat-p1' }, created_at: iso('2026-10-11T18:00:00Z') },
     { id: 'n-2', user_id: 'u-elena', notification_type: 'REVIEW_OPENED', title: 'Revisión abierta', message: 'El periodo de revisión de Cálculo I · Parcial 1 está abierto hasta el 24/10.', status: 'UNREAD', metadata: { exam_id: 'e-mat-p1' }, created_at: iso('2026-10-12T08:00:00Z') },
-    { id: 'n-3', user_id: 'u-maria', notification_type: 'REVIEW_REQUESTS_GROUPED', title: 'Nueva solicitud de revisión', message: 'Tienes 1 solicitud de revisión pendiente en Cálculo I.', status: 'UNREAD', metadata: { exam_id: 'e-mat-p1' }, created_at: iso('2026-10-13T10:12:00Z') },
+    { id: 'n-3', user_id: 'u-maria', notification_type: 'REVIEW_REQUESTS_SUMMARY', title: 'Nueva solicitud de revisión', message: 'Tienes 1 solicitud de revisión pendiente en Cálculo I.', status: 'UNREAD', metadata: { exam_id: 'e-mat-p1' }, created_at: iso('2026-10-13T10:12:00Z') },
     { id: 'n-4', user_id: 'u-maria', notification_type: 'ASSIGNMENT_CREATED', title: 'Corrección asignada', message: 'Se te han asignado problemas de Física I · Parcial 1.', status: 'READ', metadata: { exam_id: 'e-fis-p1' }, created_at: iso('2026-10-09T15:00:00Z') },
   ];
 

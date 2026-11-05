@@ -112,7 +112,11 @@ export const mocks = [
       const pending_reviews = db.review_requests
         .filter((rr) => !rr.resolved)
         .map((rr) => ({ rr, inst: q.instance(rr.instance_id) }))
-        .filter(({ inst }) => inst && (!examFilter || inst.exam_id === examFilter) && hasPerm(user, q.exam(inst.exam_id).subject_id, 'can_manage_reviews'))
+        // get_pending_reviews_for_corrector: managed (can_manage_reviews) or assigned by a rule covering the problem.
+        .filter(({ rr, inst }) => inst && (!examFilter || inst.exam_id === examFilter) && (
+          hasPerm(user, q.exam(inst.exam_id).subject_id, 'can_manage_reviews')
+          || (q.membership(user.id, q.exam(inst.exam_id).subject_id)
+            && db.assignment_rules.some((r) => r.exam_id === inst.exam_id && r.correctors.includes(user.id) && r.problems.includes(rr.problem_id)))))
         .map(({ rr, inst }) => {
           const exam = q.exam(inst.exam_id);
           return {
