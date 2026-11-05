@@ -131,9 +131,29 @@ describe('grading', () => {
     expect(db.grades.filter((g) => g.instance_id === INSTANCE).map((g) => g.score).sort()).toEqual([2, 3]);
     expect(db.annotations.some((a) => a.instance_id === INSTANCE && a.problem_id === 'p-e-mat-p2-3' && a.content === 'Bien planteado')).toBe(true);
     expect(screen.getByText('Notas: 2 de 2 ejercicios')).toBeInTheDocument();
+    // Javier only grades 2 of the 3 exercises: the exam waits for the rest.
+    expect(screen.getByText(/El examen sigue pendiente/)).toBeInTheDocument();
+    expect(db.instances.find((i) => i.id === INSTANCE).status).toBe('PENDING_GRADING');
     expect(screen.getAllByRole('button', { name: 'Siguiente por corregir' }).length).toBeGreaterThan(1);
     await user.click(screen.getByRole('button', { name: /^02 Integral impropia/ }));
     expect(second).toHaveFocus();
+  });
+
+  it('Siguiente por corregir skips exams where this corrector already graded their exercises', async () => {
+    await loginAs('javier.ruiz@uam.es', 'prof123');
+    const others = db.instances.filter((i) => i.exam_id === db.instances.find((x) => x.id === INSTANCE).exam_id && i.id !== INSTANCE && i.status === 'PENDING_GRADING');
+    const [done, ...rest] = others;
+    for (const pid of ['p-e-mat-p2-2', 'p-e-mat-p2-3']) {
+      if (!db.grades.some((g) => g.instance_id === done.id && g.problem_id === pid)) {
+        db.grades.push({ id: `gr-${done.id}-${pid}`, instance_id: done.id, problem_id: pid, score: 1, grader_id: 'u-javier', rubric_selections: [] });
+      }
+    }
+    rest.forEach((r) => { r.status = 'GRADED'; });
+    renderGrading();
+    await screen.findByLabelText('Nota de Integral impropia');
+    await screen.findByText('0/2 problemas');
+    await new Promise((r) => setTimeout(r, 400)); // let /my-tasks/ answer
+    expect(screen.queryByRole('button', { name: 'Siguiente por corregir' })).not.toBeInTheDocument();
   });
 
   it('keeps negative rubric criteria while flooring the total', async () => {

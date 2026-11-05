@@ -32,7 +32,7 @@ export default function GradingPage() {
   const inst = useApi(() => getInstance(instanceId), [instanceId]);
   const examId = inst.data?.exam_id;
   const exam = useApi(examId ? () => getExam(examId) : null, [examId]);
-  const siblings = useApi(examId ? () => getAllExamInstances(examId, { status: 'PENDING_GRADING' }) : null, [examId]);
+  const siblings = useApi(examId ? () => getAllExamInstances(examId, { status: 'PENDING_GRADING' }) : null, [examId, instanceId]);
   const { url: pdfUrl, error: pdfError } = usePdfUrl(instanceId);
   const annotations = useAnnotations(instanceId, { readOnly: !EDITABLE.includes(inst.data?.status) });
   const server = useMemo(() => serverGrades(inst.data), [inst.data]);
@@ -53,7 +53,7 @@ export default function GradingPage() {
   const { session } = useAuth();
   const { roleOf } = useMySubjects();
   const subjectId = exam.data?.subject_id;
-  const tasks = useApi(examId ? () => getMyTasks(examId) : null, [examId]);
+  const tasks = useApi(examId ? () => getMyTasks(examId) : null, [examId, instanceId]); // fresh per exam opened
   const sees = useMemo(() => {
     const mine = (tasks.data?.grading_tasks ?? []).filter((x) => x.instance_id === instanceId);
     if (session?.isStaff || session?.isSuperadmin || roleOf(subjectId) === 'COORDINATOR' || !mine.length) return null;
@@ -76,7 +76,13 @@ export default function GradingPage() {
   const editable = EDITABLE.includes(i.status);
   const gradedCount = problems.filter((p) => known.grades[p.id] !== undefined).length;
   const maxTotal = problems.reduce((a, p) => a + Number(p.max_score), 0);
-  const next = (siblings.data ?? []).find((s) => s.id !== i.id);
+  // Next exam: one where this teacher still has exercises to grade (from /my-tasks/). A corrector who
+  // finished their own exercises is not sent to exams only waiting for someone else.
+  const myTasks = tasks.data?.grading_tasks ?? [];
+  const pending = new Set((siblings.data ?? []).map((s) => s.id));
+  const nextTask = myTasks.find((x) => x.instance_id !== i.id && x.ungraded_problems.length && pending.has(x.instance_id));
+  const next = nextTask ? { id: nextTask.instance_id }
+    : tasks.data && !myTasks.length && !sees ? (siblings.data ?? []).find((s) => s.id !== i.id) : null;
 
   // After a 409 VERSION_CONFLICT: re-read the instance so old_score is the persisted one before any retry.
   const refreshGrades = async () => {
