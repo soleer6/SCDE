@@ -97,3 +97,5 @@ de commit cambian al excluir documentación interna y normalizar referencias té
 ### Escenario de prueba del alumnado
 
 Abre `/?resetMock=student` para reiniciar los datos locales con los cuatro exámenes de Elena Rodríguez disponibles para consultar y solicitar revisión. El reinicio reemplaza las modificaciones de demostración de ese navegador. Inicia sesión con la cuenta de Elena de la pantalla de acceso. Los demás alumnos mantienen sus ejercicios de corrección de ejemplo; no cambia la autorización del backend real. «No necesito revisión» vuelve a la asignatura sin enviar solicitud ni cerrar el periodo.
+
+La comparación de notas antes/después de una revisión se guarda por solicitud y estudiante en el navegador que la solicita. La API actual no expone una instantánea histórica: desde otro navegador, con almacenamiento borrado o en solicitudes anteriores a esta función, se indica que la nota anterior no está registrada. No cambia el contrato del backend.

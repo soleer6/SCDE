@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../lib/auth/AuthProvider.jsx';
+import { rememberReviewScores } from './reviewHistory.js';
 import { useAction } from '../../lib/hooks.js';
 import { Button, Checkbox, Field, Textarea, useToast } from '../../ui';
 import { submitReviewRequests } from './api.js';
@@ -15,6 +17,7 @@ export default function ReviewRequestForm({ inst, existing, onSent, onStale }) {
   const { t } = useTranslation('results');
   const { t: tc } = useTranslation();
   const toast = useToast();
+  const { session } = useAuth();
   const [picked, setPicked] = useState({}); // problem_id -> message
   const problems = (inst.rubric ?? inst.grades ?? []).filter((p) => p.problem_id);
   const already = new Set(existing.map((r) => r.problem_id));
@@ -32,7 +35,9 @@ export default function ReviewRequestForm({ inst, existing, onSent, onStale }) {
   const submit = async () => {
     const asked = Object.keys(picked).length;
     try {
-      const created = (await send.run())?.length ?? asked;
+      const rows = await send.run();
+      rememberReviewScores(session?.id, inst, rows);
+      const created = rows?.length ?? asked;
       setPicked({});
       if (!created) toast.info(t('review.noneCreated'));
       else if (created < asked) toast.success(t('review.partial', { count: created, total: asked }));

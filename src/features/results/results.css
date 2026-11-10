@@ -71,3 +71,11 @@
   text-align: center;
   text-decoration: none;
 }
+
+.rs-comparison {
+  padding: var(--s-3);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+  overflow-wrap: anywhere;
+}

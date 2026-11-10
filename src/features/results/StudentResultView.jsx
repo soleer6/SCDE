@@ -12,6 +12,8 @@ import PdfStage from '../grading/PdfStage.jsx';
 import AudioNotes from '../grading/AudioNotes.jsx';
 import { LifecycleRail, Score, StatusBadge } from '../workspace/domain.jsx';
 import { listMyReviewRequests } from './api.js';
+import { useAuth } from '../../lib/auth/AuthProvider.jsx';
+import { previousReviewScores } from './reviewHistory.js';
 import ReviewRequestForm from './ReviewRequestForm.jsx';
 import './results.css';
 
@@ -143,7 +145,7 @@ export default function StudentResultView({ exam }) {
             </div>}
             {(requests.data ?? []).length > 0 && (
               <section ref={listRef} tabIndex={-1} aria-label={t('review.requests')}>
-                <RequestList items={requests.data} />
+                <RequestList items={requests.data} inst={inst} />
               </section>
             )}
           </Panel>
@@ -231,16 +233,35 @@ function TeacherComment({ instanceId, visible, problems = [], accessKey }) {
   );
 }
 
-function RequestList({ items }) {
+function RequestList({ items, inst }) {
   const { t } = useTranslation('results');
+  const { session } = useAuth();
+  const snapshots = items.map((r) => ({ ...r, before: previousReviewScores(session?.id, inst.id, r.id) }));
+  const first = snapshots.filter((r) => r.before?.total != null).sort((a, b) => a.before.at - b.before.at)[0]?.before;
+  const delta = (current, old) => {
+    if (current == null || old == null) return t('review.noPrevious');
+    const difference = Math.round((Number(current) - Number(old)) * 100) / 100;
+    return `${difference > 0 ? '+' : ''}${formatScore(difference)}`;
+  };
   return (
+    <div className="ui-stack">
+      {Array.isArray(inst.grades) && items.some((r) => r.resolved) && first && <div className="rs-comparison">
+        <strong>{t('review.totalChange')}</strong>
+        <p className="u-muted">{t('review.historyHint')}</p>
+        <p>{t('review.before')}: {formatScore(first.total)} → {t('review.current')}: {formatScore(inst.total_score)}</p>
+        <p>{t('review.difference')}: {delta(inst.total_score, first.total)}</p>
+      </div>}
     <ul className="rs-requests">
-      {items.map((r) => (
+      {snapshots.map((r) => (
         <li key={r.id}>
           <div className="ui-row">
             <span>{r.problem_name}</span>
             <Badge tone={r.resolved ? 'green' : 'gold'}>{r.resolved ? t('review.resolved') : t('review.pending')}</Badge>
           </div>
+          {r.resolved && Array.isArray(inst.grades) && <div className="rs-comparison">
+            <p>{t('review.before')}: {r.before?.score != null ? formatScore(r.before.score) : t('review.noPrevious')} → {t('review.current')}: {formatScore(inst.grades?.find((g) => g.problem_id === r.problem_id)?.score)}</p>
+            <p>{t('review.difference')}: {delta(inst.grades?.find((g) => g.problem_id === r.problem_id)?.score, r.before?.score)}</p>
+          </div>}
           {r.student_message && <p className="u-muted">{r.student_message}</p>}
           {r.resolver_message && (
             <p className="rs-reply">
@@ -250,5 +271,6 @@ function RequestList({ items }) {
         </li>
       ))}
     </ul>
+    </div>
   );
 }
