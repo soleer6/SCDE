@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { USE_MOCK } from '../../lib/api/client.js';
 import { useApi } from '../../lib/hooks.js';
 import { formatDate, formatDateTime, formatScore } from '../../lib/format.js';
 import { Badge, Button, ButtonLink, DataTable, EmptyState, ErrorState, Loader, PageHeader, Panel } from '../../ui';
@@ -23,8 +22,6 @@ import './results.css';
  *  enforced by the backend: absent fields simply mean "not visible". */
 export default function StudentResultView({ exam }) {
   const { t } = useTranslation('results');
-  const { session } = useAuth();
-  const [resetting, setResetting] = useState(false);
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -67,20 +64,6 @@ export default function StudentResultView({ exam }) {
     return () => clearTimeout(id);
   }, [endsAt, review.data, reloadReview, reloadInstances, reloadRequests]);
 
-  const restartStudentTest = async () => {
-    setResetting(true);
-    try {
-      const [{ db }, { prepareStudentDemo }] = await Promise.all([
-        import('../../lib/mock/db.js'), import('../../lib/mock/studentDemo.js'),
-      ]);
-      try { localStorage.setItem('scde.demo.before-student-reset', JSON.stringify(db)); } catch { /* optional backup */ }
-      db.reset();
-      prepareStudentDemo(db);
-      db.persist();
-      instances.reload(); review.reload(); requests.reload();
-    } finally { setResetting(false); }
-  };
-
   const header = (
     <PageHeader
       crumbs={[
@@ -90,10 +73,7 @@ export default function StudentResultView({ exam }) {
       ]}
       eyebrow={`${exam.subject_code} · ${exam.subject_name} · ${formatDate(exam.date)}`}
       title={exam.name}
-      actions={<>
-        {inst && <StatusBadge status={inst.status} />}
-        {USE_MOCK && session?.id === 'u-elena' && <Button variant="primary" onClick={restartStudentTest} loading={resetting}>{t('review.resetDemo')}</Button>}
-      </>}
+      actions={inst && <StatusBadge status={inst.status} />}
     />
   );
 

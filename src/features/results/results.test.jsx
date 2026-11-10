@@ -207,15 +207,3 @@ describe('student review requests', () => {
     expect(db.review_requests.some((r) => r.instance_id === INSTANCE)).toBe(false);
   });
 });
-
-it('resets a hidden/unpublished Elena exam in the current session from its own visible button', async () => {
-  db.instances.find((i) => i.id === INSTANCE).status = 'GRADED';
-  db.review_requests.push({id:'stuck',instance_id:INSTANCE,problem_id:'p-e-mat-p1-2',resolved:false});
-  renderResult();
-  expect(await screen.findByText('Tu nota aún no está publicada')).toBeInTheDocument();
-  await userEvent.setup().click(screen.getByRole('button',{name:'Reiniciar prueba de Elena'}));
-  await screen.findByLabelText('Derivadas',{}, {timeout:8000});
-  expect(db.instances.find((i)=>i.id===INSTANCE).status).toBe('IN_REVIEW');
-  expect(db.review_requests.filter(r=>r.instance_id===INSTANCE)).toHaveLength(0);
-  expect(screen.queryByText('Tu nota aún no está publicada')).not.toBeInTheDocument();
-});
