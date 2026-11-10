@@ -9,6 +9,7 @@
     "reopen": "Reopen grading",
     "back": {
       "PUBLISHED": "Withdraw publication",
+      "IN_REVIEW": "Grade requested review",
       "FINALIZED": "Reopen review"
     }
   },
@@ -17,6 +18,7 @@
     "reopened": "Grading reopened",
     "back": {
       "PUBLISHED": "Publication withdrawn: the grade is back to graded",
+      "IN_REVIEW": "Review opened for grading",
       "FINALIZED": "Review reopened"
     }
   },
@@ -25,6 +27,7 @@
     "accept": "Confirm",
     "body": {
       "PUBLISHED": "The grade stops being published and the student will not see it until it is published again. No grade is deleted.",
+      "IN_REVIEW": "The exam moves to pending review so you can change the grades of the requested exercises. Resolving the requests closes it and the student sees the result.",
       "FINALIZED": "The exam goes back to pending review so it can be graded again. No grade is deleted."
     }
   },

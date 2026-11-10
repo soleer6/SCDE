@@ -54,7 +54,7 @@ export const mocks = [
       if (rr.resolved) throw mockError(409, 'ALREADY_RESOLVED');
       Object.assign(rr, { resolved: true, resolved_at: new Date().toISOString(), resolver_message: body?.resolver_message ?? '' });
       const pending = d.review_requests.some((r) => r.instance_id === inst.id && !r.resolved);
-      if (!pending && inst.status === 'IN_REVIEW') inst.status = 'FINALIZED';
+      if (!pending && ['IN_REVIEW', 'PENDING_REVIEW', 'GRADED'].includes(inst.status)) inst.status = 'FINALIZED';
       if (inst.student_id) {
         d.notifications.unshift({
           id: d.uid('n'), user_id: inst.student_id, notification_type: 'REVIEW_RESULT', title: 'Revisión resuelta',

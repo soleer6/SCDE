@@ -9,6 +9,7 @@
     "reopen": "Reabrir corrección",
     "back": {
       "PUBLISHED": "Retirar publicación",
+      "IN_REVIEW": "Corregir revisión solicitada",
       "FINALIZED": "Reabrir revisión"
     }
   },
@@ -17,6 +18,7 @@
     "reopened": "Corrección reabierta",
     "back": {
       "PUBLISHED": "Publicación retirada: la nota vuelve a corregida",
+      "IN_REVIEW": "Revisión abierta para corregir",
       "FINALIZED": "Revisión reabierta"
     }
   },
@@ -25,6 +27,7 @@
     "accept": "Confirmar",
     "body": {
       "PUBLISHED": "La nota deja de estar publicada y el estudiante dejará de verla hasta que se vuelva a publicar. No se borra ninguna calificación.",
+      "IN_REVIEW": "El examen pasa a pendiente de revisión para que puedas modificar las notas de los ejercicios solicitados. Al resolver las solicitudes se cerrará y el estudiante verá el resultado.",
       "FINALIZED": "El examen vuelve a pendiente de revisión para poder corregirlo de nuevo. No se borra ninguna calificación."
     }
   },

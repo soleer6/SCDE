@@ -18,7 +18,7 @@ import ProblemGrader from './ProblemGrader.jsx';
 import { CommentOcr } from './HandwritingOcr.jsx';
 
 /** Retrocesos del ciclo de vida (RF-7.5) que afectan al alumno: piden confirmación. */
-const CONFIRMED_MOVES = { PUBLISHED: 'GRADED', FINALIZED: 'PENDING_REVIEW' };
+const CONFIRMED_MOVES = { PUBLISHED: 'GRADED', IN_REVIEW: 'PENDING_REVIEW', FINALIZED: 'PENDING_REVIEW' };
 
 const EDITABLE = ['PENDING_GRADING', 'GRADED', 'PENDING_REVIEW'];
 
