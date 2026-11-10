@@ -13,6 +13,11 @@ import { updateDemoReviewDates } from './demoReviewDates.js';
 import { captureMembershipPermissions } from './membershipPermissions.js';
 
 const KEY = 'scde.mockdb.v3';
+// Bump when a demo fix needs everyone's saved data discarded: browsers holding data from an older
+// revision restart from the student demo scenario once, without needing ?resetMock in the URL.
+const REV_KEY = 'scde.mockdb.rev';
+const DEMO_REV = '2026-11-10-b';
+let revisionReset = false;
 const ORG = 'org-uam';
 const iso = (d) => new Date(d).toISOString();
 
@@ -173,6 +178,11 @@ function captureAllMemberships(data) {
 
 function load() {
   try {
+    if (localStorage.getItem(REV_KEY) !== DEMO_REV) {
+      revisionReset = localStorage.getItem(KEY) !== null;
+      localStorage.removeItem(KEY);
+      localStorage.setItem(REV_KEY, DEMO_REV);
+    }
     if (typeof location !== 'undefined' && location.search.includes('resetMock')) localStorage.removeItem(KEY);
     const raw = localStorage.getItem(KEY);
     if (raw) return JSON.parse(raw);
@@ -184,7 +194,7 @@ function load() {
 
 function initialData() {
   const data = ensureDemoCorrectorRule(updateDemoReviewDates(load() ?? seed()));
-  if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('resetMock') === 'student') {
+  if (revisionReset || (typeof location !== 'undefined' && new URLSearchParams(location.search).get('resetMock') === 'student')) {
     prepareStudentDemo(data);
   }
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('resetMock') === 'teacher') {
