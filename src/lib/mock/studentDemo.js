@@ -26,9 +26,15 @@ export function prepareStudentDemo(data, now = Date.now()) {
     if (!review) { review = { id: `rv-demo-${exam.id}`, exam_id: exam.id, created_at: new Date(now).toISOString() }; data.reviews.push(review); }
     Object.assign(review, { status: 'OPEN', start_date: new Date(now - 86400000).toISOString(), end_date: new Date(now + 14 * 86400000).toISOString() });
   }
-  // Javier corrects Cálculo I · Parcial 1 in this scenario: as its assigned corrector he receives
-  // Elena's review requests (get_pending_reviews_for_corrector), without extra subject permissions.
-  const p1 = data.problems.filter((p) => p.exam_model_id === 'mdl-e-mat-p1').map((p) => p.id);
+  ensureDemoCorrectorRule(data, now);
+  return data;
+}
+
+// Javier corrects Cálculo I · Parcial 1: as its assigned corrector he receives its review requests
+// (get_pending_reviews_for_corrector), without extra subject permissions. Applied on every load so
+// browsers holding data saved by an earlier version get it too, not only after ?resetMock=student.
+export function ensureDemoCorrectorRule(data, now = Date.now()) {
+  const p1 = (data.problems ?? []).filter((p) => p.exam_model_id === 'mdl-e-mat-p1').map((p) => p.id);
   if (p1.length && data.assignment_rules && !data.assignment_rules.some((r) => r.id === 'ar-demo-mat-p1')) {
     const at = new Date(now).toISOString();
     data.assignment_rules.push({ id: 'ar-demo-mat-p1', exam_id: 'e-mat-p1', groups: [], models_filter: [], problems: p1,

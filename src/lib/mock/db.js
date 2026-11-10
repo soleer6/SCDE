@@ -7,7 +7,7 @@
  * `extendSeed(fn)` from their own mocks module instead.
  */
 
-import { prepareStudentDemo } from './studentDemo.js';
+import { ensureDemoCorrectorRule, prepareStudentDemo } from './studentDemo.js';
 import { prepareTeacherDemo } from './teacherDemo.js';
 import { updateDemoReviewDates } from './demoReviewDates.js';
 import { captureMembershipPermissions } from './membershipPermissions.js';
@@ -183,7 +183,7 @@ function load() {
 }
 
 function initialData() {
-  const data = updateDemoReviewDates(load() ?? seed());
+  const data = ensureDemoCorrectorRule(updateDemoReviewDates(load() ?? seed()));
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('resetMock') === 'student') {
     prepareStudentDemo(data);
   }

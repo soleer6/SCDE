@@ -236,3 +236,15 @@ describe('Elena demo review reaches its corrector', () => {
     expect(JSON.stringify(db.memberships)).toBe(memberships);
   });
 });
+
+describe('saved demo data from an earlier version', () => {
+  it("gets Javier's Parcial 1 assignment without a reset", async () => {
+    const { ensureDemoCorrectorRule } = await import('../lib/mock/studentDemo.js');
+    db.reset();
+    db.assignment_rules = db.assignment_rules.filter((r) => r.id !== 'ar-demo-mat-p1');
+    ensureDemoCorrectorRule(db);
+    expect(db.assignment_rules.some((r) => r.id === 'ar-demo-mat-p1' && r.correctors.includes('u-javier'))).toBe(true);
+    ensureDemoCorrectorRule(db);
+    expect(db.assignment_rules.filter((r) => r.id === 'ar-demo-mat-p1')).toHaveLength(1);
+  });
+});
