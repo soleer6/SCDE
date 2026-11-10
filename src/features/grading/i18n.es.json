@@ -65,7 +65,7 @@
     "readyHint": "Todos los ejercicios tienen nota. Pulsa Guardar y el examen quedará marcado como corregido.",
     "marked": "Examen marcado como corregido.",
     "notMarked": "El examen sigue pendiente: se marcará como corregido al guardar con todos los ejercicios con nota.",
-    "doneTitle": "Guardado y publicado correctamente",
+    "doneTitle": "Cambios guardados y comprobados",
     "doneGrades": "Notas: {{done}} de {{total}} ejercicios",
     "doneNotes": "Comentarios por ejercicio: {{count}}",
     "generalYes": "Comentario general: guardado",
@@ -74,7 +74,9 @@
     "doneStrokes": "Páginas con anotaciones: {{count}}",
     "doneAt": "Comprobado en el servidor a las {{time}}",
     "noMore": "No quedan más exámenes por corregir.",
-    "failed": "No se ha podido guardar todo. Revisa los avisos en rojo y vuelve a pulsar Guardar."
+    "failed": "No se ha podido guardar todo. Revisa los avisos en rojo y vuelve a pulsar Guardar.",
+    "reviewCompleted": "Revisión resuelta. La nota actualizada está disponible para el estudiante.",
+    "reviewFailed": "Las notas se han guardado, pero no se ha podido completar el cierre de la revisión. Reintenta Guardar; no se ha confirmado la publicación."
   },
   "annotations": {
     "loadError": "No se han podido cargar las anotaciones. Reintenta antes de editar.",

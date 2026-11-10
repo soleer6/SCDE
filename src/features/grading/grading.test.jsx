@@ -127,7 +127,7 @@ describe('grading', () => {
     await user.type(screen.getByLabelText('Comentario del problema Aplicaciones'), 'Bien planteado');
     // No blur: the Guardar click itself must commit the pending drafts.
     await user.click(screen.getByRole('button', { name: 'Guardar', exact: true }));
-    expect(await screen.findByText('Guardado y publicado correctamente')).toBeInTheDocument();
+    expect(await screen.findByText('Cambios guardados y comprobados')).toBeInTheDocument();
     expect(db.grades.filter((g) => g.instance_id === INSTANCE).map((g) => g.score).sort()).toEqual([2, 3]);
     expect(db.annotations.some((a) => a.instance_id === INSTANCE && a.problem_id === 'p-e-mat-p2-3' && a.content === 'Bien planteado')).toBe(true);
     expect(screen.getByText('Notas: 2 de 2 ejercicios')).toBeInTheDocument();
@@ -373,4 +373,40 @@ describe('grading', () => {
     expect(Number(db.grades.find((g) => g.id === 'gr-rub').score)).toBeCloseTo(2.4);
     await waitFor(() => expect(screen.getAllByRole('checkbox', { name: 'Resultado final' })[0]).toBeChecked());
   });
+});
+
+
+describe('saving a requested review', () => {
+  it.each(['PENDING_REVIEW', 'GRADED'])('closes requests from %s and keeps the revised result visible to Elena', async (status) => {
+    const id = 'i-e-mat-p1-1';
+    db.instances.find((i) => i.id === id).status = status;
+    for (const n of [1, 2]) db.review_requests.push({ id: `rr-elena-${n}`, instance_id: id,
+      problem_id: `p-e-mat-p1-${n}`, student_message: 'Revisar', created_at: new Date().toISOString(), resolved: false });
+    renderGrading(id);
+    const user = userEvent.setup();
+    const score = await screen.findByRole('textbox', { name: 'Nota de Límites' });
+    await user.clear(score); await user.type(score, '2,4');
+    await user.click(screen.getByRole('button', { name: 'Guardar', exact: true }));
+    await waitFor(() => expect(db.review_requests.filter((r) => r.instance_id === id).every((r) => r.resolved)).toBe(true));
+    await waitFor(() => expect(db.instances.find((i) => i.id === id).status).toBe('FINALIZED'));
+    expect(Number(db.grades.find((g) => g.instance_id === id && g.problem_id === 'p-e-mat-p1-1').score)).toBe(2.4);
+    await loginAs('elena.rodriguez@estudiante.uam.es', 'est123');
+    const result = await api.get('/exams/e-mat-p1/instances/');
+    expect(result).toHaveLength(1); expect(result[0].total_score).not.toBeNull();
+  });
+});
+
+it('reports a failed review close instead of claiming publication and keeps requests retryable', async () => {
+ const id = 'i-e-mat-p1-1'; db.instances.find((i) => i.id === id).status = 'PENDING_REVIEW';
+ db.review_requests.push({ id: 'rr-close-failure', instance_id: id, problem_id: 'p-e-mat-p1-1', student_message: 'Revisar', created_at: new Date().toISOString(), resolved: false });
+ const patch = api.patch.bind(api);
+ const failing = vi.spyOn(api, 'patch').mockImplementation((path, ...args) => path.includes('/resolve/') ? Promise.reject(new ApiError('NETWORK_ERROR', 0)) : patch(path, ...args));
+ renderGrading(id); await screen.findByRole('textbox', { name: 'Nota de Límites' });
+ await userEvent.setup().click(screen.getByRole('button', { name: 'Guardar', exact: true }));
+ expect(await screen.findByRole('alert')).toHaveTextContent('Las notas se han guardado, pero no se ha podido completar el cierre');
+ expect(db.review_requests.find((r) => r.id === 'rr-close-failure').resolved).toBe(false);
+ expect(db.instances.find((i) => i.id === id).status).toBe('PENDING_REVIEW');
+ failing.mockRestore();
+ await userEvent.setup().click(screen.getByRole('button', { name: 'Guardar', exact: true }));
+ await waitFor(() => expect(db.instances.find((i) => i.id === id).status).toBe('FINALIZED'));
 });

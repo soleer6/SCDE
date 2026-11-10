@@ -65,7 +65,7 @@
     "readyHint": "Every exercise has a score. Press Save and the exam will be marked as graded.",
     "marked": "Exam marked as graded.",
     "notMarked": "The exam stays pending: it will be marked as graded when saved with every exercise scored.",
-    "doneTitle": "Saved and published successfully",
+    "doneTitle": "Changes saved and verified",
     "doneGrades": "Scores: {{done}} of {{total}} exercises",
     "doneNotes": "Per-exercise comments: {{count}}",
     "generalYes": "General comment: saved",
@@ -74,7 +74,9 @@
     "doneStrokes": "Annotated pages: {{count}}",
     "doneAt": "Checked on the server at {{time}}",
     "noMore": "No more exams left to grade.",
-    "failed": "Not everything could be saved. Check the red notices and press Save again."
+    "failed": "Not everything could be saved. Check the red notices and press Save again.",
+    "reviewCompleted": "Review resolved. The updated grade is available to the student.",
+    "reviewFailed": "Grades were saved, but the review could not be completed. Retry Save; publication has not been confirmed."
   },
   "annotations": {
     "loadError": "Annotations could not be loaded. Retry before editing.",

@@ -109,20 +109,33 @@ export default function GradingPage() {
       const freshGrades = serverGrades(fresh) ?? known.grades;
       // Saving with every exercise of the exam graded (all of them, not only this corrector's) marks it as graded.
       let marked = false;
-      // Regrading after reopening for review: saving answers the pending review requests of this exam,
-      // so it leaves the Revisiones inbox; the last one closes the exam for the student.
+      // Pending requests, not a stale lifecycle status, determine whether this save completes a review.
+      // A previous save may have already left a regraded exam in GRADED with unresolved requests.
       let current = fresh;
-      if (fresh.status === 'PENDING_REVIEW') {
+      let resolvedReviews = 0;
+      if (['PENDING_REVIEW', 'GRADED'].includes(fresh.status)) {
         try {
           const pendingReqs = ((await getMyTasks()).pending_reviews ?? []).filter((r) => r.instance_id === instanceId);
-          for (const r of pendingReqs) await resolveReviewRequest(r.review_request_id, t('review.autoResolved'));
-          if (mine.length) {
-            current = await getInstance(instanceId);
-            inst.setData(current);
-            toast.success(t('review.resolvedOnSave', { count: pendingReqs.length }));
+          for (const r of pendingReqs) {
+            if (freshGrades[r.problem_id] === undefined) throw new Error('Review problem has no saved score');
+            try {
+              await resolveReviewRequest(r.review_request_id, t('review.autoResolved'));
+            } catch (error) {
+              if (error.code !== 'ALREADY_RESOLVED') throw error;
+            }
+          }
+          current = await getInstance(instanceId);
+          inst.setData(current);
+          if (pendingReqs.length) {
+            const remaining = ((await getMyTasks()).pending_reviews ?? []).filter((r) => r.instance_id === instanceId);
+            if (remaining.length) throw new Error('Review requests remain pending');
+            resolvedReviews = pendingReqs.length;
+            toast.success(t('review.resolvedOnSave', { count: resolvedReviews }));
           }
         } catch {
-          /* the grades are saved; the requests can still be resolved from Revisiones */
+          setSaveRun({ state: 'error', reviewFailed: true });
+          inst.reload();
+          return;
         }
       }
       if (['PENDING_GRADING', 'PENDING_REVIEW'].includes(current.status) && allProblems.length
@@ -137,6 +150,7 @@ export default function GradingPage() {
       }
       setSaveRun({
         marked,
+        resolvedReviews,
         state: 'done',
         at: new Date(),
         graded: problems.filter((p) => freshGrades[p.id] !== undefined).length,
@@ -278,7 +292,7 @@ export default function GradingPage() {
               {saveRun.state === 'done' && (
                 <>
                   <strong>{t('save.doneTitle')}</strong>
-                  <p>{t(saveRun.marked ? 'save.marked' : 'save.notMarked', { done: saveRun.graded, total: saveRun.total })}</p>
+                  <p>{t(saveRun.resolvedReviews ? 'save.reviewCompleted' : saveRun.marked ? 'save.marked' : 'save.notMarked', { done: saveRun.graded, total: saveRun.total })}</p>
                   <ul>
                     <li>{t('save.doneGrades', { done: saveRun.graded, total: saveRun.total })}</li>
                     <li>{t('save.doneNotes', { count: saveRun.notes })}</li>
@@ -294,7 +308,7 @@ export default function GradingPage() {
                   )}
                 </>
               )}
-              {saveRun.state === 'error' && <strong role="alert">{t('save.failed')}</strong>}
+              {saveRun.state === 'error' && <strong role="alert">{t(saveRun.reviewFailed ? 'save.reviewFailed' : 'save.failed')}</strong>}
             </div>
           </Panel>
 
