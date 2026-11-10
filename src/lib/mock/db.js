@@ -16,7 +16,7 @@ const KEY = 'scde.mockdb.v3';
 // Bump when a demo fix needs everyone's saved data discarded: browsers holding data from an older
 // revision restart from the student demo scenario once, without needing ?resetMock in the URL.
 const REV_KEY = 'scde.mockdb.rev';
-const DEMO_REV = '2026-11-10-review-save-c';
+const DEMO_REV = '2026-11-10-final';
 let revisionReset = false;
 const ORG = 'org-uam';
 const iso = (d) => new Date(d).toISOString();
