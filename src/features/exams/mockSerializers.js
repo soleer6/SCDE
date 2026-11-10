@@ -105,6 +105,8 @@ export function studentCan(inst, perm) {
   if (!perm) return VISIBLE_TO_STUDENT.includes(inst.status);
   const exam = q.exam(inst.exam_id);
   if (!exam.student_permissions?.[perm]) return false;
+  // Resolved results retain the permitted per-problem grades, independently of PDF access.
+  if (inst.status === 'FINALIZED' && ['can_view_grade_breakdown', 'can_view_rubric'].includes(perm)) return true;
   const review = db.reviews.find((r) => r.exam_id === exam.id);
   if (!review) return false;
   if (review.status === 'OPEN' && inst.status === 'IN_REVIEW') return true;

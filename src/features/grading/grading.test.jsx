@@ -393,6 +393,9 @@ describe('saving a requested review', () => {
     await loginAs('elena.rodriguez@estudiante.uam.es', 'est123');
     const result = await api.get('/exams/e-mat-p1/instances/');
     expect(result).toHaveLength(1); expect(result[0].total_score).not.toBeNull();
+    expect(result[0].grades.find((g) => g.problem_id === 'p-e-mat-p1-1').score).toBe('2.40');
+    db.exams.find((e) => e.id === 'e-mat-p1').student_permissions.can_view_grade_breakdown = false;
+    expect((await api.get('/exams/e-mat-p1/instances/'))[0].grades).toBeUndefined();
   });
 });
 
