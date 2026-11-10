@@ -8,6 +8,7 @@ import { getAllExamInstances, getExam } from '../exams/api.js';
 import { getMyTasks, useMySubjects } from '../workspace/api.js';
 import { LifecycleRail, Score, StatusBadge } from '../workspace/domain.jsx';
 import { studentName } from '../workspace/model.js';
+import { resolveReviewRequest } from '../reviews/api.js';
 import { getInstance, listAnnotations, serverGrades, transitionInstance } from './api.js';
 import { usePdfUrl } from './usePdfUrl.js';
 import { useAnnotations } from './useAnnotations.js';
@@ -108,7 +109,23 @@ export default function GradingPage() {
       const freshGrades = serverGrades(fresh) ?? known.grades;
       // Saving with every exercise of the exam graded (all of them, not only this corrector's) marks it as graded.
       let marked = false;
-      if (['PENDING_GRADING', 'PENDING_REVIEW'].includes(fresh.status) && allProblems.length
+      // Regrading after reopening for review: saving answers the pending review requests of this exam,
+      // so it leaves the Revisiones inbox; the last one closes the exam for the student.
+      let current = fresh;
+      if (fresh.status === 'PENDING_REVIEW') {
+        try {
+          const pendingReqs = ((await getMyTasks()).pending_reviews ?? []).filter((r) => r.instance_id === instanceId);
+          for (const r of pendingReqs) await resolveReviewRequest(r.review_request_id, t('review.autoResolved'));
+          if (mine.length) {
+            current = await getInstance(instanceId);
+            inst.setData(current);
+            toast.success(t('review.resolvedOnSave', { count: pendingReqs.length }));
+          }
+        } catch {
+          /* the grades are saved; the requests can still be resolved from Revisiones */
+        }
+      }
+      if (['PENDING_GRADING', 'PENDING_REVIEW'].includes(current.status) && allProblems.length
           && allProblems.every((p) => freshGrades[p.id] !== undefined)) {
         try {
           await transitionInstance(instanceId, 'GRADED');

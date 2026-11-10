@@ -177,5 +177,10 @@
     "label": "Exam exercises",
     "graded": "graded",
     "pending": "not graded"
+  },
+  "review": {
+    "autoResolved": "Request reviewed: grade updated",
+    "resolvedOnSave_one": "Review request resolved on save",
+    "resolvedOnSave_other": "Review requests resolved on save"
   }
 }

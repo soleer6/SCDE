@@ -87,7 +87,6 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
 
   // Guardar: a blur may already be saving this draft; wait for it instead of repeating it with a stale old_score.
   useSaver(register, `score:${problem.id}`, async () => {
-    if (rubric.length) return true;
     if (inflight.current) return inflight.current;
     return commitDraft();
   });
@@ -114,20 +113,18 @@ export default function ProblemGrader({ instanceId, problem, known, disabled, on
         <span className="gr-problem__idx u-num">{String(problem.order).padStart(2, '0')}</span>
         <span>{problem.name}</span>
         <span className="gr-problem__score">
-          {rubric.length ? (
-            <span className="u-num">{current ? formatScore(current.score) : '—'}</span>
-          ) : (
-            <Input
-              aria-label={t('problem.scoreFor', { name: problem.name })}
-              inputMode="decimal"
-              value={draft}
-              disabled={disabled}
-              onChange={(e) => setDraft(e.target.value)}
-              onBlur={() => commitManual()}
-              onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-              placeholder="—"
-            />
-          )}
+          {/* The score can always be typed; the rubric criteria are a shortcut that fills it in. */}
+          <Input
+            aria-label={t('problem.scoreFor', { name: problem.name })}
+            inputMode="decimal"
+            value={draft}
+            disabled={disabled}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => commitManual()}
+            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+            placeholder="—"
+          />
+
           <span className="gr-problem__max">/ {formatScore(max)}</span>
         </span>
       </div>

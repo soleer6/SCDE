@@ -177,5 +177,10 @@
     "label": "Ejercicios del examen",
     "graded": "con nota",
     "pending": "sin nota"
+  },
+  "review": {
+    "autoResolved": "Solicitud revisada: nota actualizada",
+    "resolvedOnSave_one": "Solicitud de revisión resuelta al guardar",
+    "resolvedOnSave_other": "Solicitudes de revisión resueltas al guardar"
   }
 }
