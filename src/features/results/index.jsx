@@ -24,7 +24,7 @@ export default {
       comment: { title: 'Comentario del profesorado' },
       review: {
         optional: 'Si estás conforme, puedes salir sin solicitar revisión. El cierre formal del periodo lo gestiona la coordinación.', skip: 'No necesito revisión · Volver a la asignatura',
-        historyHint: 'La nota anterior se conserva en el navegador donde solicitaste la revisión.', before: 'Nota anterior', current: 'Nota actual', difference: 'Cambio', totalChange: 'Resultado de la revisión', noPrevious: 'No registrada',
+        historyHint: 'La nota anterior se conserva en el navegador donde solicitaste la revisión.', resetDemo: 'Reiniciar prueba de Elena', before: 'Nota anterior', current: 'Nota actual', difference: 'Cambio', totalChange: 'Resultado de la revisión', noPrevious: 'No registrada',
         title: 'Revisión', notOpen: 'Todavía no hay periodo de revisión para este examen.', closed: 'El periodo de revisión no está abierto.',
         help: 'Marca los problemas cuya corrección quieres que se revise y explica el motivo.',
         reason: 'Motivo', reasonPlaceholder: 'Qué crees que no se ha valorado bien',
@@ -57,7 +57,7 @@ export default {
       comment: { title: "Teacher's comment" },
       review: {
         optional: 'If you agree with your grade, you can leave without requesting a review. The coordinator manages the formal closing of the review period.', skip: 'No review needed · Back to subject',
-        historyHint: 'The previous grade is saved in the browser where you requested the review.', before: 'Previous grade', current: 'Current grade', difference: 'Change', totalChange: 'Review result', noPrevious: 'Not recorded',
+        historyHint: 'The previous grade is saved in the browser where you requested the review.', resetDemo: 'Restart Elena demo', before: 'Previous grade', current: 'Current grade', difference: 'Change', totalChange: 'Review result', noPrevious: 'Not recorded',
         title: 'Review', notOpen: 'No review period for this exam yet.', closed: 'The review period is not open.',
         help: 'Select the problems you want reviewed and explain why.',
         reason: 'Reason', reasonPlaceholder: "What you think wasn't assessed correctly",
